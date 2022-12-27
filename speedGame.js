@@ -59,6 +59,10 @@ var battleBros = [
         x:400,
         y:100,
         team: 0,
+        // Defined elsewhere
+        // - avatarHtmlElement
+        // - isTargeted
+
     },
     {
         character: 'jabba',
@@ -154,6 +158,7 @@ var battleBros = [
     },
 ]
 
+
 $(document).ready(function () {
     console.log('App started')
 
@@ -163,7 +168,7 @@ $(document).ready(function () {
     for (let battleBro of battleBros) {
         let infoAboutCharacter = infoAboutCharacters[battleBro.character]
         // Create new picture for character
-        let newGuy = $('#jabbaBlue1').clone().removeAttr("id")
+        let newGuy = $('#jabbaTemplate').clone().removeAttr("id")
 
         // Set image src
         let childImage = newGuy.children("#jabba")
@@ -198,8 +203,8 @@ function doMyStuff() {
 
     // How to move an image
     /*
-    var position = $('#jabbaBlue1').position()
-    $('#jabbaBlue1').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
+    var position = $('#jabbaTemplate').position()
+    $('#jabbaTemplate').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
     */
    
     // How to change text
@@ -223,17 +228,40 @@ function doMyStuff() {
     console.log('Processing avatar------------------------- ', avatarWithMaxTurnMeter)
     $('#myText').html('Processing avatar------------------------- ' + avatarWithMaxTurnMeter)
     $('.selected').removeClass('selected')
-    avatarHtmlElements[avatarWithMaxTurnMeter].addClass('selected')
+    let avatarHtmlElement = battleBros[avatarWithMaxTurnMeter].avatarHtmlElement
+    avatarHtmlElement.addClass('selected')
     avatarTurnMeters[avatarWithMaxTurnMeter] -= 100
     console.log('avatarTurnMeters after processing:', avatarTurnMeters)
 
 }
 
 
-function avatarClicked()
+function avatarClicked(clickedElement)
 {
     console.log('avatarClicked')
+    let clickedElementParent = clickedElement.parentElement
+    // Find which battleBro was clicked
+    let foundBattleBro
     for (let battleBro of battleBros) {
-        console.log(battleBro)
+        let broHtmlElement = battleBro.avatarHtmlElement.get(0)
+        if (broHtmlElement == clickedElementParent) {
+            console.log(battleBro)
+            foundBattleBro = battleBro
+        }
     }
+
+    // Set isTarget=false to all other battleBros from the same team
+    for (let battleBro of battleBros) {
+        if (battleBro.team == foundBattleBro.team) {
+            battleBro.isTarget = false
+        }
+    }
+
+    // Set isTarget=true to our newly-selected battleBro
+    foundBattleBro.isTarget = true
+
+    // Move team's target image
+    let htmlElementName = '#targetTeam' + foundBattleBro.team
+    $(htmlElementName).css({ 'left': foundBattleBro.x + 'px', 'top': foundBattleBro.y + 'px' });
+
 }

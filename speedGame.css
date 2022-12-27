@@ -9,3 +9,8 @@ body {
         0 0 140px 45px #0ff; /* outer cyan */
     z-index: 1;
 }
+
+.image_cropped {
+    object-fit: cover;
+    border-radius: 50%;
+}
