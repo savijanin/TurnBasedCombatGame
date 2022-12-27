@@ -1,10 +1,16 @@
 <html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.1.0/gl-matrix.js"></script>
+
         <link href='speedGame.css' rel='stylesheet' type='text/css'>
         <script src="speedGame.js"></script>
+        <script src="HyperspaceBackground.js"></script>
     </head>
     <body>
+
+        <canvas id="backgroundCanvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
+
         <div class="d-flex h-100">
             <button id="button1" class="btn btn-warning m-auto">
                 Hi! Click me
@@ -12,12 +18,16 @@
             <div id='myText'>
             </div>
 
-            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-40px; background-color: rgb(243, 242, 174);">
+            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-40px;
+              background-color: rgba(243, 242, 174, 0.0); text-align: center;"
+              >
                 <img class="image_cropped" id="jabba" src="jabba.png" width="100" height="100"
                     onclick="avatarClicked(this);"
                 >
-                Health: <div id="jabbaHealth" style="display:inline;">
-                    100
+                <span style="color:white;">
+                        Health: <div id="jabbaHealth" style="display:inline;">
+                            100
+                </span>
                 </div>
             </div>
             <!--
