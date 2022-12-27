@@ -50,6 +50,16 @@ var infoAboutCharacters = {
         imageSize: 200,
         baseSpeed: 10,
     },
+    'Yoda': {
+        image: 'images/Yoda.png',
+        imageSize: 100,
+        baseSpeed: 10,
+    },
+    'Mace Windu': {
+        image: 'images/MaceWindu.png',
+        imageSize: 100,
+        baseSpeed: 10,
+    },
 }
 
 var battleBros = [
@@ -77,13 +87,13 @@ var battleBros = [
         team: 0,
     },
     {
-        character: 'jabba',
+        character: 'Yoda',
         x:400,
         y:700,
         team: 0,
     },
     {
-        character: 'jabba',
+        character: 'Mace Windu',
         x:250,
         y:200,
         team: 0,
