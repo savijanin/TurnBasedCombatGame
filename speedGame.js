@@ -2,7 +2,7 @@ var numberOfAvatars = 16
 var avatarTurnMeters = Array(numberOfAvatars).fill(0)
 var avatarSpeeds = [6, 5, 12, 9, 7, 11, 10, 4, 12, 6, 5, 12, 9, 7, 11, 10]
 //var avatarHtmlElements
-var selectedGuys = ['CloneWarsChewbacca','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba']
+var selectedGuys = ['CloneWarsChewbacca', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba']
 
 var infoAboutCharacters = {
     'jabba': {
@@ -51,8 +51,8 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 10,
         accuracy: 0,
-        tags: ['lightSide','tank','leader','galacticRepublic','scoundrel'],
-        abilities: ['bowcaster','wookieRage','defiantRoar'],
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
+        abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
         passiveAbilities: ['wookieResolve'],
     },
     'MassiveJabba': {
@@ -82,8 +82,8 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 5,
         accuracy: 0,
-        tags: ['lightSide','support','leader','galacticRepublic','jedi'],
-        abilities: ['ataru','masterstroke','unstoppableForce','battleMeditation'],
+        tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
+        abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
         passiveAbilities: ['grandMastersGuidance'],
     },
     'Mace Windu': {
@@ -108,9 +108,9 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 15,
         accuracy: 0,
-        tags: ['lightSide','tank','leader','galacticRepublic','jedi','fleetCommander'],
-        abilities: ['invincibleAssault','smite','thisPartysOver'],
-        passiveAbilities: ['takeaSeat','vaapad','senseWeakness'],
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
+        abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
+        passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
     },
 }
 
@@ -118,8 +118,8 @@ var battleBros = [
     // Team 0 (left side)
     {
         character: 'jabba',
-        x:400,
-        y:100,
+        x: 400,
+        y: 100,
         team: 0,
         // Defined elsewhere
         // - avatarHtmlElement
@@ -128,94 +128,94 @@ var battleBros = [
     },
     {
         character: 'jabba',
-        x:400,
-        y:300,
+        x: 400,
+        y: 300,
         team: 0,
     },
     {
         character: 'CloneWarsChewbacca',
-        x:400,
-        y:500,
+        x: 400,
+        y: 500,
         team: 0,
     },
     {
         character: 'Yoda',
-        x:400,
-        y:700,
+        x: 400,
+        y: 700,
         team: 0,
     },
     {
         character: 'Mace Windu',
-        x:250,
-        y:200,
+        x: 250,
+        y: 200,
         team: 0,
     },
     {
         character: 'jabba',
-        x:250,
-        y:400,
+        x: 250,
+        y: 400,
         team: 0,
     },
     {
         character: 'jabba',
-        x:250,
-        y:600,
+        x: 250,
+        y: 600,
         team: 0,
     },
     {
         character: 'MassiveJabba',
-        x:0,
-        y:350,
+        x: 0,
+        y: 350,
         team: 0,
     },
 
     // Team 1 (right side)
     {
         character: 'jabba',
-        x:1400,
-        y:100,
+        x: 1400,
+        y: 100,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:300,
+        x: 1400,
+        y: 300,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:500,
+        x: 1400,
+        y: 500,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:700,
+        x: 1400,
+        y: 700,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:200,
+        x: 1550,
+        y: 200,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:400,
+        x: 1550,
+        y: 400,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:600,
+        x: 1550,
+        y: 600,
         team: 1,
     },
     {
         character: 'MassiveJabba',
-        x:1700,
-        y:350,
+        x: 1700,
+        y: 350,
         team: 1,
     },
 ]
@@ -235,7 +235,7 @@ var infoAboutAbilities = {
     }
 }
 
-var abilityImagesPerTeam = [[],[]]
+var abilityImagesPerTeam = [[], []]
 
 
 $(document).ready(function () {
@@ -262,25 +262,25 @@ $(document).ready(function () {
             childImage.css({ 'width': infoAboutCharacter.imageSize + 'px', 'height': infoAboutCharacter.imageSize + 'px' });
         }
 
-        
+
 
         newGuy.appendTo('#myGuys');
         //avatarHtmlElements.push(newGuy)
         battleBro.avatarHtmlElement = newGuy
     }
 
-    for (let team=0; team<2; team++) {
+    for (let team = 0; team < 2; team++) {
         const maxNumberOfAbilities = 8
-        for (let i=0; i<maxNumberOfAbilities; i++) {
+        for (let i = 0; i < maxNumberOfAbilities; i++) {
             // Create new picture for ability
             let newAbilityImage = $('#abilityTemplate').clone().removeAttr("id")
-            
+
             // Set position
-            if (team==0) {
-                newAbilityImage.css({ 'left': (i*115) + 'px' });
+            if (team == 0) {
+                newAbilityImage.css({ 'left': (i * 115) + 'px' });
             }
             else {
-                newAbilityImage.css({ 'right': (i*115) + 'px' });
+                newAbilityImage.css({ 'right': (i * 115) + 'px' });
             }
 
             newAbilityImage.appendTo('#myAbilities');
@@ -305,7 +305,7 @@ function doMyStuff() {
     var position = $('#jabbaTemplate').position()
     $('#jabbaTemplate').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
     */
-   
+
     // How to change text
     //$('#jabbaHealth').text("dead")
 
@@ -359,7 +359,7 @@ function selectBattleBro(battleBroNumber) {
 
     // loop over battlebro abilities and display them
     if (characterAbilities) {
-        for (i=0; i<characterAbilities.length; i++) {
+        for (i = 0; i < characterAbilities.length; i++) {
             let processingAbility = characterAbilities[i]
             let imagePngPath = infoAboutAbilities[processingAbility].image
 
@@ -374,8 +374,7 @@ function selectBattleBro(battleBroNumber) {
 }
 
 
-function avatarClicked(clickedElement)
-{
+function avatarClicked(clickedElement) {
     console.log('avatarClicked')
     let clickedElementParent = clickedElement.parentElement
     // Find which battleBro was clicked
