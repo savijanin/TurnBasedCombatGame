@@ -327,6 +327,21 @@ var infoAboutAbilities = {
         abilityType: 'special',
         abilityTags: ['turnmeter_recovery','buff_gain'],
     },
+    'invincibleAssault': {
+        displayName: 'invincibleAssault',
+        image: 'images/abilities/ability_macewindu_basic.png',
+        desc:"Mace Windu deals phisycal damage to the target enemy"
+    },
+    'smite': {
+      displayName: 'smite',
+      image: 'images/abilities/ability_macewindu_special01.png',
+      desc:"Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter."
+    },
+    'thisPartysOver': {
+        displayName: "This party's over",
+        image: 'images/abilities/ability_macewindu_special02.png',
+        desc:"Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
+      },
 }
 
 var infoAboutPassives = {
