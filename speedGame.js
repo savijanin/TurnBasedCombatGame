@@ -2,7 +2,7 @@ var numberOfAvatars = 16
 var avatarTurnMeters = Array(numberOfAvatars).fill(0)
 var avatarSpeeds = [6, 5, 12, 9, 7, 11, 10, 4, 12, 6, 5, 12, 9, 7, 11, 10]
 //var avatarHtmlElements
-var selectedGuys = ['CloneWarsChewbacca','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba','jabba']
+var selectedGuys = ['CloneWarsChewbacca', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba']
 
 var infoAboutCharacters = {
     'jabba': {
@@ -29,6 +29,7 @@ var infoAboutCharacters = {
         tags: ['lightSide'],
         abilities: ['test1', 'test2'],
         passiveAbilities: ['test3'],
+        charDesc: 'insert funny description here',
     },
     'CloneWarsChewbacca': {
         image: 'images/avatars/CloneWarsChewbacca.png',
@@ -51,9 +52,10 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 10,
         accuracy: 0,
-        tags: ['lightSide','tank','leader','galacticRepublic','scoundrel'],
-        abilities: ['bowcaster','wookieRage','defiantRoar'],
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
+        abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
         passiveAbilities: ['wookieResolve'],
+        charDesc: 'Durable Tank with both Taunt and self-Healing',
     },
     'MassiveJabba': {
         image: 'images/jabba.png',
@@ -82,9 +84,10 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 5,
         accuracy: 0,
-        tags: ['lightSide','support','leader','galacticRepublic','jedi'],
-        abilities: ['ataru','masterstroke','unstoppableForce','battleMeditation'],
+        tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
+        abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
         passiveAbilities: ['grandMastersGuidance'],
+        charDesc: 'Masterful Jedi support that can replicate enemy buffs and share them with allies',
     },
     'Mace Windu': {
         image: 'images/avatars/MaceWindu.png',
@@ -108,9 +111,37 @@ var infoAboutCharacters = {
         critAvoidance: 0,
         healthSteal: 15,
         accuracy: 0,
-        tags: ['lightSide','tank','leader','galacticRepublic','jedi','fleetCommander'],
-        abilities: ['invincibleAssault','smite','thisPartysOver'],
-        passiveAbilities: ['takeaSeat','vaapad','senseWeakness'],
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
+        abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
+        passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
+        charDesc: 'Aggressive Jedi tank with devastating damage if left unchecked',
+    },
+    'Darth Vader': {
+        image: 'images/avatars/DarthVader.png',
+        imageSize: 100,
+        physicalDamage: 3447,
+        physicalCritChance: 37.67,
+        armourPenetration: 175,
+        health: 32156,
+        protection: 47828,
+        baseSpeed: 141,
+        potency: 50,
+        tenacity: 43,
+        critDamage: 150,
+        specialDamage: 2570,
+        specialCritChance: 11.88,
+        resistancePenetration: 0,
+        armourPercent: 43.36,
+        resistancePercent: 34.38,
+        armourNumber: 488,
+        resistanceNumber: 334,
+        critAvoidance: 0,
+        healthSteal: 15,
+        accuracy: 0,
+        tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
+        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade','mercilessMassacre'],
+        passiveAbilities: ['inspiringThroughFear', 'noEscape'],
+        charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
     },
 }
 
@@ -118,8 +149,8 @@ var battleBros = [
     // Team 0 (left side)
     {
         character: 'jabba',
-        x:400,
-        y:100,
+        x: 400,
+        y: 100,
         team: 0,
         // Defined elsewhere
         // - avatarHtmlElement
@@ -128,94 +159,94 @@ var battleBros = [
     },
     {
         character: 'jabba',
-        x:400,
-        y:300,
+        x: 400,
+        y: 300,
         team: 0,
     },
     {
         character: 'CloneWarsChewbacca',
-        x:400,
-        y:500,
+        x: 400,
+        y: 500,
         team: 0,
     },
     {
         character: 'Yoda',
-        x:400,
-        y:700,
+        x: 400,
+        y: 700,
         team: 0,
     },
     {
         character: 'Mace Windu',
-        x:250,
-        y:200,
+        x: 250,
+        y: 200,
         team: 0,
     },
     {
         character: 'jabba',
-        x:250,
-        y:400,
+        x: 250,
+        y: 400,
         team: 0,
     },
     {
         character: 'jabba',
-        x:250,
-        y:600,
+        x: 250,
+        y: 600,
         team: 0,
     },
     {
         character: 'MassiveJabba',
-        x:0,
-        y:350,
+        x: 0,
+        y: 350,
         team: 0,
     },
 
     // Team 1 (right side)
     {
         character: 'jabba',
-        x:1400,
-        y:100,
+        x: 1400,
+        y: 100,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:300,
+        x: 1400,
+        y: 300,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:500,
+        x: 1400,
+        y: 500,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1400,
-        y:700,
+        x: 1400,
+        y: 700,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:200,
+        x: 1550,
+        y: 200,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:400,
+        x: 1550,
+        y: 400,
         team: 1,
     },
     {
         character: 'jabba',
-        x:1550,
-        y:600,
+        x: 1550,
+        y: 600,
         team: 1,
     },
     {
         character: 'MassiveJabba',
-        x:1700,
-        y:350,
+        x: 1700,
+        y: 350,
         team: 1,
     },
 ]
@@ -224,18 +255,108 @@ var infoAboutAbilities = {
     'test1': {
         displayName: 'Battle meditation',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        desc: 'This is a test, deal physical damage to target enemy.',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage','projectile_attack'],
+        abilityDamage: 100,
+        abilityDamageVariance: 500,
     },
     'test2': {
         displayName: 'Battle meditation2',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
+        desc: 'Heal target ally',
+        abilityType: 'special',
+        abilityTags: ['health_recovery'],
     },
     'bowcaster': {
         displayName: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage','projectile_attack'],
+        abilityDamage: 117.8,
+        abilityDamageVariance: 500,
+    },
+    'wookieRage': {
+        displayName: 'Wookie Rage',
+        image: 'images/abilities/clonewarschewbacca_wookierage.png',
+        desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
+        abilityType: 'special',
+        abilityTags: ['buff_gain'],
+    },
+    'defiantRoar': {
+        displayName: 'Defiant Roar',
+        image: 'images/abilities/clonewarschewbacca_defiantroar.png',
+        desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
+        zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
+        abilityType: 'special',
+        abilityTags: ['dispel','health_recovery','buff_gain','turnmeter_recovery'],
+    },
+    'ataru': {
+        displayName: 'Ataru',
+        image: 'images/abilities/ability_grandmasteryoda_basic.png',
+        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
+        abilityType: 'basic',
+        abilityTags: ['turnmeter_recovery','buff_gain','special_damage','debuff_gain'],
+        abilityDamage: 208,
+        abilityDamageVariance: 500,
+    },
+    'masterstroke': {
+        displayName: 'Masterstroke',
+        image: 'images/abilities/ability_grandmasteryoda_special01.png',
+        desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
+        abilityType: 'special',
+        abilityTags: ['bonus_turn','special_damage', 'buff_gain'],
+        abilityDamage: 60.2,
+        abilityDamageVariance: 500,
+    },
+    'unstoppableForce': {
+        displayName: 'Unstoppable Force',
+        image: 'images/abilities/ability_grandmasteryoda_special02.png',
+        desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
+        abilityType: 'special',
+        abilityTags: ['debuff_gain','special_damage'],
+        abilityDamage: 299.9,
+        abilityDamageVariance: 500,
+    },
+    'battleMeditation': {
+        displayName: 'Battle Meditation',
+        image: 'images/abilities/ability_grandmasteryoda_special03.png',
+        desc: 'Yoda gains Tenacity Up and Protection Up (30%) for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns, with a 50% chance to also grant Yoda 35% Turn Meter.',
+        zeta_desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
+        abilityType: 'special',
+        abilityTags: ['turnmeter_recovery','buff_gain'],
     }
 }
 
-var abilityImagesPerTeam = [[],[]]
+var infoAboutPassives = {
+    'test3': {
+        displayName: 'Battle mooditation',
+        image: 'images/abilities/ability_grandmasteryoda_special01.png',
+        desc: 'jabba\'s blubber grants him 50% counter chance',
+        abilityType: 'unique',
+        abilityTags: [],
+    },
+    'wookieResolve': {
+        displayName: 'Wookie Resolve',
+        image: 'images/abilities/abilityui_passive_def.png',
+        desc: 'All allies have +50 Defense, and a 50% chance to gain Defense Up for 3 turns whenever they are damaged.',
+        omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
+        abilityType: 'leader',
+        abilityTags: ['buff_gain','grand_arena_omicron'],
+    },
+    'grandMastersGuidance': {
+        displayName: 'Grand Master\'s Guidance',
+        image: 'images/abilities/abilityui_passive_removeharmful.png',
+        desc: 'Jedi allies have +25% Tenacity. Whenever a Jedi ally Resists a debuff, they gain 25% Turn Meter.',
+        zeta_desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
+        omicron_desc: 'At the start of battle if there are no galactic legends and all allies are Galactic Republic Jedi, the leadership abilities of all other allies are active until the end of battle.',
+        abilityType: 'leader',
+        abilityTags: ['buff_gain','grand_arena_omicron'],
+    },
+}
+
+var abilityImagesPerTeam = [[], []]
 
 
 $(document).ready(function () {
@@ -262,25 +383,25 @@ $(document).ready(function () {
             childImage.css({ 'width': infoAboutCharacter.imageSize + 'px', 'height': infoAboutCharacter.imageSize + 'px' });
         }
 
-        
+
 
         newGuy.appendTo('#myGuys');
         //avatarHtmlElements.push(newGuy)
         battleBro.avatarHtmlElement = newGuy
     }
 
-    for (let team=0; team<2; team++) {
+    for (let team = 0; team < 2; team++) {
         const maxNumberOfAbilities = 8
-        for (let i=0; i<maxNumberOfAbilities; i++) {
+        for (let i = 0; i < maxNumberOfAbilities; i++) {
             // Create new picture for ability
             let newAbilityImage = $('#abilityTemplate').clone().removeAttr("id")
-            
+
             // Set position
-            if (team==0) {
-                newAbilityImage.css({ 'left': (i*115) + 'px' });
+            if (team == 0) {
+                newAbilityImage.css({ 'left': (i * 115 + 15) + 'px' });
             }
             else {
-                newAbilityImage.css({ 'right': (i*115) + 'px' });
+                newAbilityImage.css({ 'right': (i * 115+ 15) + 'px' });
             }
 
             newAbilityImage.appendTo('#myAbilities');
@@ -305,7 +426,7 @@ function doMyStuff() {
     var position = $('#jabbaTemplate').position()
     $('#jabbaTemplate').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
     */
-   
+
     // How to change text
     //$('#jabbaHealth').text("dead")
 
@@ -359,7 +480,7 @@ function selectBattleBro(battleBroNumber) {
 
     // loop over battlebro abilities and display them
     if (characterAbilities) {
-        for (i=0; i<characterAbilities.length; i++) {
+        for (i = 0; i < characterAbilities.length; i++) {
             let processingAbility = characterAbilities[i]
             let imagePngPath = infoAboutAbilities[processingAbility].image
 
@@ -374,8 +495,7 @@ function selectBattleBro(battleBroNumber) {
 }
 
 
-function avatarClicked(clickedElement)
-{
+function avatarClicked(clickedElement) {
     console.log('avatarClicked')
     let clickedElementParent = clickedElement.parentElement
     // Find which battleBro was clicked
