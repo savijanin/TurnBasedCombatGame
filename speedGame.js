@@ -326,7 +326,7 @@ var infoAboutAbilities = {
         zeta_desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
         abilityType: 'special',
         abilityTags: ['turnmeter_recovery','buff_gain'],
-    }
+    },
 }
 
 var infoAboutPassives = {
@@ -354,9 +354,34 @@ var infoAboutPassives = {
         abilityType: 'leader',
         abilityTags: ['buff_gain','grand_arena_omicron'],
     },
+    'takeaSeat': {
+        displayName: 'Take a Seat',
+        image: 'images/abilities/abilityui_passive_takeaseat.png',
+        desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
+        abilityType: 'leader',
+        abilityTags: ['health_recovery'],
+    },
+    'vaapad': {
+        displayName: 'Vaapad',
+        image: 'images/abilities/abilityui_passive_def.png',
+        desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
+        zeta_desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
+        abilityType: 'unique',
+        abilityTags: ['dispel','buff_gain'],
+    },
+    'senseWeakness': {
+        displayName: 'Sense Weakness',
+        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
+        zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Galactic Republic Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
+        omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
+        abilityType: 'unique',
+        abilityTags: ['territory_war_omicron','dispel','debuff_gain','protection_recovery','turnmeter_recovery']
+    },
 }
 
 var abilityImagesPerTeam = [[], []]
+var passiveImagesPerTeam = [[],[]]
 
 
 $(document).ready(function () {
@@ -395,17 +420,23 @@ $(document).ready(function () {
         for (let i = 0; i < maxNumberOfAbilities; i++) {
             // Create new picture for ability
             let newAbilityImage = $('#abilityTemplate').clone().removeAttr("id")
+            let newPassiveImage = $('#passiveTemplate').clone().removeAttr("id")
 
             // Set position
             if (team == 0) {
                 newAbilityImage.css({ 'left': (i * 115 + 15) + 'px' });
+                newPassiveImage.css({ 'left': (i * 85 + 15) + 'px' });
             }
             else {
                 newAbilityImage.css({ 'right': (i * 115+ 15) + 'px' });
+                newPassiveImage.css({ 'right': (i * 85 + 15) + 'px' });
             }
 
             newAbilityImage.appendTo('#myAbilities');
             abilityImagesPerTeam[team].push(newAbilityImage)
+
+            newPassiveImage.appendTo('#myPassives');
+            passiveImagesPerTeam[team].push(newPassiveImage)
         }
     }
 
@@ -462,8 +493,10 @@ function selectBattleBro(battleBroNumber) {
 
     // Update ability images
     let abilityImages = abilityImagesPerTeam[battleBro.team]
+    let passiveImages = passiveImagesPerTeam[battleBro.team]
     // Find battlebro abilities
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
+    let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     /*
     is the same as:
         let characterName = battleBro.character
@@ -475,6 +508,11 @@ function selectBattleBro(battleBroNumber) {
     for (let abilityImages of abilityImagesPerTeam) {
         for (let abilityImage of abilityImages) {
             abilityImage.css({ 'display': 'none' });
+        }
+    }
+    for (let passiveImages of passiveImagesPerTeam) {
+        for (let passiveImage of passiveImages) {
+            passiveImage.css({ 'display': 'none' });
         }
     }
 
@@ -489,6 +527,18 @@ function selectBattleBro(battleBroNumber) {
             let abilityImage = abilityImagesForCurrentTeam[i]
             abilityImage.attr("src", imagePngPath)
             abilityImage.css({ 'display': 'block' });
+        }
+    }
+    if (characterPassives) {
+        for (i = 0; i < characterPassives.length; i++) {
+            let processingPassive = characterPassives[i]
+            let imagePngPath = infoAboutPassives[processingPassive].image
+
+            // set the image png and set display=block
+            let passiveImagesForCurrentTeam = passiveImagesPerTeam[battleBro.team]
+            let passiveImage = passiveImagesForCurrentTeam[i]
+            passiveImage.attr("src", imagePngPath)
+            passiveImage.css({ 'display': 'block' });
         }
     }
 
