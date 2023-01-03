@@ -6,59 +6,111 @@ var selectedGuys = ['CloneWarsChewbacca','jabba','jabba','jabba','jabba','jabba'
 
 var infoAboutCharacters = {
     'jabba': {
-        image: 'jabba.png',
-        baseSpeed: 7,
-        health: 50,
-        damage: 10,
-        critical_chance: 50,
-        critical_damage: 150,
-        defence_penetration: 0,
-        protection: 2,
-        potency: 15,
-        tenacity: 15,
-        special_critical_chance: 20,
-        defence: 30,
-        special_defence: 10,
-        dodge_chance: 2,
-        critical_avoidance: 0,
+        image: 'images/jabba.png',
+        physicalDamage: 18000,
+        physicalCritChance: 50,
+        armourPenetration: 200,
+        health: 50000,
+        protection: 15000,
+        baseSpeed: 111,
+        potency: 900,
+        tenacity: 1,
+        critDamage: 150,
+        specialDamage: 10000,
+        specialCritChance: 25,
+        resistancePenetration: 200,
+        armourPercent: 50,
+        resistancePercent: 50,
+        armourNumber: 500,
+        resistanceNumber: 500,
+        critAvoidance: 0,
+        healthSteal: 100,
         accuracy: 0,
-        gear_level: 1,
-        tags: ['light_side'],
+        tags: ['lightSide'],
+        abilities: ['test1', 'test2'],
+        passiveAbilities: ['test3'],
     },
     'CloneWarsChewbacca': {
-        image: 'CloneWarsChewbacca.png',
-        baseSpeed: 126,
+        image: 'images/avatars/CloneWarsChewbacca.png',
+        physicalDamage: 3267,
+        physicalCritChance: 28.46,
+        armourPenetration: 101,
         health: 43470,
-        damage: 3267,
-        critical_chance: 28.46,
-        critical_damage: 150,
-        defence_penetration: 0,
-        protection: 26186,
+        protection: 52371,
+        baseSpeed: 126,
         potency: 28,
         tenacity: 55,
-        special_critical_chance: 12.92,
-        defence: 48.23,
-        special_defence: 41.81,
-        dodge_chance: 4,
-        critical_avoidance: 0,
+        critDamage: 150,
+        specialDamage: 2043,
+        specialCritChance: 12.92,
+        resistancePenetration: 0,
+        armourPercent: 48.23,
+        resistancePercent: 41.81,
+        armourNumber: 594,
+        resistanceNumber: 458,
+        critAvoidance: 0,
+        healthSteal: 10,
         accuracy: 0,
-        gear_level: 13,
-        tags: ['light_side','galactic_republic','leader','scoundrel','tank'],        
+        tags: ['lightSide','tank','leader','galacticRepublic','scoundrel'],
+        abilities: ['bowcaster','wookieRage','defiantRoar'],
+        passiveAbilities: ['wookieResolve'],
     },
     'MassiveJabba': {
-        image: 'jabba.png',
+        image: 'images/jabba.png',
         imageSize: 200,
         baseSpeed: 10,
     },
     'Yoda': {
-        image: 'images/Yoda.png',
+        image: 'images/avatars/GrandmasterYoda.png',
         imageSize: 100,
-        baseSpeed: 10,
+        physicalDamage: 2527,
+        physicalCritChance: 28.42,
+        armourPenetration: 36,
+        health: 33753,
+        protection: 18937,
+        baseSpeed: 177,
+        potency: 56,
+        tenacity: 39,
+        critDamage: 150,
+        specialDamage: 4492,
+        specialCritChance: 22.92,
+        resistancePenetration: 130,
+        armourPercent: 31.85,
+        resistancePercent: 19.46,
+        armourNumber: 298,
+        resistanceNumber: 154,
+        critAvoidance: 0,
+        healthSteal: 5,
+        accuracy: 0,
+        tags: ['lightSide','support','leader','galacticRepublic','jedi'],
+        abilities: ['ataru','masterstroke','unstoppableForce','battleMeditation'],
+        passiveAbilities: ['grandMastersGuidance'],
     },
     'Mace Windu': {
-        image: 'images/MaceWindu.png',
+        image: 'images/avatars/MaceWindu.png',
         imageSize: 100,
-        baseSpeed: 10,
+        physicalDamage: 2689,
+        physicalCritChance: 23.33,
+        armourPenetration: 80,
+        health: 36040,
+        protection: 39209,
+        baseSpeed: 143,
+        potency: 46,
+        tenacity: 47,
+        critDamage: 150,
+        specialDamage: 4679,
+        specialCritChance: 18.13,
+        resistancePenetration: 140,
+        armourPercent: 31.19,
+        resistancePercent: 43.31,
+        armourNumber: 289,
+        resistanceNumber: 487,
+        critAvoidance: 0,
+        healthSteal: 15,
+        accuracy: 0,
+        tags: ['lightSide','tank','leader','galacticRepublic','jedi','fleetCommander'],
+        abilities: ['invincibleAssault','smite','thisPartysOver'],
+        passiveAbilities: ['takeaSeat','vaapad','senseWeakness'],
     },
 }
 
@@ -168,6 +220,23 @@ var battleBros = [
     },
 ]
 
+var infoAboutAbilities = {
+    'test1': {
+        displayName: 'Battle meditation',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+    },
+    'test2': {
+        displayName: 'Battle meditation2',
+        image: 'images/abilities/abilityui_passive_takeaseat.png',
+    },
+    'bowcaster': {
+        displayName: 'Bowcaster',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+    }
+}
+
+var abilityImagesPerTeam = [[],[]]
+
 
 $(document).ready(function () {
     console.log('App started')
@@ -200,7 +269,27 @@ $(document).ready(function () {
         battleBro.avatarHtmlElement = newGuy
     }
 
-    $('#jabbaBlue2').attr("src",'CloneWarsChewbacca.png')
+    for (let team=0; team<2; team++) {
+        const maxNumberOfAbilities = 8
+        for (let i=0; i<maxNumberOfAbilities; i++) {
+            // Create new picture for ability
+            let newAbilityImage = $('#abilityTemplate').clone().removeAttr("id")
+            
+            // Set position
+            if (team==0) {
+                newAbilityImage.css({ 'left': (i*115) + 'px' });
+            }
+            else {
+                newAbilityImage.css({ 'right': (i*115) + 'px' });
+            }
+
+            newAbilityImage.appendTo('#myAbilities');
+            abilityImagesPerTeam[team].push(newAbilityImage)
+        }
+    }
+
+    // ?
+    //$('#jabbaBlue2').attr("src",'image/avatars/CloneWarsChewbacca.png')
 
     $('#button1').on('click', doMyStuff)
 
@@ -237,11 +326,50 @@ function doMyStuff() {
 
     console.log('Processing avatar------------------------- ', avatarWithMaxTurnMeter)
     $('#myText').html('Processing avatar------------------------- ' + avatarWithMaxTurnMeter)
-    $('.selected').removeClass('selected')
-    let avatarHtmlElement = battleBros[avatarWithMaxTurnMeter].avatarHtmlElement
-    avatarHtmlElement.addClass('selected')
+    selectBattleBro(avatarWithMaxTurnMeter)
     avatarTurnMeters[avatarWithMaxTurnMeter] -= 100
     console.log('avatarTurnMeters after processing:', avatarTurnMeters)
+
+}
+
+
+function selectBattleBro(battleBroNumber) {
+    $('.selected').removeClass('selected')
+    let battleBro = battleBros[battleBroNumber]
+    let avatarHtmlElement = battleBro.avatarHtmlElement
+    avatarHtmlElement.addClass('selected')
+
+    // Update ability images
+    let abilityImages = abilityImagesPerTeam[battleBro.team]
+    // Find battlebro abilities
+    let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
+    /*
+    is the same as:
+        let characterName = battleBro.character
+        let infoAboutThisCharacter = infoAboutCharacters[characterName]
+        let characterAbilities = infoAboutThisCharacter.abilities
+    */
+
+    // Hide all ability images
+    for (let abilityImages of abilityImagesPerTeam) {
+        for (let abilityImage of abilityImages) {
+            abilityImage.css({ 'display': 'none' });
+        }
+    }
+
+    // loop over battlebro abilities and display them
+    if (characterAbilities) {
+        for (i=0; i<characterAbilities.length; i++) {
+            let processingAbility = characterAbilities[i]
+            let imagePngPath = infoAboutAbilities[processingAbility].image
+
+            // set the image png and set display=block
+            let abilityImagesForCurrentTeam = abilityImagesPerTeam[battleBro.team]
+            let abilityImage = abilityImagesForCurrentTeam[i]
+            abilityImage.attr("src", imagePngPath)
+            abilityImage.css({ 'display': 'block' });
+        }
+    }
 
 }
 
