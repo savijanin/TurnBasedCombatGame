@@ -1,12 +1,6 @@
-var numberOfAvatars = 16
-var avatarTurnMeters = Array(numberOfAvatars).fill(0)
-var avatarSpeeds = [6, 5, 12, 9, 7, 11, 10, 4, 12, 6, 5, 12, 9, 7, 11, 10]
-//var avatarHtmlElements
-var selectedGuys = ['CloneWarsChewbacca', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba', 'jabba']
-
 var infoAboutCharacters = {
     'jabba': {
-        image: 'images/jabba.png',
+        image: 'images/Jabba.png',
         physicalDamage: 18000,
         physicalCritChance: 50,
         armourPenetration: 200,
@@ -58,9 +52,10 @@ var infoAboutCharacters = {
         charDesc: 'Durable Tank with both Taunt and self-Healing',
     },
     'MassiveJabba': {
-        image: 'images/jabba.png',
+        image: 'images/Jabba.png',
         imageSize: 200,
         baseSpeed: 10,
+        health: 1000000,
     },
     'Yoda': {
         image: 'images/avatars/GrandmasterYoda.png',
@@ -139,9 +134,51 @@ var infoAboutCharacters = {
         healthSteal: 15,
         accuracy: 0,
         tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
-        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade','mercilessMassacre'],
+        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
         passiveAbilities: ['inspiringThroughFear', 'noEscape'],
         charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
+    },
+    'KraytDragon': {
+        image: 'images/KraytDragon.png',
+        imageSize: 200,
+        baseSpeed: 120,
+        health: 1000000,
+    },
+    'Explosives': {
+        image: 'images/Explosives.png',
+        imageSize: 100,
+        baseSpeed: 0,
+        health: 5,
+    },
+    'Dathcha': {
+        image: 'images/Dathcha.png',
+        imageSize: 100,
+        baseSpeed: 157,
+        health: 30000,
+    },
+    'Boba Fett': {
+        image: 'images/BobaFett.png',
+        imageSize: 100,
+        baseSpeed: 167,
+        health: 29000,
+    },
+    'Mando': {
+        image: 'images/Mando.png',
+        imageSize: 100,
+        baseSpeed: 164,
+        health: 36000,
+    },
+    'Jango Fett': {
+        image: 'images/JangoFett.png',
+        imageSize: 100,
+        baseSpeed: 178,
+        health: 35000,
+    },
+    'Cad Bane': {
+        image: 'images/CadBane.png',
+        imageSize: 100,
+        baseSpeed: 133,
+        health: 33000,
     },
 }
 
@@ -257,7 +294,7 @@ var infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         desc: 'This is a test, deal physical damage to target enemy.',
         abilityType: 'basic',
-        abilityTags: ['physical_damage','projectile_attack'],
+        abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 100,
         abilityDamageVariance: 500,
     },
@@ -273,7 +310,7 @@ var infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
         abilityType: 'basic',
-        abilityTags: ['physical_damage','projectile_attack'],
+        abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 117.8,
         abilityDamageVariance: 500,
     },
@@ -290,14 +327,14 @@ var infoAboutAbilities = {
         desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
         zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
         abilityType: 'special',
-        abilityTags: ['dispel','health_recovery','buff_gain','turnmeter_recovery'],
+        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
     },
     'ataru': {
         displayName: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
         abilityType: 'basic',
-        abilityTags: ['turnmeter_recovery','buff_gain','special_damage','debuff_gain'],
+        abilityTags: ['turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
         abilityDamageVariance: 500,
     },
@@ -306,7 +343,7 @@ var infoAboutAbilities = {
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
         abilityType: 'special',
-        abilityTags: ['bonus_turn','special_damage', 'buff_gain'],
+        abilityTags: ['bonus_turn', 'special_damage', 'buff_gain'],
         abilityDamage: 60.2,
         abilityDamageVariance: 500,
     },
@@ -315,7 +352,7 @@ var infoAboutAbilities = {
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
         desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
         abilityType: 'special',
-        abilityTags: ['debuff_gain','special_damage'],
+        abilityTags: ['debuff_gain', 'special_damage'],
         abilityDamage: 299.9,
         abilityDamageVariance: 500,
     },
@@ -325,23 +362,23 @@ var infoAboutAbilities = {
         desc: 'Yoda gains Tenacity Up and Protection Up (30%) for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns, with a 50% chance to also grant Yoda 35% Turn Meter.',
         zeta_desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
         abilityType: 'special',
-        abilityTags: ['turnmeter_recovery','buff_gain'],
+        abilityTags: ['turnmeter_recovery', 'buff_gain'],
     },
     'invincibleAssault': {
         displayName: 'invincibleAssault',
         image: 'images/abilities/ability_macewindu_basic.png',
-        desc:"Mace Windu deals phisycal damage to the target enemy"
+        desc: "Mace Windu deals phisycal damage to the target enemy"
     },
     'smite': {
-      displayName: 'smite',
-      image: 'images/abilities/ability_macewindu_special01.png',
-      desc:"Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter."
+        displayName: 'smite',
+        image: 'images/abilities/ability_macewindu_special01.png',
+        desc: "Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter."
     },
     'thisPartysOver': {
         displayName: "This party's over",
         image: 'images/abilities/ability_macewindu_special02.png',
-        desc:"Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
-      },
+        desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
+    },
 }
 
 var infoAboutPassives = {
@@ -358,7 +395,7 @@ var infoAboutPassives = {
         desc: 'All allies have +50 Defense, and a 50% chance to gain Defense Up for 3 turns whenever they are damaged.',
         omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
         abilityType: 'leader',
-        abilityTags: ['buff_gain','grand_arena_omicron'],
+        abilityTags: ['buff_gain', 'grand_arena_omicron'],
     },
     'grandMastersGuidance': {
         displayName: 'Grand Master\'s Guidance',
@@ -367,7 +404,7 @@ var infoAboutPassives = {
         zeta_desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
         omicron_desc: 'At the start of battle if there are no galactic legends and all allies are Galactic Republic Jedi, the leadership abilities of all other allies are active until the end of battle.',
         abilityType: 'leader',
-        abilityTags: ['buff_gain','grand_arena_omicron'],
+        abilityTags: ['buff_gain', 'grand_arena_omicron'],
     },
     'takeaSeat': {
         displayName: 'Take a Seat',
@@ -382,7 +419,7 @@ var infoAboutPassives = {
         desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         zeta_desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         abilityType: 'unique',
-        abilityTags: ['dispel','buff_gain'],
+        abilityTags: ['dispel', 'buff_gain'],
     },
     'senseWeakness': {
         displayName: 'Sense Weakness',
@@ -391,20 +428,19 @@ var infoAboutPassives = {
         zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Galactic Republic Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         abilityType: 'unique',
-        abilityTags: ['territory_war_omicron','dispel','debuff_gain','protection_recovery','turnmeter_recovery']
+        abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery']
     },
 }
 
 var abilityImagesPerTeam = [[], []]
-var passiveImagesPerTeam = [[],[]]
+var passiveImagesPerTeam = [[], []]
 
 
-$(document).ready(function () {
-    console.log('App started')
+function clearScreen() {
+    $('#myGuys').html("");
+}
 
-    // Fill array of avatar images
-    //avatarHtmlElements = []
-
+function createBattleBroImages() {
     for (let battleBro of battleBros) {
         let infoAboutCharacter = infoAboutCharacters[battleBro.character]
         // Create new picture for character
@@ -443,7 +479,7 @@ $(document).ready(function () {
                 newPassiveImage.css({ 'left': (i * 85 + 15) + 'px' });
             }
             else {
-                newAbilityImage.css({ 'right': (i * 115+ 15) + 'px' });
+                newAbilityImage.css({ 'right': (i * 115 + 15) + 'px' });
                 newPassiveImage.css({ 'right': (i * 85 + 15) + 'px' });
             }
 
@@ -454,18 +490,28 @@ $(document).ready(function () {
             passiveImagesPerTeam[team].push(newPassiveImage)
         }
     }
+}
 
-    // ?
-    //$('#jabbaBlue2').attr("src",'image/avatars/CloneWarsChewbacca.png')
+function createBattleBroVars() {
+    for (let battleBro of battleBros) {
+        let infoAboutCharacter = infoAboutCharacters[battleBro.character]
+        battleBro.speed = infoAboutCharacter.baseSpeed
+        battleBro.turnMeter = 0
+        battleBro.health = infoAboutCharacter.health
+    }
+}
 
-    $('#button1').on('click', doMyStuff)
+function updateBattleBrosHtmlText() {
+    for (let battleBro of battleBros) {
+        let avatarHtmlElement = battleBro.avatarHtmlElement
+        //let broHtmlElement = battleBro.avatarHtmlElement.get(0)
+        battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + battleBro.health
+    }
+}
 
-    console.log('avatarTurnMeters:', avatarTurnMeters)
 
-})
-
-function doMyStuff() {
-    console.log('---------- Click detected ------------')
+$(document).ready(function () {
+    console.log('App started')
 
     // How to move an image
     /*
@@ -476,11 +522,38 @@ function doMyStuff() {
     // How to change text
     //$('#jabbaHealth').text("dead")
 
+    createBattleBroImages()
+    createBattleBroVars()
+    updateBattleBrosHtmlText()
+
+    // Buttons and keyboard shortcuts
+    $('#button1').on('click', calculateNextTurnFromTurnMetersAndSpeeds)
+    $('#button_startKraytRaid').on('click', startKraytRaid)
+
+    $(document).on("keypress", function (e) {
+        if (e.originalEvent.key == 'n') { // Can also use e.which
+            calculateNextTurnFromTurnMetersAndSpeeds()
+        }
+        if (e.originalEvent.key == 'K') { // Can also use e.which
+            startKraytRaid()
+        }
+    });
+
+    console.log('avatarTurnMeters:', battleBros.map(battleBro => battleBro.turnMeter))
+
+})
+
+function calculateNextTurnFromTurnMetersAndSpeeds() {
+    console.log('---------- Click detected ------------')
+
+    // Bring the battleBros data into a temporary working array, for convenience
+    let avatarTurnMeters = battleBros.map(battleBro => battleBro.turnMeter)
+
     var maxTurnMeter = Math.max(...avatarTurnMeters)
     while (maxTurnMeter < 100) {
-        for (var i = 0; i < numberOfAvatars; i++) {
-            if (avatarSpeeds[i]) {
-                avatarTurnMeters[i] += avatarSpeeds[i]
+        for (var i = 0; i < battleBros.length; i++) {
+            if (battleBros[i].speed) {
+                avatarTurnMeters[i] += battleBros[i].speed
             }
         }
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
@@ -497,8 +570,11 @@ function doMyStuff() {
     avatarTurnMeters[avatarWithMaxTurnMeter] -= 100
     console.log('avatarTurnMeters after processing:', avatarTurnMeters)
 
+    // Save our working array back into the main battleBros data
+    for (var i = 0; i < battleBros.length; i++) {
+        battleBros[i].turnMeter = avatarTurnMeters[i]
+    }
 }
-
 
 function selectBattleBro(battleBroNumber) {
     $('.selected').removeClass('selected')
@@ -588,3 +664,79 @@ function avatarClicked(clickedElement) {
     $(htmlElementName).css({ 'left': foundBattleBro.x + 'px', 'top': foundBattleBro.y + 'px' });
 
 }
+
+
+
+
+
+
+/////////////////////// KRAYT RAID stuff ///////////////////////////////////
+
+function startKraytRaid() {
+    battleBros = [
+        // Team 0 (left side)
+        {
+            character: 'Dathcha',
+            x: 500,
+            y: 700,
+            team: 0,
+        },
+        {
+            character: 'Boba Fett',
+            x: 700,
+            y: 720,
+            team: 0,
+        },
+        {
+            character: 'Mando',
+            x: 900,
+            y: 730,
+            team: 0,
+        },
+        {
+            character: 'Jango Fett',
+            x: 1100,
+            y: 720,
+            team: 0,
+        },
+        {
+            character: 'Cad Bane',
+            x: 1300,
+            y: 700,
+            team: 0,
+        },
+
+        // Team 1 (right side)
+        {
+            character: 'KraytDragon',
+            x: 850,
+            y: 50,
+            team: 1,
+        },
+        {
+            character: 'Explosives',
+            x: 700,
+            y: 270,
+            team: 1,
+        },
+        {
+            character: 'Explosives',
+            x: 900,
+            y: 300,
+            team: 1,
+        },
+        {
+            character: 'Explosives',
+            x: 1100,
+            y: 270,
+            team: 1,
+        },
+    ]
+
+    clearScreen()
+    createBattleBroImages()
+    createBattleBroVars()
+    updateBattleBrosHtmlText()
+}
+
+

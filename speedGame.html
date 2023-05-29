@@ -12,24 +12,26 @@
         <canvas id="backgroundCanvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
 
         <div class="d-flex h-100">
-
+<!--
             <img id="background" src="images/WarSign.png" style="position:absolute; width:300px; height:300px; top:40px; left:800px;">
-
-            <button id="button1" class="btn btn-warning m-auto" style="position:absolute">
-                Hi! Click me
+-->
+            <button id="button1" class="btn btn-warning m-auto x-centered">
+                Next tur<u>n</u>
             </button>
+            <button id="button_startKraytRaid" class="btn btn-warning m-auto" style="position:absolute; left: 20px;">Start <u>K</u>rayt raid</button>
             <div id='myText'>
             </div>
 
-            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-40px;
-              background-color: rgba(243, 242, 174, 0.0); text-align: center;"
+            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-240px;
+              background-color: rgba(243, 242, 174, 0.0); text-align: center; border-radius: 10%;"
               >
-                <img class="image_cropped" id="jabba" src="jabba.png" width="100" height="100"
+                <img class="image_cropped" id="jabba" src="images/jabba.png" width="100" height="100"
                     onclick="avatarClicked(this);"
                 >
                 <span style="color:white;">
-                        Health: <div id="jabbaHealth" style="display:inline;">
+                        Health: <div id="health" style="display:inline;">
                             100
+                        </div>
                 </span>
                 </div>
             </div>
@@ -46,8 +48,8 @@
             </div>
 
             <div id='myTargets'>
-                <img id="targetTeam0" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2;" >
-                <img id="targetTeam1" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2;" >
+                <img id="targetTeam0" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2; left:-500px" >
+                <img id="targetTeam1" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2; left:-500px" >
             </div>
 
             <!--

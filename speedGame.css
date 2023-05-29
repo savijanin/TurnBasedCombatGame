@@ -14,3 +14,11 @@ body {
     object-fit: cover;
     border-radius: 50%;
 }
+
+.x-centered {
+    position:absolute;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -moz-transform: translateX(-50%);
+    transform: translateX(-50%);
+}
