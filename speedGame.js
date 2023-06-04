@@ -1,3 +1,4 @@
+var selectedBattleBroNumber = -1
 var infoAboutCharacters = {
     'jabba': {
         image: 'images/Jabba.png',
@@ -143,6 +144,7 @@ var infoAboutCharacters = {
         imageSize: 200,
         baseSpeed: 120,
         health: 1000000,
+        abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow'],
     },
     'Explosives': {
         image: 'images/Explosives.png',
@@ -155,30 +157,35 @@ var infoAboutCharacters = {
         imageSize: 100,
         baseSpeed: 157,
         health: 30000,
+        abilities: ['dathchaHitAndRun'],
     },
     'Boba Fett': {
         image: 'images/BobaFett.png',
         imageSize: 100,
         baseSpeed: 167,
         health: 29000,
+        abilities: ['bobaEE3Carbine'],
     },
     'Mando': {
         image: 'images/Mando.png',
         imageSize: 100,
         baseSpeed: 164,
         health: 36000,
+        abilities: ['mandoSwiftShot'],
     },
     'Jango Fett': {
         image: 'images/JangoFett.png',
         imageSize: 100,
         baseSpeed: 178,
         health: 35000,
+        abilities: ['jangoUnscrupulousGunfire'],
     },
     'Cad Bane': {
         image: 'images/CadBane.png',
         imageSize: 100,
         baseSpeed: 133,
         health: 33000,
+        abilities: ['cadBaneGunSlinger'],
     },
 }
 
@@ -379,6 +386,93 @@ var infoAboutAbilities = {
         image: 'images/abilities/ability_macewindu_special02.png',
         desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
     },
+    'jangoUnscrupulousGunfire': {
+        displayName: "Unscrupulous Gunfire",
+        image: 'images/abilities/ability_jangofett_basic.png',
+        desc: "Deal Physical damage to target enemy and gain 15% Offense for each enemy suffering a debuff during this attack. If the target enemy was suffering a debuff, Jango Fett attacks again.",
+        abilityDamage: (6823 + 7541) / 2, // "6823 - 7541"
+        abilityDamageVariance: -(6823 - 7541) / 2,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'dathchaHitAndRun': {
+        displayName: "HitAndRun",
+        image: 'images/abilities/ability_dathcha_basic.png',
+        desc: "",
+        abilityDamage: (5921 + 6543) / 2,
+        abilityDamageVariance: -(5921 - 6543) / 2,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'bobaEE3Carbine': {
+        displayName: "EE-3 Carbine",
+        image: 'images/abilities/ability_bobafett_basic.png',
+        desc: "",
+        abilityDamage: (6813 + 7529) / 2,
+        abilityDamageVariance: -(6813 - 7529) / 2,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'cadBaneGunSlinger': {
+        displayName: "Gun Slinger",
+        image: 'images/abilities/ability_cadbane_basic.png',
+        desc: "",
+        abilityDamage: (5898 + 6518) / 2,
+        abilityDamageVariance: -(5898 - 6518) / 2,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'mandoSwiftShot': {
+        displayName: "Swift Shot",
+        image: 'images/abilities/ability_mandalorian_basic.png',
+        desc: "",
+        abilityDamage: (6622 + 7318) / 2,
+        abilityDamageVariance: -(6622 - 7318) / 2,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'kraytBasicAttack': {
+        displayName: "Krayt 1",
+        image: 'images/abilities/ability_mandalorian_basic.png',
+        desc: "",
+        abilityDamage: 10000,
+        abilityDamageVariance: 0,
+        // New
+        needsEnemyTarget: 1,
+    },
+    'kraytAcidPuke': {
+        displayName: "Acid Puke",
+        image: 'images/abilities/ability_mandalorian_basic.png',
+        desc: "",
+        abilityDamage: 20000,
+        abilityDamageVariance: 0,
+        // New
+        needsEnemyTarget: 1,
+        cooldownAfterUse: 1,
+        initialCooldown: 0,
+    },
+    'kraytEatEnemy': {
+        displayName: "Eat Enemy",
+        image: 'images/abilities/ability_mandalorian_basic.png',
+        desc: "",
+        abilityDamage: 30000,
+        abilityDamageVariance: 0,
+        // New
+        needsEnemyTarget: 1,
+        cooldownAfterUse: 3,
+        initialCooldown: 1,
+    },
+    'kraytBurrow': {
+        displayName: "Burrow",
+        image: 'images/abilities/ability_mandalorian_basic.png',
+        desc: "",
+        abilityDamage: 40000,
+        abilityDamageVariance: 0,
+        // New
+        needsEnemyTarget: 1,
+        cooldownAfterUse: 3,
+        initialCooldown: 2,
+    },
 }
 
 var infoAboutPassives = {
@@ -498,6 +592,15 @@ function createBattleBroVars() {
         battleBro.speed = infoAboutCharacter.baseSpeed
         battleBro.turnMeter = 0
         battleBro.health = infoAboutCharacter.health
+        // Initialise skill cooldowns
+        battleBro.skillsData = []
+        for (let skill of infoAboutCharacter?.abilities || []) {
+            skillData = {
+                skill: skill,
+                cooldown: skill.initialCooldown,
+            }
+            battleBro.skillsData.push(skillData)
+        }
     }
 }
 
@@ -509,6 +612,58 @@ function updateBattleBrosHtmlText() {
     }
 }
 
+function updateCurrentBattleBroSkillImages() {
+    // Update ability images
+    let battleBro = battleBros[selectedBattleBroNumber]
+
+    // Hide all ability images
+    for (let abilityImages of abilityImagesPerTeam) {
+        for (let abilityImage of abilityImages) {
+            abilityImage.css({ 'display': 'none' });
+        }
+    }
+    for (let passiveImages of passiveImagesPerTeam) {
+        for (let passiveImage of passiveImages) {
+            passiveImage.css({ 'display': 'none' });
+        }
+    }
+
+    // loop over battlebro abilities and display them
+    let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
+    if (characterAbilities) {
+        for (i = 0; i < characterAbilities.length; i++) {
+            let processingAbility = characterAbilities[i]
+            let imagePngPath = infoAboutAbilities[processingAbility].image
+
+            // set the image png and set display=block
+            let abilityImagesForCurrentTeam = abilityImagesPerTeam[battleBro.team]
+            let abilityImage = abilityImagesForCurrentTeam[i]
+            abilityImage.attr("src", imagePngPath)
+            abilityImage.css({ 'display': 'block' });
+            if (!abilityImage.dataset) {
+                abilityImage.dataset = {}
+            }
+            abilityImage.attr("data-mydata", JSON.stringify({
+                battleBroNumber: selectedBattleBroNumber,
+                abilityNumber: i,
+            }))
+        }
+    }
+
+    let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
+    if (characterPassives) {
+        for (i = 0; i < characterPassives.length; i++) {
+            let processingPassive = characterPassives[i]
+            let imagePngPath = infoAboutPassives[processingPassive].image
+
+            // set the image png and set display=block
+            let passiveImagesForCurrentTeam = passiveImagesPerTeam[battleBro.team]
+            let passiveImage = passiveImagesForCurrentTeam[i]
+            passiveImage.attr("src", imagePngPath)
+            passiveImage.css({ 'display': 'block' });
+        }
+    }
+}
 
 $(document).ready(function () {
     console.log('App started')
@@ -522,8 +677,8 @@ $(document).ready(function () {
     // How to change text
     //$('#jabbaHealth').text("dead")
 
-    createBattleBroImages()
     createBattleBroVars()
+    createBattleBroImages()
     updateBattleBrosHtmlText()
 
     // Buttons and keyboard shortcuts
@@ -536,6 +691,9 @@ $(document).ready(function () {
         }
         if (e.originalEvent.key == 'K') { // Can also use e.which
             startKraytRaid()
+        }
+        if (e.originalEvent.key == 'a') {
+            runOnAuto(false)
         }
     });
 
@@ -577,62 +735,13 @@ function calculateNextTurnFromTurnMetersAndSpeeds() {
 }
 
 function selectBattleBro(battleBroNumber) {
+    selectedBattleBroNumber = battleBroNumber
     $('.selected').removeClass('selected')
     let battleBro = battleBros[battleBroNumber]
     let avatarHtmlElement = battleBro.avatarHtmlElement
     avatarHtmlElement.addClass('selected')
 
-    // Update ability images
-    let abilityImages = abilityImagesPerTeam[battleBro.team]
-    let passiveImages = passiveImagesPerTeam[battleBro.team]
-    // Find battlebro abilities
-    let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
-    let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
-    /*
-    is the same as:
-        let characterName = battleBro.character
-        let infoAboutThisCharacter = infoAboutCharacters[characterName]
-        let characterAbilities = infoAboutThisCharacter.abilities
-    */
-
-    // Hide all ability images
-    for (let abilityImages of abilityImagesPerTeam) {
-        for (let abilityImage of abilityImages) {
-            abilityImage.css({ 'display': 'none' });
-        }
-    }
-    for (let passiveImages of passiveImagesPerTeam) {
-        for (let passiveImage of passiveImages) {
-            passiveImage.css({ 'display': 'none' });
-        }
-    }
-
-    // loop over battlebro abilities and display them
-    if (characterAbilities) {
-        for (i = 0; i < characterAbilities.length; i++) {
-            let processingAbility = characterAbilities[i]
-            let imagePngPath = infoAboutAbilities[processingAbility].image
-
-            // set the image png and set display=block
-            let abilityImagesForCurrentTeam = abilityImagesPerTeam[battleBro.team]
-            let abilityImage = abilityImagesForCurrentTeam[i]
-            abilityImage.attr("src", imagePngPath)
-            abilityImage.css({ 'display': 'block' });
-        }
-    }
-    if (characterPassives) {
-        for (i = 0; i < characterPassives.length; i++) {
-            let processingPassive = characterPassives[i]
-            let imagePngPath = infoAboutPassives[processingPassive].image
-
-            // set the image png and set display=block
-            let passiveImagesForCurrentTeam = passiveImagesPerTeam[battleBro.team]
-            let passiveImage = passiveImagesForCurrentTeam[i]
-            passiveImage.attr("src", imagePngPath)
-            passiveImage.css({ 'display': 'block' });
-        }
-    }
-
+    updateCurrentBattleBroSkillImages()
 }
 
 
@@ -665,7 +774,22 @@ function avatarClicked(clickedElement) {
 
 }
 
+function abilityClicked(clickedElement) {
+    console.log('abilityClicked')
+    let clickedElementParent = clickedElement.parentElement
+    // Find which battleBro ability was clicked
+    let eltData = JSON.parse(clickedElement.dataset.mydata)
+    let battleBroNumber = eltData.battleBroNumber
+    let abilityNumber = eltData.abilityNumber
+    let battleBro = battleBros[battleBroNumber]
+    let characterAbilities = infoAboutCharacters[battleBro.character].abilities
+    let abilityName = characterAbilities[abilityNumber]
+    let ability = infoAboutAbilities[abilityName]
 
+    let a = clickedElement.attr("data-test1")
+    let b = clickedElement.attr("data-abilityNumber")
+    a = 0
+}
 
 
 
@@ -734,9 +858,67 @@ function startKraytRaid() {
     ]
 
     clearScreen()
-    createBattleBroImages()
     createBattleBroVars()
+    createBattleBroImages()
     updateBattleBrosHtmlText()
 }
 
 
+function runOnAuto(runForever = true) {
+    count = 0
+    try {
+        while (runForever || count++ == 0) {
+            // Click next
+            if (selectedBattleBroNumber == -1) {
+                calculateNextTurnFromTurnMetersAndSpeeds()
+                continue
+            }
+
+            let battleBro = battleBros[selectedBattleBroNumber]
+            // How many possible skills?
+            let skillsCount = infoAboutCharacters[battleBro.character]?.abilities?.length
+            if (!skillsCount) throw new Error('Char has no skill available')
+            let randomSkillNum = Math.floor(Math.random() * skillsCount)
+            let skillName = infoAboutCharacters[battleBro.character].abilities[randomSkillNum]
+            let skill = infoAboutAbilities[skillName]
+
+            // Target 1 enemy
+            let targetedEnemy
+            //if (skill.needsEnemyTarget) {
+            //let enemies = getAliveEnemies()
+            let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
+            if (!aliveEnemies.length) throw new Error('No live enemies')
+            let randomEnemyNum = Math.floor(Math.random() * aliveEnemies.length)
+            targetedEnemy = aliveEnemies[randomEnemyNum]
+            //}
+
+            // Target 1 ally (always excluding ourselves for the moment)
+            let targetedAlly
+            if (skill.needsAllyTarget) {
+                let aliveAllies = battleBros.filter(bb => bb.team == battleBro.team && bb.health > 0 && bb != battleBro)
+                let randomAllyNum = Math.floor(Math.random() * aliveAllies.length)
+                targetedAlly = aliveAllies[randomAllyNum]
+            }
+
+            // Attack
+            attack({
+                battleBroNumber: selectedBattleBroNumber,
+                skill: skill,
+                targetedEnemy: targetedEnemy,
+                targetedAlly: targetedAlly,
+            })
+            selectedBattleBroNumber = -1 // Ready for next turn's selection
+        }
+    }
+    catch (e) {
+        console.log(e.toString())
+        selectedBattleBroNumber = -1 // In case we're stuck on a char without skills, move to next char
+    }
+}
+
+
+function attack(inputs) {
+    inputs.targetedEnemy.health -= inputs.skill.abilityDamage
+
+    updateBattleBrosHtmlText()
+}
