@@ -145,7 +145,7 @@ var infoAboutCharacters = {
         imageSize: 200,
         baseSpeed: 120 * 10,
         health: 1000000,
-        abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow'],
+        abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow', 'kraytUnburrow'],
         attacksPerTurn: 2,
     },
     'Explosives': {
@@ -441,6 +441,10 @@ var infoAboutAbilities = {
         abilityDamageVariance: 0,
         // New
         needsEnemyTarget: 1,
+        attackFct: (inputs) => {
+            damageEnemy(inputs)
+            applyEffectsToEnemy(inputs, ['Daze'])
+        },
     },
     'kraytAcidPuke': {
         displayName: "Acid Puke",
@@ -449,11 +453,11 @@ var infoAboutAbilities = {
         abilityDamage: 20000,
         abilityDamageVariance: 0,
         // New
-        needsEnemyTarget: 1,
+        needsEnemyTarget: 0,
         cooldownAfterUse: 2,
         initialCooldown: 0,
-        attackFct: () => {
-            dotAllEnemies()
+        attackFct: (inputs) => {
+            damageAllEnemies(inputs)
         },
     },
     'kraytEatEnemy': {
@@ -466,6 +470,9 @@ var infoAboutAbilities = {
         needsEnemyTarget: 1,
         cooldownAfterUse: 4,
         initialCooldown: 1,
+        attackFct: (inputs) => {
+            applyEffectsToEnemy(inputs, ['Eaten'])
+        },
     },
     'kraytBurrow': {
         displayName: "Burrow",
@@ -474,9 +481,30 @@ var infoAboutAbilities = {
         abilityDamage: 40000,
         abilityDamageVariance: 0,
         // New
-        needsEnemyTarget: 1,
+        needsEnemyTarget: 0,
         cooldownAfterUse: 4,
         initialCooldown: 2,
+        selectThisSkillLastPerTurn: true,
+        attackFct: (inputs) => {
+            applyEffectsToSelf(inputs, ['Burrowed'])
+            // Change Unburrow cooldown to 0
+            let battleBro = battleBros[inputs.battleBroNumber]
+            battleBro.skillsData[4].cooldown = 0
+        },
+    },
+    'kraytUnburrow': {
+        displayName: "Unburrow",
+        image: 'images/abilities/KraytDragonSkill4.png',
+        desc: "",
+        abilityDamage: 40000,
+        abilityDamageVariance: 0,
+        // New
+        needsEnemyTarget: 0,
+        cooldownAfterUse: 9,
+        initialCooldown: 9,
+        attackFct: (inputs) => {
+            //removeEffectsFromSelf(inputs, ['Burrowed'])
+        },
     },
 }
 
@@ -597,6 +625,7 @@ function createBattleBroVars() {
         battleBro.speed = infoAboutCharacter.baseSpeed
         battleBro.turnMeter = 0
         battleBro.health = infoAboutCharacter.health
+        battleBro.effects = []
         // Initialise skill cooldowns
         battleBro.skillsData = []
         for (let skillName of infoAboutCharacter?.abilities || []) {
@@ -911,7 +940,7 @@ function runOnAuto(runForever = true) {
 
                     case 'right-most':
                         {
-                            let rightMostActiveSkillNum = battleBro.skillsData.findLastIndex(s => !s.cooldown)
+                            let rightMostActiveSkillNum = battleBro.skillsData.findLastIndex(sd => !sd.cooldown && (!sd.skill.selectThisSkillLastPerTurn || attackNum == attackCount - 1))
                             if (rightMostActiveSkillNum == -1) throw new Error('Char has no skill available')
                             skill = battleBro.skillsData[rightMostActiveSkillNum].skill
                             skillNum = rightMostActiveSkillNum
@@ -921,10 +950,13 @@ function runOnAuto(runForever = true) {
 
                 // Target 1 enemy
                 let targetedEnemy
-                let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
-                if (!aliveEnemies.length) throw new Error('No live enemies')
-                let randomEnemyNum = Math.floor(Math.random() * aliveEnemies.length)
-                targetedEnemy = aliveEnemies[randomEnemyNum]
+                if (skill.needsEnemyTarget === undefined || skill.needsEnemyTarget == 1) {
+                    let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
+                    let targetableEnemies = aliveEnemies.filter(bb => !bb.effects.includes('Eaten'))
+                    if (!targetableEnemies.length) throw new Error('No live enemies')
+                    let randomEnemyNum = Math.floor(Math.random() * targetableEnemies.length)
+                    targetedEnemy = targetableEnemies[randomEnemyNum]
+                }
 
                 // Target 1 ally (always excluding ourselves for the moment)
                 let targetedAlly
@@ -959,9 +991,44 @@ function runOnAuto(runForever = true) {
 
 
 function attack(inputs) {
-    console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.displayName + ' on ' + inputs.targetedEnemy.character)
-    inputs.targetedEnemy.health -= inputs.skill.abilityDamage
-    inputs.skillData.cooldown = inputs.skill.cooldownAfterUse
+    console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.displayName + (inputs.targetedEnemy ? ' on ' + inputs.targetedEnemy.character : ''))
+    if (inputs.skill.attackFct) {
+        inputs.skill.attackFct(inputs)
+    } else {
+        inputs.targetedEnemy.health -= inputs.skill.abilityDamage
+    }
 
+    inputs.skillData.cooldown = inputs.skill.cooldownAfterUse
     updateBattleBrosHtmlText()
+}
+
+
+function damageEnemy(inputs) {
+    console.log('damageEnemy')
+    inputs.targetedEnemy.health -= inputs.skill.abilityDamage
+}
+function damageAllEnemies(inputs) {
+    console.log('damageAllEnemies')
+    let battleBro = battleBros[inputs.battleBroNumber]
+    let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
+    for (let enemy of aliveEnemies) {
+        enemy.health -= inputs.skill.abilityDamage
+    }
+}
+function applyEffectsToEnemy(inputs, effects) {
+    console.log('applyEffectsToEnemy')
+    for (let effect of effects) {
+        inputs.targetedEnemy.effects.push(effect)
+        switch (effect) {
+            case 'Eaten':
+                {
+                    //inputs.targetedEnemy.health = -1
+                }
+                break
+        }
+    }
+}
+function applyEffectsToSelf(inputs, effects) {
+    console.log('applyEffectsToSelf')
+
 }
