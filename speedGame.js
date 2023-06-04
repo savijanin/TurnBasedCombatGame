@@ -1,4 +1,5 @@
 var selectedBattleBroNumber = -1
+var team2abilitiesAlwaysVisible = false
 var infoAboutCharacters = {
     'jabba': {
         image: 'images/Jabba.png',
@@ -142,9 +143,10 @@ var infoAboutCharacters = {
     'KraytDragon': {
         image: 'images/KraytDragon.png',
         imageSize: 200,
-        baseSpeed: 120,
+        baseSpeed: 120 * 10,
         health: 1000000,
         abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow'],
+        attacksPerTurn: 2,
     },
     'Explosives': {
         image: 'images/Explosives.png',
@@ -433,7 +435,7 @@ var infoAboutAbilities = {
     },
     'kraytBasicAttack': {
         displayName: "Krayt 1",
-        image: 'images/abilities/ability_mandalorian_basic.png',
+        image: 'images/abilities/KraytDragonSkill1.png',
         desc: "",
         abilityDamage: 10000,
         abilityDamageVariance: 0,
@@ -442,35 +444,38 @@ var infoAboutAbilities = {
     },
     'kraytAcidPuke': {
         displayName: "Acid Puke",
-        image: 'images/abilities/ability_mandalorian_basic.png',
+        image: 'images/abilities/KraytDragonSkill2.png',
         desc: "",
         abilityDamage: 20000,
         abilityDamageVariance: 0,
         // New
         needsEnemyTarget: 1,
-        cooldownAfterUse: 1,
+        cooldownAfterUse: 2,
         initialCooldown: 0,
+        attackFct: () => {
+            dotAllEnemies()
+        },
     },
     'kraytEatEnemy': {
         displayName: "Eat Enemy",
-        image: 'images/abilities/ability_mandalorian_basic.png',
+        image: 'images/abilities/KraytDragonSkill3.png',
         desc: "",
         abilityDamage: 30000,
         abilityDamageVariance: 0,
         // New
         needsEnemyTarget: 1,
-        cooldownAfterUse: 3,
+        cooldownAfterUse: 4,
         initialCooldown: 1,
     },
     'kraytBurrow': {
         displayName: "Burrow",
-        image: 'images/abilities/ability_mandalorian_basic.png',
+        image: 'images/abilities/KraytDragonSkill4.png',
         desc: "",
         abilityDamage: 40000,
         abilityDamageVariance: 0,
         // New
         needsEnemyTarget: 1,
-        cooldownAfterUse: 3,
+        cooldownAfterUse: 4,
         initialCooldown: 2,
     },
 }
@@ -526,7 +531,7 @@ var infoAboutPassives = {
     },
 }
 
-var abilityImagesPerTeam = [[], []]
+var abilityImagesDivsPerTeam = [[], []]
 var passiveImagesPerTeam = [[], []]
 
 
@@ -564,21 +569,21 @@ function createBattleBroImages() {
         const maxNumberOfAbilities = 8
         for (let i = 0; i < maxNumberOfAbilities; i++) {
             // Create new picture for ability
-            let newAbilityImage = $('#abilityTemplate').clone().removeAttr("id")
+            let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
             let newPassiveImage = $('#passiveTemplate').clone().removeAttr("id")
 
             // Set position
             if (team == 0) {
-                newAbilityImage.css({ 'left': (i * 115 + 15) + 'px' });
+                newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' });
                 newPassiveImage.css({ 'left': (i * 85 + 15) + 'px' });
             }
             else {
-                newAbilityImage.css({ 'right': (i * 115 + 15) + 'px' });
+                newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' });
                 newPassiveImage.css({ 'right': (i * 85 + 15) + 'px' });
             }
 
-            newAbilityImage.appendTo('#myAbilities');
-            abilityImagesPerTeam[team].push(newAbilityImage)
+            newAbilityImageDiv.appendTo('#myAbilities');
+            abilityImagesDivsPerTeam[team].push(newAbilityImageDiv)
 
             newPassiveImage.appendTo('#myPassives');
             passiveImagesPerTeam[team].push(newPassiveImage)
@@ -594,7 +599,8 @@ function createBattleBroVars() {
         battleBro.health = infoAboutCharacter.health
         // Initialise skill cooldowns
         battleBro.skillsData = []
-        for (let skill of infoAboutCharacter?.abilities || []) {
+        for (let skillName of infoAboutCharacter?.abilities || []) {
+            let skill = infoAboutAbilities[skillName]
             skillData = {
                 skill: skill,
                 cooldown: skill.initialCooldown,
@@ -617,12 +623,15 @@ function updateCurrentBattleBroSkillImages() {
     let battleBro = battleBros[selectedBattleBroNumber]
 
     // Hide all ability images
-    for (let abilityImages of abilityImagesPerTeam) {
-        for (let abilityImage of abilityImages) {
-            abilityImage.css({ 'display': 'none' });
+    for (let team = 0; team < 2; team++) {
+        if (team2abilitiesAlwaysVisible && team == 1 && battleBro.team != 1) continue
+
+        let abilityImagesDivs = abilityImagesDivsPerTeam[team]
+        for (let abilityImageDiv of abilityImagesDivs) {
+            abilityImageDiv.css({ 'display': 'none' });
         }
-    }
-    for (let passiveImages of passiveImagesPerTeam) {
+
+        let passiveImages = passiveImagesPerTeam[team]
         for (let passiveImage of passiveImages) {
             passiveImage.css({ 'display': 'none' });
         }
@@ -630,16 +639,19 @@ function updateCurrentBattleBroSkillImages() {
 
     // loop over battlebro abilities and display them
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
-    if (characterAbilities) {
-        for (i = 0; i < characterAbilities.length; i++) {
-            let processingAbility = characterAbilities[i]
-            let imagePngPath = infoAboutAbilities[processingAbility].image
+    if (battleBro.skillsData) {
+        for (i = 0; i < battleBro.skillsData.length; i++) {
+            let processedAbility = battleBro.skillsData[i]
+            let imagePngPath = processedAbility.skill.image
 
             // set the image png and set display=block
-            let abilityImagesForCurrentTeam = abilityImagesPerTeam[battleBro.team]
-            let abilityImage = abilityImagesForCurrentTeam[i]
+            let abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
+            let indexReversedForTeam2 = battleBro.team == 0 ? i : (characterAbilities.length - i - 1)
+            let abilityImageDiv = abilityImagesDivsForCurrentTeam[indexReversedForTeam2]
+            let abilityImage = abilityImageDiv.children("#image")
+            let abilityCooldown = abilityImageDiv.children("#cooldown")[0]
             abilityImage.attr("src", imagePngPath)
-            abilityImage.css({ 'display': 'block' });
+            abilityImageDiv.css({ 'display': 'block' });
             if (!abilityImage.dataset) {
                 abilityImage.dataset = {}
             }
@@ -647,6 +659,7 @@ function updateCurrentBattleBroSkillImages() {
                 battleBroNumber: selectedBattleBroNumber,
                 abilityNumber: i,
             }))
+            abilityCooldown.innerText = processedAbility.cooldown ? processedAbility.cooldown : ''
         }
     }
 
@@ -857,6 +870,8 @@ function startKraytRaid() {
         },
     ]
 
+    team2abilitiesAlwaysVisible = true
+
     clearScreen()
     createBattleBroVars()
     createBattleBroImages()
@@ -875,38 +890,64 @@ function runOnAuto(runForever = true) {
             }
 
             let battleBro = battleBros[selectedBattleBroNumber]
-            // How many possible skills?
-            let skillsCount = infoAboutCharacters[battleBro.character]?.abilities?.length
-            if (!skillsCount) throw new Error('Char has no skill available')
-            let randomSkillNum = Math.floor(Math.random() * skillsCount)
-            let skillName = infoAboutCharacters[battleBro.character].abilities[randomSkillNum]
-            let skill = infoAboutAbilities[skillName]
 
-            // Target 1 enemy
-            let targetedEnemy
-            //if (skill.needsEnemyTarget) {
-            //let enemies = getAliveEnemies()
-            let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
-            if (!aliveEnemies.length) throw new Error('No live enemies')
-            let randomEnemyNum = Math.floor(Math.random() * aliveEnemies.length)
-            targetedEnemy = aliveEnemies[randomEnemyNum]
-            //}
+            // Some raid bosses can attack multiple times
+            let attackCount = Math.max(infoAboutCharacters[battleBro.character].attacksPerTurn, 1)
+            for (let attackNum = 0; attackNum < attackCount; attackNum++) {
+                // Pick a skill
+                let skill, skillNum
+                let skillChoiceStrategy = 'right-most' // or 'random'
+                switch (skillChoiceStrategy) {
+                    case 'random':
+                        {
+                            let skillsCount = infoAboutCharacters[battleBro.character]?.abilities?.length
+                            if (!skillsCount) throw new Error('Char has no skill available')
+                            let randomSkillNum = Math.floor(Math.random() * skillsCount)
+                            let skillName = infoAboutCharacters[battleBro.character].abilities[randomSkillNum]
+                            skill = infoAboutAbilities[skillName]
+                            skillNum = randomSkillNum
+                        }
+                        break
 
-            // Target 1 ally (always excluding ourselves for the moment)
-            let targetedAlly
-            if (skill.needsAllyTarget) {
-                let aliveAllies = battleBros.filter(bb => bb.team == battleBro.team && bb.health > 0 && bb != battleBro)
-                let randomAllyNum = Math.floor(Math.random() * aliveAllies.length)
-                targetedAlly = aliveAllies[randomAllyNum]
+                    case 'right-most':
+                        {
+                            let rightMostActiveSkillNum = battleBro.skillsData.findLastIndex(s => !s.cooldown)
+                            if (rightMostActiveSkillNum == -1) throw new Error('Char has no skill available')
+                            skill = battleBro.skillsData[rightMostActiveSkillNum].skill
+                            skillNum = rightMostActiveSkillNum
+                        }
+                        break
+                }
+
+                // Target 1 enemy
+                let targetedEnemy
+                let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
+                if (!aliveEnemies.length) throw new Error('No live enemies')
+                let randomEnemyNum = Math.floor(Math.random() * aliveEnemies.length)
+                targetedEnemy = aliveEnemies[randomEnemyNum]
+
+                // Target 1 ally (always excluding ourselves for the moment)
+                let targetedAlly
+                if (skill.needsAllyTarget) {
+                    let aliveAllies = battleBros.filter(bb => bb.team == battleBro.team && bb.health > 0 && bb != battleBro)
+                    let randomAllyNum = Math.floor(Math.random() * aliveAllies.length)
+                    targetedAlly = aliveAllies[randomAllyNum]
+                }
+
+                // Attack
+                attack({
+                    battleBroNumber: selectedBattleBroNumber,
+                    skill: skill,
+                    skillData: battleBro.skillsData[skillNum],
+                    targetedEnemy: targetedEnemy,
+                    targetedAlly: targetedAlly,
+                })
             }
 
-            // Attack
-            attack({
-                battleBroNumber: selectedBattleBroNumber,
-                skill: skill,
-                targetedEnemy: targetedEnemy,
-                targetedAlly: targetedAlly,
-            })
+            // Update to get ready for next turn
+            //  reduce skills' cooldowns
+            battleBro.skillsData.map(skillData => skillData.cooldown = skillData.cooldown ? (skillData.cooldown - 1) : 0)
+            updateCurrentBattleBroSkillImages()
             selectedBattleBroNumber = -1 // Ready for next turn's selection
         }
     }
@@ -918,7 +959,9 @@ function runOnAuto(runForever = true) {
 
 
 function attack(inputs) {
+    console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.displayName + ' on ' + inputs.targetedEnemy.character)
     inputs.targetedEnemy.health -= inputs.skill.abilityDamage
+    inputs.skillData.cooldown = inputs.skill.cooldownAfterUse
 
     updateBattleBrosHtmlText()
 }

@@ -15,6 +15,11 @@ body {
     border-radius: 50%;
 }
 
+.image_ability_cropped {
+    object-fit: cover;
+    border-radius: 10%;
+}
+
 .x-centered {
     position:absolute;
     left: 50%;

@@ -36,7 +36,16 @@
                 </div>
             </div>
 
-            <img id="abilityTemplate" src="images/abilities/clonewarschewbacca_bowcaster.png" style="position:absolute; width:100px; height:100px; top:875px; display:none;" onclick="abilityClicked(this);">
+            <div id="abilityTemplate" style="position:absolute; width:100px; height:100px; top:875px; display:none;"
+              >
+                <img class="image_ability_cropped" id="image" src="images/abilities/clonewarschewbacca_bowcaster.png" width="100" height="100"
+                    onclick="abilityClicked(this);"
+                >
+                <span id="cooldown" style="color:white; position: absolute; font-size: xxx-large; right: 36; top: 20;">
+                        0
+                </span>
+                </div>
+            </div>
 
             <img id="passiveTemplate" src="images/abilities/abilityui_passive_takeaseat.png" style="position:absolute; width:70px; height:70px; top:800px; display:none;">
 
