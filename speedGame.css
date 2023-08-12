@@ -14,3 +14,16 @@ body {
     object-fit: cover;
     border-radius: 50%;
 }
+
+.image_ability_cropped {
+    object-fit: cover;
+    border-radius: 10%;
+}
+
+.x-centered {
+    position:absolute;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -moz-transform: translateX(-50%);
+    transform: translateX(-50%);
+}

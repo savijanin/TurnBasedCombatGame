@@ -1,30 +1,51 @@
 <html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.1.0/gl-matrix.js"></script>
+
         <link href='speedGame.css' rel='stylesheet' type='text/css'>
         <script src="speedGame.js"></script>
+        <script src="HyperspaceBackground.js"></script>
     </head>
     <body>
+
+        <canvas id="backgroundCanvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
+
         <div class="d-flex h-100">
-
+<!--
             <img id="background" src="images/WarSign.png" style="position:absolute; width:300px; height:300px; top:40px; left:800px;">
-
-            <button id="button1" class="btn btn-warning m-auto">
-                Hi! Click me
+-->
+            <button id="button1" class="btn btn-warning m-auto x-centered">
+                Next tur<u>n</u>
             </button>
+            <button id="button_startKraytRaid" class="btn btn-warning m-auto" style="position:absolute; left: 20px;">Start <u>K</u>rayt raid</button>
             <div id='myText'>
             </div>
 
-            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-40px; background-color: rgb(243, 242, 174);">
+            <div id="jabbaTemplate" style="position:absolute; width:100px; height:150px; top:40px; left:-240px;
+              background-color: rgba(243, 242, 174, 0.0); text-align: center; border-radius: 10%;"
+              >
                 <img class="image_cropped" id="jabba" src="images/jabba.png" width="100" height="100"
                     onclick="avatarClicked(this);"
                 >
-                Health: <div id="jabbaHealth" style="display:inline;">
-                    100
+                <span style="color:white;">
+                        Health: <div id="health" style="display:inline;">
+                            100
+                        </div>
+                </span>
                 </div>
             </div>
 
-            <img id="abilityTemplate" src="images/abilities/clonewarschewbacca_bowcaster.png" style="position:absolute; width:100px; height:100px; top:875px; display:none;">
+            <div id="abilityTemplate" style="position:absolute; width:100px; height:100px; top:875px; display:none;"
+              >
+                <img class="image_ability_cropped" id="image" src="images/abilities/clonewarschewbacca_bowcaster.png" width="100" height="100"
+                    onclick="abilityClicked(this);"
+                >
+                <span id="cooldown" style="color:white; position: absolute; font-size: xxx-large; right: 36; top: 20;">
+                        0
+                </span>
+                </div>
+            </div>
 
             <img id="passiveTemplate" src="images/abilities/abilityui_passive_takeaseat.png" style="position:absolute; width:70px; height:70px; top:800px; display:none;">
 
@@ -36,8 +57,8 @@
             </div>
 
             <div id='myTargets'>
-                <img id="targetTeam0" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2;" >
-                <img id="targetTeam1" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2;" >
+                <img id="targetTeam0" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2; left:-500px" >
+                <img id="targetTeam1" src="images/TargetEnemy.png" style="position:absolute; width:100px; height:100px; z-index: 2; left:-500px" >
             </div>
 
             <!--
