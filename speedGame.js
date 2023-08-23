@@ -290,7 +290,7 @@ var infoAboutAbilities = {
         desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
         zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
         abilityType: 'special',
-        abilityTags: ['dispel','health_recovery','buff_gain','turnmeter_recovery'],
+        abilityTags: ['cleanse','health_recovery','buff_gain','turnmeter_recovery'],
     },
     'ataru': {
         displayName: 'Ataru',
@@ -328,19 +328,33 @@ var infoAboutAbilities = {
         abilityTags: ['turnmeter_recovery','buff_gain'],
     },
     'invincibleAssault': {
-        displayName: 'invincibleAssault',
+        displayName: 'Invincible Assault',
         image: 'images/abilities/ability_macewindu_basic.png',
-        desc:"Mace Windu deals phisycal damage to the target enemy"
+        desc:'Deal Special damage to target enemy and inflict Ability Block for 1 turn. This attack deals bonus damage equal to 5% of Mace\'s Max Health. If Mace is above 50% Health, he gains 15% Turn Meter. If Mace is below 50% Health, he recovers Health equal to 100% of the damage dealt.',
+        abilityType: 'basic',
+        abilityTags: ['debuff_gain','turnmeter_recovery','health_recovery'],
+        abilityDamage: 154.3,
+        abilityDamageVariance: 500,
     },
     'smite': {
-      displayName: 'smite',
+      displayName: 'Smite',
       image: 'images/abilities/ability_macewindu_special01.png',
-      desc:"Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter."
+      desc: 'Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter.',
+      abilityType: 'special',
+      abilityTags: ['dispel','debuff_gain','turnmeter_recovery'],
+      abilityDamage: 146,
+      abilityDamageVariance: 500,
     },
     'thisPartysOver': {
-        displayName: "This party's over",
+        displayName: 'This Party\'s Over',
         image: 'images/abilities/ability_macewindu_special02.png',
-        desc:"Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
+        desc: 'Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint, both Mace and target ally recover 30% Protection.',
+        zeta_desc: 'Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection.',
+        abilityType: 'special',
+        abilityTags: ['assist','turnmeter_recovery','buff_gain','protection_recovery'],
+        abilityDamage: 184,
+        abilityDamageVariance: 500,
+
       },
 }
 
@@ -382,7 +396,7 @@ var infoAboutPassives = {
         desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         zeta_desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         abilityType: 'unique',
-        abilityTags: ['dispel','buff_gain'],
+        abilityTags: ['dipel','buff_gain'],
     },
     'senseWeakness': {
         displayName: 'Sense Weakness',
@@ -391,7 +405,7 @@ var infoAboutPassives = {
         zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Galactic Republic Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         abilityType: 'unique',
-        abilityTags: ['territory_war_omicron','dispel','debuff_gain','protection_recovery','turnmeter_recovery']
+        abilityTags: ['territory_war_omicron','cleanse','debuff_gain','protection_recovery','turnmeter_recovery']
     },
 }
 
@@ -476,25 +490,44 @@ function doMyStuff() {
     // How to change text
     //$('#jabbaHealth').text("dead")
 
+    // 
     var maxTurnMeter = Math.max(...avatarTurnMeters)
-    while (maxTurnMeter < 100) {
+    let timeNeededToReach1000TM =  Array(numberOfAvatars).fill(999999)
+    //while (maxTurnMeter < 1000) {
         for (var i = 0; i < numberOfAvatars; i++) {
-            if (avatarSpeeds[i]) {
-                avatarTurnMeters[i] += avatarSpeeds[i]
-            }
+            let avatarSpeed = infoAboutCharacters[battleBros[i].character].baseSpeed
+                //avatarTurnMeters[i] += avatarSpeed
+                if (avatarSpeed > 0) {
+                    timeNeededToReach1000TM[i] = (1000-avatarTurnMeters[i]) / avatarSpeed
+                }
+        }
+        console.log('timeNeededToReach1000TM:', timeNeededToReach1000TM)
+        minTimeNeededToReach1000TM = Math.min(...timeNeededToReach1000TM)
+    //}
+
+    let avatarWithMinTimeNeededToReach1000TM = timeNeededToReach1000TM.indexOf(minTimeNeededToReach1000TM);
+    
+    console.log('minTimeNeededToReach1000TM:', minTimeNeededToReach1000TM)
+    console.log('avatarWithMinTimeNeededToReach1000TM:', avatarWithMinTimeNeededToReach1000TM)
+
+        // Update tm
+        for (var i = 0; i < numberOfAvatars; i++) {
+            let avatarSpeed = infoAboutCharacters[battleBros[i].character].baseSpeed
+            //if (avatarWithMaxTurnMeter[infoAboutCharacters[battleBros[i].character].baseSpeed] > 1000 - maxTurnMeter) {
+                //avatarTurnMeters[avatarWithMaxTurnMeter] += 1000 - maxTurnMeter
+                avatarTurnMeters[i] += avatarSpeed * minTimeNeededToReach1000TM
+            //}
         }
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
-        maxTurnMeter = Math.max(...avatarTurnMeters)
-    }
+    //}
+    
+    let avatarWithMaxTurnMeter = avatarWithMinTimeNeededToReach1000TM
 
-    let avatarWithMaxTurnMeter = avatarTurnMeters.indexOf(maxTurnMeter);
-    console.log('maxTurnMeter:', maxTurnMeter)
-    console.log('avatarWithMaxTurnMeter:', avatarWithMaxTurnMeter)
 
     console.log('Processing avatar------------------------- ', avatarWithMaxTurnMeter)
     $('#myText').html('Processing avatar------------------------- ' + avatarWithMaxTurnMeter)
     selectBattleBro(avatarWithMaxTurnMeter)
-    avatarTurnMeters[avatarWithMaxTurnMeter] -= 100
+    avatarTurnMeters[avatarWithMaxTurnMeter] -= 1000
     console.log('avatarTurnMeters after processing:', avatarTurnMeters)
 
 }
