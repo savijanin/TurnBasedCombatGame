@@ -1,188 +1,6 @@
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
-var infoAboutCharacters = {
-    'jabba': {
-        image: 'images/Jabba.png',
-        health: 50000,
-        protection: 15000,
-        speed: 111,
-        potency: 900,
-        tenacity: 1,
-        critChance: 50,
-        physicalDamage: 5000,
-        specialDamage: 5000,
-        armour: 50,
-        resistance: 50,
-        healthSteal: 100,
-        tags: ['lightSide'],
-        abilities: ['test1', 'test2'],
-        passiveAbilities: ['test3'],
-        charDesc: 'insert funny description here',
-    },
-    'CloneWarsChewbacca': {
-        image: 'images/avatars/CloneWarsChewbacca.png',
-        health: 43470+52371,
-        protection: 0,
-        speed: 126,
-        potency: 28,
-        tenacity: 55,
-        critChance: 28.46,
-        physicalDamage: 3267,
-        specialDamage: 2043,
-        armour: 48.23,
-        resistance: 41.81,
-        healthSteal: 10,
-        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
-        abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
-        passiveAbilities: ['wookieResolve'],
-        charDesc: 'Durable Tank with both Taunt and self-Healing',
-    },
-    'MassiveJabba': {
-        image: 'images/Jabba.png',
-        imageSize: 200,
-        health: 100000,
-        protection: 10000,
-        speed: 60,
-        potency: 100,
-        tenacity: 100,
-        critChance: 60,
-        physicalDamage: 18000,
-        specialDamage: 10000,
-        armour: 60,
-        resistance: 30,
-        healthSteal: 20,
-    },
-    'Yoda': {
-        image: 'images/avatars/GrandmasterYoda.png',
-        imageSize: 100,
-        health: 33753,
-        protection: 18937,
-        speed: 177,
-        potency: 56,
-        tenacity: 39,
-        critChance: 28.42,
-        physicalDamage: 2527,
-        specialDamage: 4492,
-        armour: 31.85,
-        resistance: 19.46,
-        healthSteal: 5,
-        tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
-        abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
-        passiveAbilities: ['grandMastersGuidance'],
-        charDesc: 'Masterful Jedi support that can replicate enemy buffs and share them with allies',
-    },
-    'Mace Windu': {
-        image: 'images/avatars/MaceWindu.png',
-        imageSize: 100,
-        physicalDamage: 2689,
-        physicalCritChance: 23.33,
-        armourPenetration: 80,
-        health: 36040,
-        protection: 39209,
-        speed: 143,
-        potency: 46,
-        tenacity: 47,
-        specialDamage: 4679,
-        specialCritChance: 18.13,
-        resistancePenetration: 140,
-        armour: 31.19,
-        resistancePercent: 43.31,
-        armourNumber: 289,
-        resistanceNumber: 487,
-        healthSteal: 15,
-        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
-        abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
-        passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
-        charDesc: 'Aggressive Jedi tank with devastating damage if left unchecked',
-    },
-    'Darth Vader': {
-        image: 'images/avatars/DarthVader.png',
-        imageSize: 100,
-        health: 32156,
-        protection: 47828,
-        speed: 141,
-        potency: 50,
-        tenacity: 43,
-        critChance: 37.67,
-        physicalDamage: 3447,
-        specialDamage: 2570,
-        armour: 43.36,
-        resistance: 34.38,
-        healthSteal: 15,
-        tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
-        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
-        passiveAbilities: ['inspiringThroughFear', 'noEscape'],
-        charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
-    },
-    'Super Striker': {
-        image: 'images/avatars/DarthVader.png',
-        imageSize: 100,
-        health: 28450,
-        protection: 0,
-        speed: 172,
-        potency: 55,
-        tenacity: 22,
-        critChance: 42.23,
-        physicalDamage: 2447,
-        specialDamage: 3570,
-        armour: 23.36,
-        resistance: 32.34,
-        healthSteal: 20,
-        tags: ['lightSide', 'attacker', 'oliv'],
-        abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Blade', 'Super Strike'],
-        passiveAbilities: ['Elimination Protocol'],
-        charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
-    },
-    'KraytDragon': {
-        image: 'images/KraytDragon.png',
-        imageSize: 200,
-        speed: 120 * 10,
-        health: 1000000,
-        abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow', 'kraytUnburrow'],
-        attacksPerTurn: 2,
-    },
-    'Explosives': {
-        image: 'images/Explosives.png',
-        imageSize: 100,
-        speed: 0,
-        health: 5,
-    },
-    'Dathcha': {
-        image: 'images/Dathcha.png',
-        imageSize: 100,
-        speed: 157,
-        health: 30000,
-        abilities: ['dathchaHitAndRun'],
-    },
-    'Boba Fett': {
-        image: 'images/BobaFett.png',
-        imageSize: 100,
-        speed: 167,
-        health: 29000,
-        abilities: ['bobaEE3Carbine'],
-    },
-    'Mando': {
-        image: 'images/Mando.png',
-        imageSize: 100,
-        speed: 164,
-        health: 36000,
-        abilities: ['mandoSwiftShot'],
-    },
-    'Jango Fett': {
-        image: 'images/JangoFett.png',
-        imageSize: 100,
-        speed: 178,
-        health: 35000,
-        abilities: ['jangoUnscrupulousGunfire'],
-    },
-    'Cad Bane': {
-        image: 'images/CadBane.png',
-        imageSize: 100,
-        speed: 133,
-        health: 33000,
-        abilities: ['cadBaneGunSlinger'],
-    },
-}
+var pendingAbility = null
 
 var battleBros = [
     // Team 0 (left side)
@@ -290,7 +108,186 @@ var battleBros = [
     },
 ]
 
-var infoAboutAbilities = {
+const infoAboutCharacters = {
+    'jabba': {
+        image: 'images/Jabba.png',
+        health: 50000,
+        protection: 15000,
+        speed: 111,
+        potency: 900,
+        tenacity: 1,
+        critChance: 50,
+        physicalDamage: 5000,
+        specialDamage: 5000,
+        armour: 50,
+        resistance: 50,
+        healthSteal: 100,
+        tags: ['lightSide'],
+        abilities: ['test1', 'test2'],
+        passiveAbilities: ['test3'],
+        charDesc: 'insert funny description here',
+    },
+    'CloneWarsChewbacca': {
+        image: 'images/avatars/CloneWarsChewbacca.png',
+        health: 43470+52371,
+        protection: 0,
+        speed: 126,
+        potency: 28,
+        tenacity: 55,
+        critChance: 28.46,
+        physicalDamage: 3267,
+        specialDamage: 2043,
+        armour: 48.23,
+        resistance: 41.81,
+        healthSteal: 10,
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
+        abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
+        passiveAbilities: ['wookieResolve'],
+        charDesc: 'Durable Tank with both Taunt and self-Healing',
+    },
+    'MassiveJabba': {
+        image: 'images/Jabba.png',
+        imageSize: 200,
+        health: 100000,
+        protection: 10000,
+        speed: 60,
+        potency: 100,
+        tenacity: 100,
+        critChance: 60,
+        physicalDamage: 18000,
+        specialDamage: 10000,
+        armour: 60,
+        resistance: 30,
+        healthSteal: 20,
+    },
+    'Yoda': {
+        image: 'images/avatars/GrandmasterYoda.png',
+        imageSize: 100,
+        health: 33753,
+        protection: 18937,
+        speed: 177,
+        potency: 56,
+        tenacity: 39,
+        critChance: 28.42,
+        physicalDamage: 2527,
+        specialDamage: 4492,
+        armour: 31.85,
+        resistance: 19.46,
+        healthSteal: 5,
+        tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
+        abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
+        passiveAbilities: ['grandMastersGuidance'],
+        charDesc: 'Masterful Jedi support that can replicate enemy buffs and share them with allies',
+    },
+    'Mace Windu': {
+        image: 'images/avatars/MaceWindu.png',
+        imageSize: 100,
+        health: 36040,
+        protection: 39209,
+        speed: 143,
+        potency: 46,
+        tenacity: 47,
+        critChance: 23.33,
+        physicalDamage: 2689,
+        specialDamage: 4679,
+        armour: 31.19,
+        resistance: 43.31,
+        healthSteal: 15,
+        tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
+        abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
+        passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
+        charDesc: 'Aggressive Jedi tank with devastating damage if left unchecked',
+    },
+    'Darth Vader': {
+        image: 'images/avatars/DarthVader.png',
+        imageSize: 100,
+        health: 32156,
+        protection: 47828,
+        speed: 141,
+        potency: 50,
+        tenacity: 43,
+        critChance: 37.67,
+        physicalDamage: 3447,
+        specialDamage: 2570,
+        armour: 43.36,
+        resistance: 34.38,
+        healthSteal: 15,
+        tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
+        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
+        passiveAbilities: ['inspiringThroughFear', 'noEscape'],
+        charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
+    },
+    'Super Striker': {
+        image: 'images/avatars/DarthVader.png',
+        imageSize: 100,
+        health: 28450,
+        protection: 0,
+        speed: 172,
+        potency: 55,
+        tenacity: 22,
+        critChance: 42.23,
+        physicalDamage: 2447,
+        specialDamage: 3570,
+        armour: 23.36,
+        resistance: 32.34,
+        healthSteal: 20,
+        tags: ['neutral', 'attacker', 'mercenary','oliv','unalignedForceUser'],
+        abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Blade', 'Super Strike'],
+        passiveAbilities: ['Elimination Protocol'],
+        charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
+    },
+    'KraytDragon': {
+        image: 'images/KraytDragon.png',
+        imageSize: 200,
+        speed: 120 * 10,
+        health: 1000000,
+        abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow', 'kraytUnburrow'],
+        attacksPerTurn: 2,
+    },
+    'Explosives': {
+        image: 'images/Explosives.png',
+        imageSize: 100,
+        speed: 0,
+        health: 5,
+    },
+    'Dathcha': {
+        image: 'images/Dathcha.png',
+        imageSize: 100,
+        speed: 157,
+        health: 30000,
+        abilities: ['dathchaHitAndRun'],
+    },
+    'Boba Fett': {
+        image: 'images/BobaFett.png',
+        imageSize: 100,
+        speed: 167,
+        health: 29000,
+        abilities: ['bobaEE3Carbine'],
+    },
+    'Mando': {
+        image: 'images/Mando.png',
+        imageSize: 100,
+        speed: 164,
+        health: 36000,
+        abilities: ['mandoSwiftShot'],
+    },
+    'Jango Fett': {
+        image: 'images/JangoFett.png',
+        imageSize: 100,
+        speed: 178,
+        health: 35000,
+        abilities: ['jangoUnscrupulousGunfire'],
+    },
+    'Cad Bane': {
+        image: 'images/CadBane.png',
+        imageSize: 100,
+        speed: 133,
+        health: 33000,
+        abilities: ['cadBaneGunSlinger'],
+    },
+}
+
+const infoAboutAbilities = {
     'test1': {
         displayName: 'JABBA Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
@@ -308,7 +305,16 @@ var infoAboutAbilities = {
         abilityType: 'special',
         cooldown: 3,
         abilityTags: ['special_damage','health_recovery','target_ally'],
+        abilityDamage: 160,
         desc: 'Heal target ally + special dmg dealt',
+        use(battleBro,target) {
+            specialDmg(battleBro,target,this.abilityDamage)
+            // insert target ally part
+            console.log('Waiting for ally target...')
+        },
+        allyUse(battleBro, ally) {
+            heal(battleBro, ally, battleBro.physicalDamage)
+        }
     },
     'bowcaster': {
         displayName: 'Bowcaster',
@@ -327,9 +333,14 @@ var infoAboutAbilities = {
     'wookieRage': {
         displayName: 'Wookie Rage',
         image: 'images/abilities/clonewarschewbacca_wookierage.png',
-        desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         abilityType: 'special',
+        cooldown: 3,
         abilityTags: ['buff_gain'],
+        desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
+        use(battleBro,target) {
+            applyEffect(battleBro, 'taunt', 2);
+            applyEffect(battleBro, 'healthUp', 2);
+        }
     },
     'defiantRoar': {
         displayName: 'Defiant Roar',
@@ -509,7 +520,7 @@ var infoAboutAbilities = {
     },
 }
 
-var infoAboutPassives = {
+const infoAboutPassives = {
     'test3': {
         displayName: 'Battle mooditation',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
@@ -558,6 +569,31 @@ var infoAboutPassives = {
         abilityType: 'unique',
         abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery']
     },
+}
+
+const infoAboutEffects = {
+    'healthUp': {
+        name: 'Health Up',
+        image: 'images/effects/healthUp.png',
+        type: 'buff',
+        effectTags: ['heal'],
+        apply: (unit) => {
+            unit.maxHealth *= 1.15;
+            heal(unit,unit,unit.maxHealth*0.13)
+        },
+        remove: (unit) => { unit.maxHealth /= 1.15; }
+    },
+    'taunt': {
+        name: 'Taunt',
+        image: 'images/effects/taunt.png',
+        type: 'buff',
+        effectTags: ['taunt'],
+        apply: (unit) => {
+            unit.taunting = true
+            changeTarget(unit)
+        },
+        remove: (unit) => { unit.taunting = false; }
+    }
 }
 
 var abilityImagesDivsPerTeam = [[], []]
@@ -639,7 +675,9 @@ function createBattleBroVars() {
         battleBro.maxHealth = battleBro.health
         battleBro.maxProtection = battleBro.protection
         battleBro.isDead = false
-        battleBro.effects = []
+        battleBro.buffs = []
+        battleBro.debuffs = []
+        battleBro.miscEffects = []
         // Initialise skill cooldowns
         battleBro.skillsData = []
         for (let skillName of infoAboutCharacter?.abilities || []) {
@@ -664,7 +702,7 @@ function updateBattleBrosHtmlText() {
             battleBro.isDead = true
         }
         battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.protection)
-        battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + battleBro.turnMeter
+        battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.turnMeter)
         battleBro.avatarHtmlElement.children()[7].firstElementChild.firstChild.nodeValue = ''
     }
 }
@@ -775,7 +813,7 @@ function calculateNextTurnFromTurnMetersAndSpeeds() {
     while (maxTurnMeter < 100) {
         for (var i = 0; i < battleBros.length; i++) {
             if (battleBros[i].speed) {
-                avatarTurnMeters[i] += battleBros[i].speed
+                avatarTurnMeters[i] += battleBros[i].speed / 10
             }
         }
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
@@ -822,21 +860,45 @@ function avatarClicked(clickedElement) {
             foundBattleBro = battleBro
         }
     }
+    
+    if (pendingAbility) {
+        let isAlly = foundBattleBro.team === pendingAbility.user.team
+        pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
+        if (isAlly) {
+            console.log('Executing ally-targeted ability on:', foundBattleBro.character)
+            pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
+            endTurn(pendingAbility.user)
+            pendingAbility = null
+            return
+        } else {
+            console.log('Not a valid ally target.')
+            return
+        }
+    }
 
+    if (battleBros.filter(battleBro => battleBro.taunting).length == 0) {
+        changeTarget(foundBattleBro)
+    } else if (foundBattleBro.taunting == true) {
+        changeTarget(foundBattleBro)
+    } else {
+        return
+    }
+}
+
+function changeTarget(target) {
     // Set isTarget=false to all other battleBros from the same team
     for (let battleBro of battleBros) {
-        if (battleBro.team == foundBattleBro.team) {
+        if (battleBro.team == target.team) {
             battleBro.isTarget = false
         }
     }
 
     // Set isTarget=true to our newly-selected battleBro
-    foundBattleBro.isTarget = true
+    target.isTarget = true
 
     // Move team's target image
-    let htmlElementName = '#targetTeam' + foundBattleBro.team
-    $(htmlElementName).css({ 'left': foundBattleBro.x + 'px', 'top': foundBattleBro.y + 'px' });
-
+    let htmlElementName = '#targetTeam' + target.team
+    $(htmlElementName).css({ 'left': target.x + 'px', 'top': target.y + 'px' })
 }
 
 function abilityClicked(clickedElement) {
@@ -849,18 +911,34 @@ function abilityClicked(clickedElement) {
     let battleBro = battleBros[battleBroNumber]
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities
     let abilityName = characterAbilities[abilityNumber]
-
     let tags = infoAboutAbilities[abilityName].abilityTags
-    let target
+
+    let target = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team);
+    if (!target) {
+        console.log('no target found')
+    }
+
+    if (tags) {
+        if (tags.includes('target_ally')) {
+            console.log('Ally-targeting ability selected. Waiting for ally click...')
+            showFloatingText(battleBro.avatarHtmlElement.children()[7].firstElementChild,'Ally Click','white')
+            pendingAbility = {
+                user: battleBro,
+                ability: infoAboutAbilities[abilityName],
+                target: target
+            }
+            return
+        }
+    } else{
+        console.log('where tags')
+    }
+    /*let target - old for loop finding
     for (let enemy of battleBros) {
         if (enemy.isTarget == true && enemy.team != battleBro.team) {
             target = enemy
             break
         }
-    }
-    if (!target) {
-        console.log('no target found')
-    }
+    }*/
     let ability = infoAboutAbilities[abilityName].use?.(battleBro,target)
     /* old physical damage command that operated with tags
     if (tags) {
@@ -874,13 +952,19 @@ function abilityClicked(clickedElement) {
         console.log('tags haven\'t been defined!')
     }
     */
-    updateBattleBrosHtmlText()
-    // console.log(''+eltData+','+battleBroNumber+','+abilityNumber+','+battleBro+','+characterAbilities+','+abilityName+','+tags)
-    calculateNextTurnFromTurnMetersAndSpeeds()
+    if (!pendingAbility) {
+        endTurn(battleBro)
+    }
 
     // let a = clickedElement.attr("data-test1")
     // let b = clickedElement.attr("data-abilityNumber")
     // a = 0
+}
+
+function endTurn(battleBro) {
+    updateBattleBrosHtmlText()
+    calculateNextTurnFromTurnMetersAndSpeeds()
+    updateEffectsAtTurnEnd(battleBro)
 }
 
 function showFloatingText(targetElement, value, color) {
@@ -902,8 +986,49 @@ function showFloatingText(targetElement, value, color) {
   }, 2000); // matches animation duration
 }
 
+function applyEffect(battleBro, effectName, duration) {
+    const info = infoAboutEffects[effectName];
+    const effect = {
+        ...info,
+        duration: duration+1,
+        apply: info.apply,
+        remove: info.remove,
+    };
+    effect.apply(battleBro);
+    battleBro.buffs.push(effect);
+    updateEffectIcons(battleBro);
+}
+
+function updateEffectsAtTurnEnd(battleBro) {
+    for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
+        const effect = battleBro.buffs[i];
+        effect.duration -= 1;
+        if (effect.duration <= 0) {
+            effect.remove(battleBro);
+            battleBro.buffs.splice(i, 1);
+        }
+    }
+    updateEffectIcons(battleBro);
+}
+
+function updateEffectIcons(battleBro) {
+    const container = battleBro.avatarHtmlElement.get(0).querySelector('.buffIcons');
+    if (!container) {
+        console.warn("Could not find buffIcons container for:", battleBro);
+        return;
+    }
+    container.innerHTML = ''; // Clear old icons
+    battleBro.buffs.forEach(effect => {
+        const img = document.createElement('img');
+        img.src = effect.image;
+        img.style.width = '30px';
+        img.style.height = '30px';
+        container.appendChild(img);
+    });
+}
+
 function dodge(user,target) {
-    const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+    const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     if (target.protection > 0) {
         if (Math.random() > 0.5) {
             showFloatingText(logElement, 'BLOCKED', 'white');
@@ -922,7 +1047,7 @@ function dodge(user,target) {
 
 function physicalDmg(user,target,dmg) {
     if (Math.random() > target.evasion * 0.01) {
-        const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+        const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = (dmg * user.physicalDamage * 0.01) * (1-(target.armour/100)) - Math.floor(Math.random()*501)
         if (Math.random() < (user.critChance-target.critAvoidance)*0.01) {
             dealtdmg = dealtdmg * user.critDamage * 0.01
@@ -947,8 +1072,30 @@ function physicalDmg(user,target,dmg) {
     }
 }
 
+function specialDmg(user,target,dmg) {
+    if (Math.random() > target.evasion * 0.01) {
+        const logElement = target.avatarHtmlElement.children()[7].firstElementChild
+        let dealtdmg = (dmg * user.specialDamage * 0.01) * (1-(target.resistance/100)) - Math.floor(Math.random()*501)
+        showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'cornflowerblue');
+        let prot = target.protection
+        target.protection -= Math.min(dealtdmg, prot)
+        if (prot < dealtdmg) {
+            target.health -= dealtdmg-prot
+        }
+        // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
+        if (user.healthSteal > 0 && prot < dealtdmg) {
+            heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
+        }
+        //logElement.innerHTML += `<span style="color: red;">+${Math.ceil(dealtdmg)}</span>`;
+        return dealtdmg
+    } else {
+        dodge(user,target)
+        return 0
+    }
+}
+
 function heal(user,target,healing) {
-    const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+    const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     showFloatingText(logElement, `-${Math.ceil(Math.min(target.maxHealth-target.health,healing))}`, 'green');
     target.health = Math.min(target.health+healing,target.maxHealth)
 }
