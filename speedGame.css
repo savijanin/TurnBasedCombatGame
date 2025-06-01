@@ -27,3 +27,23 @@ body {
     -moz-transform: translateX(-50%);
     transform: translateX(-50%);
 }
+
+@keyframes floatFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.floating-text {
+  position: absolute;
+  pointer-events: none;
+  font-weight: bold;
+  font-size: 20px;
+  animation: floatFade 2s ease-out forwards;
+  white-space: nowrap;
+}

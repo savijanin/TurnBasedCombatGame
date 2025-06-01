@@ -298,6 +298,9 @@ var infoAboutAbilities = {
         abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 100,
         desc: 'This is a test, deal physical damage to target enemy.',
+        use(battleBro,target) {
+            physicalDmg(battleBro,target,this.abilityDamage)
+        }
     },
     'test2': {
         displayName: 'Jabba take a seat',
@@ -314,6 +317,12 @@ var infoAboutAbilities = {
         abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 117.8,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        use(battleBro,target) {
+            let hit = physicalDmg(battleBro,target,this.abilityDamage)
+            if (hit > 0 && Math.random() < 0.55) {
+                TMchange(battleBro,target,-50)
+            }
+        }
     },
     'wookieRage': {
         displayName: 'Wookie Rage',
@@ -649,12 +658,14 @@ function updateBattleBrosHtmlText() {
         let avatarHtmlElement = battleBro.avatarHtmlElement
         //let broHtmlElement = battleBro.avatarHtmlElement.get(0)
         if (battleBro.health > 0) {
-            battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + battleBro.health
+            battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.health)
         } else{
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
             battleBro.isDead = true
         }
-        battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + battleBro.protection
+        battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.protection)
+        battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + battleBro.turnMeter
+        battleBro.avatarHtmlElement.children()[7].firstElementChild.firstChild.nodeValue = ''
     }
 }
 
@@ -785,6 +796,7 @@ function calculateNextTurnFromTurnMetersAndSpeeds() {
     for (var i = 0; i < battleBros.length; i++) {
         battleBros[i].turnMeter = avatarTurnMeters[i]
     }
+    updateBattleBrosHtmlText()
 }
 
 function selectBattleBro(battleBroNumber) {
@@ -849,17 +861,19 @@ function abilityClicked(clickedElement) {
     if (!target) {
         console.log('no target found')
     }
+    let ability = infoAboutAbilities[abilityName].use?.(battleBro,target)
+    /* old physical damage command that operated with tags
     if (tags) {
         for (let tag of tags) {
             if (tag == 'physical_damage') {
                 console.log('Physical damage: ' + battleBro.character + ' uses ' + infoAboutAbilities[abilityName].displayName + ' on ' + target.character)
-                physicalDmg(battleBro,target,infoAboutAbilities[abilityName].abilityDamage,battleBro.physicalDamage,battleBro.critChance, battleBro.critDamage,battleBro.healthSteal,target.armour,target.critAvoidance)
+                physicalDmg(battleBro,target,infoAboutAbilities[abilityName].abilityDamage)
             }
         }
     } else {
         console.log('tags haven\'t been defined!')
     }
-    
+    */
     updateBattleBrosHtmlText()
     // console.log(''+eltData+','+battleBroNumber+','+abilityNumber+','+battleBro+','+characterAbilities+','+abilityName+','+tags)
     calculateNextTurnFromTurnMetersAndSpeeds()
@@ -869,24 +883,78 @@ function abilityClicked(clickedElement) {
     // a = 0
 }
 
-function physicalDmg(user,target,dmg,physical,critChance,critDamage,healthsteal,armour,critAvoid) {
-    let dealtdmg = (dmg * physical * 0.01) * (1-(armour/100)) - Math.floor(Math.random()*501)
-    if (Math.random() < (critChance-critAvoid)*0.01) {
-        dealtdmg = dealtdmg * critDamage * 0.01
+function showFloatingText(targetElement, value, color) {
+  const floatText = document.createElement('span');
+  floatText.className = 'floating-text';
+  floatText.textContent = value;
+  floatText.style.color = color;
+
+  // Position the text inside the target box
+  floatText.style.left = '50%';
+  floatText.style.top = '0';
+  floatText.style.transform = 'translateX(-50%)';
+  
+  targetElement.appendChild(floatText);
+
+  // Remove it after animation ends
+  setTimeout(() => {
+    floatText.remove();
+  }, 2000); // matches animation duration
+}
+
+function dodge(user,target) {
+    const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+    if (target.protection > 0) {
+        if (Math.random() > 0.5) {
+            showFloatingText(logElement, 'BLOCKED', 'white');
+        } else {
+            showFloatingText(logElement, 'DEFLECTED', 'white');
+        }
+    } else {
+        if (Math.random() > 0.5) {
+            showFloatingText(logElement, 'EVADED', 'white');
+        } else {
+            showFloatingText(logElement, 'DODGED', 'white');
+        }
     }
-    let prot = target.protection
-    target.protection -= Math.min(dealtdmg, prot)
-    if (prot < dealtdmg) {
-        target.health -= dealtdmg-prot
-    }
-    // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
-    if (healthsteal > 0 && prot < dealtdmg) {
-        heal(user,user,(dealtdmg-prot)*healthsteal*0.01)
+        
+}
+
+function physicalDmg(user,target,dmg) {
+    if (Math.random() > target.evasion * 0.01) {
+        const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+        let dealtdmg = (dmg * user.physicalDamage * 0.01) * (1-(target.armour/100)) - Math.floor(Math.random()*501)
+        if (Math.random() < (user.critChance-target.critAvoidance)*0.01) {
+            dealtdmg = dealtdmg * user.critDamage * 0.01
+            showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'yellow');
+        } else {
+            showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'red');
+        }
+        let prot = target.protection
+        target.protection -= Math.min(dealtdmg, prot)
+        if (prot < dealtdmg) {
+            target.health -= dealtdmg-prot
+        }
+        // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
+        if (user.healthSteal > 0 && prot < dealtdmg) {
+            heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
+        }
+        //logElement.innerHTML += `<span style="color: red;">+${Math.ceil(dealtdmg)}</span>`;
+        return dealtdmg
+    } else {
+        dodge(user,target)
+        return 0
     }
 }
 
 function heal(user,target,healing) {
-    target.health = Math.min(target.health+healing,infoAboutCharacters[target.character].health)
+    const logElement = target.avatarHtmlElement.children()[7].firstElementChild;
+    showFloatingText(logElement, `-${Math.ceil(Math.min(target.maxHealth-target.health,healing))}`, 'green');
+    target.health = Math.min(target.health+healing,target.maxHealth)
+}
+
+function TMchange(user,target,change) {
+    target.turnMeter += change
 }
 
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
