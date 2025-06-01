@@ -3,25 +3,17 @@ var team2abilitiesAlwaysVisible = false
 var infoAboutCharacters = {
     'jabba': {
         image: 'images/Jabba.png',
-        physicalDamage: 18000,
-        physicalCritChance: 50,
-        armourPenetration: 200,
         health: 50000,
         protection: 15000,
-        baseSpeed: 111,
+        speed: 111,
         potency: 900,
         tenacity: 1,
-        critDamage: 150,
-        specialDamage: 10000,
-        specialCritChance: 25,
-        resistancePenetration: 200,
-        armourPercent: 50,
-        resistancePercent: 50,
-        armourNumber: 500,
-        resistanceNumber: 500,
-        critAvoidance: 0,
+        critChance: 50,
+        physicalDamage: 5000,
+        specialDamage: 5000,
+        armour: 50,
+        resistance: 50,
         healthSteal: 100,
-        accuracy: 0,
         tags: ['lightSide'],
         abilities: ['test1', 'test2'],
         passiveAbilities: ['test3'],
@@ -29,25 +21,17 @@ var infoAboutCharacters = {
     },
     'CloneWarsChewbacca': {
         image: 'images/avatars/CloneWarsChewbacca.png',
-        physicalDamage: 3267,
-        physicalCritChance: 28.46,
-        armourPenetration: 101,
-        health: 43470,
-        protection: 52371,
-        baseSpeed: 126,
+        health: 43470+52371,
+        protection: 0,
+        speed: 126,
         potency: 28,
         tenacity: 55,
-        critDamage: 150,
+        critChance: 28.46,
+        physicalDamage: 3267,
         specialDamage: 2043,
-        specialCritChance: 12.92,
-        resistancePenetration: 0,
-        armourPercent: 48.23,
-        resistancePercent: 41.81,
-        armourNumber: 594,
-        resistanceNumber: 458,
-        critAvoidance: 0,
+        armour: 48.23,
+        resistance: 41.81,
         healthSteal: 10,
-        accuracy: 0,
         tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
         abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
         passiveAbilities: ['wookieResolve'],
@@ -56,31 +40,32 @@ var infoAboutCharacters = {
     'MassiveJabba': {
         image: 'images/Jabba.png',
         imageSize: 200,
-        baseSpeed: 10,
-        health: 1000000,
+        health: 100000,
+        protection: 10000,
+        speed: 60,
+        potency: 100,
+        tenacity: 100,
+        critChance: 60,
+        physicalDamage: 18000,
+        specialDamage: 10000,
+        armour: 60,
+        resistance: 30,
+        healthSteal: 20,
     },
     'Yoda': {
         image: 'images/avatars/GrandmasterYoda.png',
         imageSize: 100,
-        physicalDamage: 2527,
-        physicalCritChance: 28.42,
-        armourPenetration: 36,
         health: 33753,
         protection: 18937,
-        baseSpeed: 177,
+        speed: 177,
         potency: 56,
         tenacity: 39,
-        critDamage: 150,
+        critChance: 28.42,
+        physicalDamage: 2527,
         specialDamage: 4492,
-        specialCritChance: 22.92,
-        resistancePenetration: 130,
-        armourPercent: 31.85,
-        resistancePercent: 19.46,
-        armourNumber: 298,
-        resistanceNumber: 154,
-        critAvoidance: 0,
+        armour: 31.85,
+        resistance: 19.46,
         healthSteal: 5,
-        accuracy: 0,
         tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
         abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
         passiveAbilities: ['grandMastersGuidance'],
@@ -94,20 +79,17 @@ var infoAboutCharacters = {
         armourPenetration: 80,
         health: 36040,
         protection: 39209,
-        baseSpeed: 143,
+        speed: 143,
         potency: 46,
         tenacity: 47,
-        critDamage: 150,
         specialDamage: 4679,
         specialCritChance: 18.13,
         resistancePenetration: 140,
-        armourPercent: 31.19,
+        armour: 31.19,
         resistancePercent: 43.31,
         armourNumber: 289,
         resistanceNumber: 487,
-        critAvoidance: 0,
         healthSteal: 15,
-        accuracy: 0,
         tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
         abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
         passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
@@ -116,34 +98,45 @@ var infoAboutCharacters = {
     'Darth Vader': {
         image: 'images/avatars/DarthVader.png',
         imageSize: 100,
-        physicalDamage: 3447,
-        physicalCritChance: 37.67,
-        armourPenetration: 175,
         health: 32156,
         protection: 47828,
-        baseSpeed: 141,
+        speed: 141,
         potency: 50,
         tenacity: 43,
-        critDamage: 150,
+        critChance: 37.67,
+        physicalDamage: 3447,
         specialDamage: 2570,
-        specialCritChance: 11.88,
-        resistancePenetration: 0,
-        armourPercent: 43.36,
-        resistancePercent: 34.38,
-        armourNumber: 488,
-        resistanceNumber: 334,
-        critAvoidance: 0,
+        armour: 43.36,
+        resistance: 34.38,
         healthSteal: 15,
-        accuracy: 0,
         tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
         abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
         passiveAbilities: ['inspiringThroughFear', 'noEscape'],
         charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
     },
+    'Super Striker': {
+        image: 'images/avatars/DarthVader.png',
+        imageSize: 100,
+        health: 28450,
+        protection: 0,
+        speed: 172,
+        potency: 55,
+        tenacity: 22,
+        critChance: 42.23,
+        physicalDamage: 2447,
+        specialDamage: 3570,
+        armour: 23.36,
+        resistance: 32.34,
+        healthSteal: 20,
+        tags: ['lightSide', 'attacker', 'oliv'],
+        abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Blade', 'Super Strike'],
+        passiveAbilities: ['Elimination Protocol'],
+        charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
+    },
     'KraytDragon': {
         image: 'images/KraytDragon.png',
         imageSize: 200,
-        baseSpeed: 120 * 10,
+        speed: 120 * 10,
         health: 1000000,
         abilities: ['kraytBasicAttack', 'kraytAcidPuke', 'kraytEatEnemy', 'kraytBurrow', 'kraytUnburrow'],
         attacksPerTurn: 2,
@@ -151,41 +144,41 @@ var infoAboutCharacters = {
     'Explosives': {
         image: 'images/Explosives.png',
         imageSize: 100,
-        baseSpeed: 0,
+        speed: 0,
         health: 5,
     },
     'Dathcha': {
         image: 'images/Dathcha.png',
         imageSize: 100,
-        baseSpeed: 157,
+        speed: 157,
         health: 30000,
         abilities: ['dathchaHitAndRun'],
     },
     'Boba Fett': {
         image: 'images/BobaFett.png',
         imageSize: 100,
-        baseSpeed: 167,
+        speed: 167,
         health: 29000,
         abilities: ['bobaEE3Carbine'],
     },
     'Mando': {
         image: 'images/Mando.png',
         imageSize: 100,
-        baseSpeed: 164,
+        speed: 164,
         health: 36000,
         abilities: ['mandoSwiftShot'],
     },
     'Jango Fett': {
         image: 'images/JangoFett.png',
         imageSize: 100,
-        baseSpeed: 178,
+        speed: 178,
         health: 35000,
         abilities: ['jangoUnscrupulousGunfire'],
     },
     'Cad Bane': {
         image: 'images/CadBane.png',
         imageSize: 100,
-        baseSpeed: 133,
+        speed: 133,
         health: 33000,
         abilities: ['cadBaneGunSlinger'],
     },
@@ -299,29 +292,28 @@ var battleBros = [
 
 var infoAboutAbilities = {
     'test1': {
-        displayName: 'Battle meditation',
+        displayName: 'JABBA Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        desc: 'This is a test, deal physical damage to target enemy.',
         abilityType: 'basic',
         abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 100,
-        abilityDamageVariance: 500,
+        desc: 'This is a test, deal physical damage to target enemy.',
     },
     'test2': {
-        displayName: 'Battle meditation2',
+        displayName: 'Jabba take a seat',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
-        desc: 'Heal target ally',
         abilityType: 'special',
-        abilityTags: ['health_recovery'],
+        cooldown: 3,
+        abilityTags: ['special_damage','health_recovery','target_ally'],
+        desc: 'Heal target ally + special dmg dealt',
     },
     'bowcaster': {
         displayName: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
         abilityType: 'basic',
         abilityTags: ['physical_damage', 'projectile_attack'],
         abilityDamage: 117.8,
-        abilityDamageVariance: 500,
+        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
     },
     'wookieRage': {
         displayName: 'Wookie Rage',
@@ -622,9 +614,22 @@ function createBattleBroImages() {
 function createBattleBroVars() {
     for (let battleBro of battleBros) {
         let infoAboutCharacter = infoAboutCharacters[battleBro.character]
-        battleBro.speed = infoAboutCharacter.baseSpeed
+        // battleBro.speed = infoAboutCharacter.speed
         battleBro.turnMeter = 0
-        battleBro.health = infoAboutCharacter.health
+        // battleBro.health = infoAboutCharacter.health
+        for (let info in infoAboutCharacter) {
+            if (infoAboutCharacter.hasOwnProperty(info)) {
+                battleBro[info] = infoAboutCharacter[info];
+            }
+        }
+        // add extra variables
+        battleBro.critDamage = 150
+        battleBro.critAvoidance = 0
+        battleBro.accuracy = 0
+        battleBro.evasion = 0
+        battleBro.maxHealth = battleBro.health
+        battleBro.maxProtection = battleBro.protection
+        battleBro.isDead = false
         battleBro.effects = []
         // Initialise skill cooldowns
         battleBro.skillsData = []
@@ -643,7 +648,13 @@ function updateBattleBrosHtmlText() {
     for (let battleBro of battleBros) {
         let avatarHtmlElement = battleBro.avatarHtmlElement
         //let broHtmlElement = battleBro.avatarHtmlElement.get(0)
-        battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + battleBro.health
+        if (battleBro.health > 0) {
+            battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + battleBro.health
+        } else{
+            battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
+            battleBro.isDead = true
+        }
+        battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + battleBro.protection
     }
 }
 
@@ -826,15 +837,57 @@ function abilityClicked(clickedElement) {
     let battleBro = battleBros[battleBroNumber]
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities
     let abilityName = characterAbilities[abilityNumber]
-    let ability = infoAboutAbilities[abilityName]
 
-    let a = clickedElement.attr("data-test1")
-    let b = clickedElement.attr("data-abilityNumber")
-    a = 0
+    let tags = infoAboutAbilities[abilityName].abilityTags
+    let target
+    for (let enemy of battleBros) {
+        if (enemy.isTarget == true && enemy.team != battleBro.team) {
+            target = enemy
+            break
+        }
+    }
+    if (!target) {
+        console.log('no target found')
+    }
+    if (tags) {
+        for (let tag of tags) {
+            if (tag == 'physical_damage') {
+                console.log('Physical damage: ' + battleBro.character + ' uses ' + infoAboutAbilities[abilityName].displayName + ' on ' + target.character)
+                physicalDmg(battleBro,target,infoAboutAbilities[abilityName].abilityDamage,battleBro.physicalDamage,battleBro.critChance, battleBro.critDamage,battleBro.healthSteal,target.armour,target.critAvoidance)
+            }
+        }
+    } else {
+        console.log('tags haven\'t been defined!')
+    }
+    
+    updateBattleBrosHtmlText()
+    // console.log(''+eltData+','+battleBroNumber+','+abilityNumber+','+battleBro+','+characterAbilities+','+abilityName+','+tags)
+    calculateNextTurnFromTurnMetersAndSpeeds()
+
+    // let a = clickedElement.attr("data-test1")
+    // let b = clickedElement.attr("data-abilityNumber")
+    // a = 0
 }
 
+function physicalDmg(user,target,dmg,physical,critChance,critDamage,healthsteal,armour,critAvoid) {
+    let dealtdmg = (dmg * physical * 0.01) * (1-(armour/100)) - Math.floor(Math.random()*501)
+    if (Math.random() < (critChance-critAvoid)*0.01) {
+        dealtdmg = dealtdmg * critDamage * 0.01
+    }
+    let prot = target.protection
+    target.protection -= Math.min(dealtdmg, prot)
+    if (prot < dealtdmg) {
+        target.health -= dealtdmg-prot
+    }
+    // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
+    if (healthsteal > 0 && prot < dealtdmg) {
+        heal(user,user,(dealtdmg-prot)*healthsteal*0.01)
+    }
+}
 
-
+function heal(user,target,healing) {
+    target.health = Math.min(target.health+healing,infoAboutCharacters[target.character].health)
+}
 
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
 
