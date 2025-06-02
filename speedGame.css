@@ -28,6 +28,10 @@ body {
     transform: translateX(-50%);
 }
 
+#myAbilities img {
+    position: absolute;
+}
+
 @keyframes floatFade {
   0% {
     opacity: 1;

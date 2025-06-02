@@ -612,7 +612,7 @@ const infoAboutEffects = {
     }
 }
 
-var abilityImagesDivsPerTeam = [[], []]
+//var abilityImagesDivsPerTeam =[[],[]]
 var passiveImagesPerTeam = [[], []]
 
 
@@ -664,8 +664,8 @@ function createBattleBroImages() {
             }
 
             newAbilityImageDiv.appendTo('#myAbilities');
-            abilityImagesDivsPerTeam[team].push(newAbilityImageDiv)
-
+            //abilityImagesDivsPerTeam[team].push(newAbilityImageDiv)
+            //battleBro.abilityImageDivs.push(newAbilityImageDiv)
             newPassiveImage.appendTo('#myPassives');
             passiveImagesPerTeam[team].push(newPassiveImage)
         }
@@ -692,6 +692,19 @@ function createBattleBroVars() {
         battleBro.maxProtection = battleBro.protection
         battleBro.isDead = false
         battleBro.buffs = []
+        battleBro.abilityImageDivs = []
+        const abilities = infoAboutCharacters[battleBro.character].abilities || [];
+        for (let i = 0; i < abilities.length; i++) {
+            let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
+            console.log(''+battleBro.team)
+            if (battleBro.team == 0) {
+                newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
+            } else {
+                newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' })
+            }
+            newAbilityImageDiv.appendTo('#myAbilities');
+            battleBro.abilityImageDivs.push(newAbilityImageDiv);
+        }
         battleBro.cooldowns = {}
         for (let abilityName in infoAboutCharacters[battleBro.character].abilities) {
             const ability = infoAboutAbilities[abilityName];
@@ -734,15 +747,17 @@ function updateCurrentBattleBroSkillImages() {
     let battleBro = battleBros[selectedBattleBroNumber]
 
     // Hide all ability images
-    for (let team = 0; team < 2; team++) {
-        if (team2abilitiesAlwaysVisible && team == 1 && battleBro.team != 1) continue
-
-        let abilityImagesDivs = abilityImagesDivsPerTeam[team]
-        for (let abilityImageDiv of abilityImagesDivs) {
+    // Hide all ability images
+    for (let bro of battleBros) {
+        if (!bro.abilityImageDivs) continue;
+        for (let abilityImageDiv of bro.abilityImageDivs) {
             abilityImageDiv.css({ 'display': 'none' });
         }
+    }
 
-        let passiveImages = passiveImagesPerTeam[team]
+    // Hide ALL passive images from BOTH teams
+    for (let team = 0; team < 2; team++) {
+        let passiveImages = passiveImagesPerTeam[team];
         for (let passiveImage of passiveImages) {
             passiveImage.css({ 'display': 'none' });
         }
@@ -756,11 +771,15 @@ function updateCurrentBattleBroSkillImages() {
             let imagePngPath = processedAbility.skill.image
 
             // set the image png and set display=block
-            let abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
-            let indexReversedForTeam2 = battleBro.team == 0 ? i : (characterAbilities.length - i - 1)
-            let abilityImageDiv = abilityImagesDivsForCurrentTeam[indexReversedForTeam2]
-            let abilityImage = abilityImageDiv.children("#image")
-            let abilityCooldown = abilityImageDiv.children("#cooldown")[0]
+            //let abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
+            //let indexReversedForTeam2 = battleBro.team == 0 ? i : (characterAbilities.length - i - 1)
+            //let abilityImageDiv = abilityImagesDivsForCurrentTeam[indexReversedForTeam2]
+            let index = battleBro.team === 1
+                ? (battleBro.abilityImageDivs.length - i - 1)
+                : i;
+            let abilityImageDiv = battleBro.abilityImageDivs[index];
+            let abilityImage = abilityImageDiv.find(".image_ability_cropped")
+            let abilityCooldown = abilityImageDiv.find(".cooldown")[0]
             abilityImage.attr("src", imagePngPath)
             abilityImageDiv.css({ 'display': 'block' });
             if (!abilityImage.dataset) {
@@ -773,7 +792,7 @@ function updateCurrentBattleBroSkillImages() {
             abilityCooldown.innerText = processedAbility.cooldown ? processedAbility.cooldown : ''
         }
     }
-
+    reduceCooldowns(battleBro)
     let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     if (characterPassives) {
         for (i = 0; i < characterPassives.length; i++) {
@@ -935,7 +954,6 @@ function abilityClicked(clickedElement) {
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities
     let abilityName = characterAbilities[abilityNumber]
     let tags = infoAboutAbilities[abilityName].abilityTags
-
     // abort if the ability is on cooldown
     if (battleBro.cooldowns[abilityName] > 0) {
         console.log("Ability on cooldown!")
@@ -994,6 +1012,10 @@ function abilityClicked(clickedElement) {
 function useAbility(abilityName, ability,battleBro,target) {
     let abilityFunction = ability.use?.(battleBro,target)
     console.log(abilityName)
+    if (!abilityName || !infoAboutAbilities[abilityName]) {
+        console.warn("Ability not found:", abilityName);
+        return;
+    }
     battleBro.cooldowns[abilityName] = ability.cooldown || 0
     updateAbilityCooldownUI(battleBro, abilityName)
 }
@@ -1002,7 +1024,6 @@ function endTurn(battleBro) {
     updateBattleBrosHtmlText()
     calculateNextTurnFromTurnMetersAndSpeeds()
     updateEffectsAtTurnEnd(battleBro)
-    reduceCooldowns(battleBro)
 }
 
 function showFloatingText(targetElement, value, color) {
@@ -1072,6 +1093,12 @@ function reduceCooldowns(battleBro) {
             updateAbilityCooldownUI(battleBro, abilityName);
         }
     }
+    for (let skillData of battleBro.skillsData) {
+        if (skillData.cooldown > 0) {
+            skillData.cooldown--;
+            //updateAbilityCooldownUI(battleBro, skillData.skill.name);
+        }
+    }
 }
 
 function updateAbilityCooldownUI(battleBro, abilityName) {
@@ -1079,12 +1106,13 @@ function updateAbilityCooldownUI(battleBro, abilityName) {
     const cooldown = battleBro.cooldowns[abilityName] || 0
 
     const characterAbilities = infoAboutCharacters[battleBro.character].abilities
-    const abilityIndex = characterAbilities.indexOf(abilityName)
+    const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
     
-    const abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
+    /*const abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
     const index = battleBro.team === 0 ? abilityIndex : (characterAbilities.length - abilityIndex - 1);
-    const abilityImageDiv = abilityImagesDivsForCurrentTeam[index]
+    const abilityImageDiv = abilityImagesDivsForCurrentTeam[index]*/
+    const abilityImageDiv = battleBro.abilityImageDivs[abilityIndex]
     if (!abilityImageDiv) console.log("no ability Image Div found")
     if (!abilityImageDiv) return;
 
