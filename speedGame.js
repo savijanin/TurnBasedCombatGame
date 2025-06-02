@@ -5,6 +5,7 @@ var pendingAbility = null
 var battleBros = [
     // Team 0 (left side)
     {
+        id: "01",
         character: 'jabba',
         x: 400,
         y: 100,
@@ -15,42 +16,49 @@ var battleBros = [
 
     },
     {
+        id: "02",
         character: 'jabba',
         x: 400,
         y: 300,
         team: 0,
     },
     {
+        id: "03",
         character: 'CloneWarsChewbacca',
         x: 400,
         y: 500,
         team: 0,
     },
     {
+        id: "04",
         character: 'Yoda',
         x: 400,
         y: 700,
         team: 0,
     },
     {
+        id: "05",
         character: 'Mace Windu',
         x: 250,
         y: 200,
         team: 0,
     },
     {
+        id: "06",
         character: 'jabba',
         x: 250,
         y: 400,
         team: 0,
     },
     {
+        id: "07",
         character: 'jabba',
         x: 250,
         y: 600,
         team: 0,
     },
     {
+        id: "08",
         character: 'MassiveJabba',
         x: 0,
         y: 350,
@@ -59,48 +67,56 @@ var battleBros = [
 
     // Team 1 (right side)
     {
+        id: "11",
         character: 'jabba',
         x: 1400,
         y: 100,
         team: 1,
     },
     {
+        id: "12",
         character: 'jabba',
         x: 1400,
         y: 300,
         team: 1,
     },
     {
+        id: "13",
         character: 'jabba',
         x: 1400,
         y: 500,
         team: 1,
     },
     {
+        id: "14",
         character: 'jabba',
         x: 1400,
         y: 700,
         team: 1,
     },
     {
+        id: "15",
         character: 'jabba',
         x: 1550,
         y: 200,
         team: 1,
     },
     {
+        id: "16",
         character: 'jabba',
         x: 1550,
         y: 400,
         team: 1,
     },
     {
+        id: "17",
         character: 'jabba',
         x: 1550,
         y: 600,
         team: 1,
     },
     {
+        id: "18",
         character: 'MassiveJabba',
         x: 1700,
         y: 350,
@@ -676,17 +692,23 @@ function createBattleBroVars() {
         battleBro.maxProtection = battleBro.protection
         battleBro.isDead = false
         battleBro.buffs = []
-        battleBro.debuffs = []
-        battleBro.miscEffects = []
+        battleBro.cooldowns = {}
+        for (let abilityName in infoAboutCharacters[battleBro.character].abilities) {
+            const ability = infoAboutAbilities[abilityName];
+            battleBro.cooldowns[abilityName] = 0;
+        }
         // Initialise skill cooldowns
         battleBro.skillsData = []
         for (let skillName of infoAboutCharacter?.abilities || []) {
-            let skill = infoAboutAbilities[skillName]
+            let skill = JSON.parse(JSON.stringify(infoAboutAbilities[skillName]))
             skillData = {
                 skill: skill,
                 cooldown: skill.initialCooldown,
             }
             battleBro.skillsData.push(skillData)
+
+            // make sure cooldowns are keyed by name for checking and updating
+            battleBro.cooldowns[skillName] = skill.initialCooldown || 0
         }
     }
 }
@@ -863,10 +885,11 @@ function avatarClicked(clickedElement) {
     
     if (pendingAbility) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
-        pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
             pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
+            //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
+            useAbility(pendingAbility.abilityName,pendingAbility.ability,pendingAbility.user,pendingAbility.target)
             endTurn(pendingAbility.user)
             pendingAbility = null
             return
@@ -913,6 +936,12 @@ function abilityClicked(clickedElement) {
     let abilityName = characterAbilities[abilityNumber]
     let tags = infoAboutAbilities[abilityName].abilityTags
 
+    // abort if the ability is on cooldown
+    if (battleBro.cooldowns[abilityName] > 0) {
+        console.log("Ability on cooldown!")
+        return
+    }
+
     let target = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team);
     if (!target) {
         console.log('no target found')
@@ -925,7 +954,8 @@ function abilityClicked(clickedElement) {
             pendingAbility = {
                 user: battleBro,
                 ability: infoAboutAbilities[abilityName],
-                target: target
+                target: target,
+                abilityName: abilityName
             }
             return
         }
@@ -939,7 +969,7 @@ function abilityClicked(clickedElement) {
             break
         }
     }*/
-    let ability = infoAboutAbilities[abilityName].use?.(battleBro,target)
+    useAbility(abilityName,infoAboutAbilities[abilityName],battleBro,target)
     /* old physical damage command that operated with tags
     if (tags) {
         for (let tag of tags) {
@@ -961,10 +991,18 @@ function abilityClicked(clickedElement) {
     // a = 0
 }
 
+function useAbility(abilityName, ability,battleBro,target) {
+    let abilityFunction = ability.use?.(battleBro,target)
+    console.log(abilityName)
+    battleBro.cooldowns[abilityName] = ability.cooldown || 0
+    updateAbilityCooldownUI(battleBro, abilityName)
+}
+
 function endTurn(battleBro) {
     updateBattleBrosHtmlText()
     calculateNextTurnFromTurnMetersAndSpeeds()
     updateEffectsAtTurnEnd(battleBro)
+    reduceCooldowns(battleBro)
 }
 
 function showFloatingText(targetElement, value, color) {
@@ -1025,6 +1063,44 @@ function updateEffectIcons(battleBro) {
         img.style.height = '30px';
         container.appendChild(img);
     });
+}
+
+function reduceCooldowns(battleBro) {
+    for (let abilityName in battleBro.cooldowns) {
+        if (battleBro.cooldowns[abilityName] > 0) {
+            battleBro.cooldowns[abilityName] --;
+            updateAbilityCooldownUI(battleBro, abilityName);
+        }
+    }
+}
+
+function updateAbilityCooldownUI(battleBro, abilityName) {
+    if (battleBro !== battleBros[selectedBattleBroNumber]) return;
+    const cooldown = battleBro.cooldowns[abilityName] || 0
+
+    const characterAbilities = infoAboutCharacters[battleBro.character].abilities
+    const abilityIndex = characterAbilities.indexOf(abilityName)
+    if (abilityIndex === -1) console.log("no ability index found")
+    
+    const abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
+    const index = battleBro.team === 0 ? abilityIndex : (characterAbilities.length - abilityIndex - 1);
+    const abilityImageDiv = abilityImagesDivsForCurrentTeam[index]
+    if (!abilityImageDiv) console.log("no ability Image Div found")
+    if (!abilityImageDiv) return;
+
+    const img = abilityImageDiv.get(0).querySelector('img');
+    const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
+
+    if (cooldown > 0) {
+        img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
+        cooldownSpan.innerText = cooldown;
+        cooldownSpan.style.display = 'block';
+        img.style.pointerEvents = 'none'; // prevent clicking
+    } else {
+        img.style.filter = '';
+        cooldownSpan.style.display = 'none';
+        img.style.pointerEvents = 'auto';
+    }
 }
 
 function dodge(user,target) {
