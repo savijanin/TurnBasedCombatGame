@@ -130,8 +130,8 @@ const infoAboutCharacters = {
         health: 50000,
         protection: 15000,
         speed: 111,
-        potency: 1,
-        tenacity: 1,
+        potency: 100,
+        tenacity: 100,
         critChance: 50,
         physicalDamage: 5000,
         specialDamage: 5000,
@@ -175,6 +175,10 @@ const infoAboutCharacters = {
         armour: 60,
         resistance: 30,
         healthSteal: 20,
+        tags: ['lightSide'],
+        abilities: ['test1', 'test2'],
+        passiveAbilities: ['test3'],
+        charDesc: 'insert funny description here',
     },
     'Yoda': {
         image: 'images/avatars/GrandmasterYoda.png',
@@ -313,7 +317,8 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use(battleBro,target) {
             physicalDmg(battleBro,target,this.abilityDamage)
-            applyEffect(battleBro, target,'healthDown', 1);
+            applyEffect(battleBro, target,'healthUp', 1);
+            applyEffect(battleBro, battleBro,'offenceUp', 2);
         }
     },
     'test2': {
@@ -385,17 +390,40 @@ const infoAboutAbilities = {
         abilityDamage: 208,
         desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
         use(battleBro,target) {
-            specialDmg(battleBro,target,this.abilityDamage)
+            let hit = specialDmg(battleBro,target,this.abilityDamage)
+            if (hit > 0) {
+                applyEffect(battleBro, target,'potencyDown', 1);
+            }
+            if (target.health >= target.maxHealth*0.5) {
+                TMchange(battleBro,battleBro,40)
+                applyEffect(battleBro, battleBro,'foresight', 2);
+            } else {
+                applyEffect(battleBro, battleBro,'offenceUp', 2);
+                applyEffect(battleBro, battleBro,'defencePenetrationUp', 2);
+            }
         }
     },
     'masterstroke': {
         displayName: 'Masterstroke',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
-        desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
         abilityType: 'special',
-        abilityTags: ['bonus_turn', 'special_damage', 'buff_gain'],
+        cooldown: 3,
+        abilityTags: ['bonus_turn', 'special_damage', 'buff_gain', 'copy'],
         abilityDamage: 60.2,
-        abilityDamageVariance: 500,
+        desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
+        use (battleBro,target) {
+            for (let enemy of battleBros) {
+                if (enemy.team !== battleBro.team) {
+                    specialDmg(battleBro,enemy,this.abilityDamage)
+                    let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
+                    console.log(copiedEffects)
+                    for (let buff of copiedEffects) {
+                        console.log(buff)
+                        applyEffect(battleBro,battleBro,buff.name,3)
+                    }
+                }
+            }
+        }
     },
     'unstoppableForce': {
         displayName: 'Unstoppable Force',
@@ -428,6 +456,50 @@ const infoAboutAbilities = {
         displayName: "This party's over",
         image: 'images/abilities/ability_macewindu_special02.png',
         desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
+    },
+    'Lethal Swing': {
+        displayName: "Lethal Swing",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage'],
+        abilityDamage: 117.8,
+        desc: 'Deals physical damage and inflicts Tenacity Down and Potency Down, this ability ignores defence and can\'t be evaded. If this ability scores a critical hit, inflict Ability Block on a random enemy.',
+        use(battleBro,target) {
+            
+        }
+    },
+    'Piercing Edge': {
+        displayName: "Piercing Edge",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage', 'projectile_attack'],
+        abilityDamage: 117.8,
+        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        use(battleBro,target) {
+            
+        }
+    },
+    'Disruptor Blade': {
+        displayName: "Disruptor Blade",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage', 'projectile_attack'],
+        abilityDamage: 117.8,
+        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        use(battleBro,target) {
+            
+        }
+    },
+    'Super Strike': {
+        displayName: "Super Strike",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'basic',
+        abilityTags: ['physical_damage', 'projectile_attack'],
+        abilityDamage: 117.8,
+        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        use(battleBro,target) {
+            
+        }
     },
     'jangoUnscrupulousGunfire': {
         displayName: "Unscrupulous Gunfire",
@@ -598,6 +670,13 @@ const infoAboutPassives = {
         abilityType: 'unique',
         abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery']
     },
+    'Elimination Protocol': {
+        displayName: 'Elimination Protocol',
+        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        desc: 'jabba\'s blubber grants him 50% counter chance',
+        abilityType: 'unique',
+        abilityTags: [],
+    },
 }
 
 const infoAboutEffects = {
@@ -615,6 +694,30 @@ const infoAboutEffects = {
             unit.resistance /= 1.5
         }
     },
+    'defencePenetrationUp': {
+        name: 'defencePenetrationUp',
+        image: 'images/effects/defencePenetrationUp.png',
+        type: 'buff',
+        effectTags: ['stack','up','defence'],
+        apply: (unit) => {
+
+        },
+        remove: (unit) => {
+            
+        }
+    },
+    'foresight': {
+        name: 'foresight',
+        image: 'images/effects/foresight.png',
+        type: 'buff',
+        effectTags: ['stack','evasion'],
+        apply: (unit) => {
+            unit.evasion += 100
+        },
+        remove: (unit) => {
+            unit.evasion -= 100
+        }
+    },
     'healthUp': {
         name: 'healthUp',
         image: 'images/effects/healthUp.png',
@@ -627,6 +730,20 @@ const infoAboutEffects = {
         remove: (unit) => {
             unit.maxHealth /= 1.15;
             unit.health = Math.min(unit.health,unit.maxHealth) // Make sure health doesn't surpass max health when max health is lowered
+        }
+    },
+    'offenceUp': {
+        name: 'offenceUp',
+        image: 'images/effects/offenceUp.png',
+        type: 'buff',
+        effectTags: ['stack','up','offence'],
+        apply: (unit) => {
+            unit.physicalDamage *= 1.5
+            unit.specialDamage *= 1.5
+        },
+        remove: (unit) => {
+            unit.physicalDamage /= 1.5
+            unit.specialDamage /= 1.5
         }
     },
     'taunt': {
@@ -646,14 +763,26 @@ const infoAboutEffects = {
         type: 'debuff',
         effectTags: ['stack','down','maxhealth'],
         apply: (unit) => {
-            unit.maxHealth /= 1.15;
+            unit.maxHealth /= 1.15
             unit.health /= 1.15
         },
         remove: (unit) => {
             unit.maxHealth *= 1.15
             unit.health *= 1.15
         }
-    }
+    },
+    'potencyDown': {
+        name: 'potencyDown',
+        image: 'images/effects/potencyDown.png',
+        type: 'debuff',
+        effectTags: ['down','potency'],
+        apply: (unit) => {
+            unit.potency /= 100
+        },
+        remove: (unit) => {
+            unit.potency *= 100
+        }
+    },
 }
 
 //var abilityImagesDivsPerTeam =[[],[]]
@@ -892,7 +1021,7 @@ function calculateNextTurnFromTurnMetersAndSpeeds() {
     console.log('---------- Click detected ------------')
 
     // Bring the battleBros data into a temporary working array, for convenience
-    let avatarTurnMeters = battleBros.map(battleBro => battleBro.turnMeter)
+    /*let avatarTurnMeters = battleBros.map(battleBro => battleBro.turnMeter)
 
     var maxTurnMeter = Math.max(...avatarTurnMeters)
     while (maxTurnMeter < 100) {
@@ -903,22 +1032,28 @@ function calculateNextTurnFromTurnMetersAndSpeeds() {
         }
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
         maxTurnMeter = Math.max(...avatarTurnMeters)
+    }*/
+    let avatarDistances = battleBros.map(battleBro => (100-battleBro.turnMeter)/battleBro.speed)
+    let closestAvatarDistance = Math.min(...avatarDistances)
+    for (let battleBro of battleBros) {
+        if (battleBro.speed) {
+            battleBro.turnMeter += battleBro.speed*closestAvatarDistance
+        }
     }
+    console.log('avatar distances:', avatarDistances)
+    console.log('closest distance:', closestAvatarDistance)
+    let closestAvatar = avatarDistances.indexOf(closestAvatarDistance)
+    console.log('closest avatar:', closestAvatar)
 
-    let avatarWithMaxTurnMeter = avatarTurnMeters.indexOf(maxTurnMeter);
-    console.log('maxTurnMeter:', maxTurnMeter)
-    console.log('avatarWithMaxTurnMeter:', avatarWithMaxTurnMeter)
-
-    console.log('Processing avatar------------------------- ', avatarWithMaxTurnMeter)
-    $('#myText').html('Processing avatar------------------------- ' + avatarWithMaxTurnMeter)
-    selectBattleBro(avatarWithMaxTurnMeter)
-    avatarTurnMeters[avatarWithMaxTurnMeter] -= 100
-    console.log('avatarTurnMeters after processing:', avatarTurnMeters)
+    console.log('Processing avatar------------------------- ', closestAvatar)
+    $('#myText').html('Processing avatar------------------------- ' + closestAvatar)
+    selectBattleBro(closestAvatar)
 
     // Save our working array back into the main battleBros data
-    for (var i = 0; i < battleBros.length; i++) {
-        battleBros[i].turnMeter = avatarTurnMeters[i]
-    }
+    /*for (var i = 0; i < battleBros.length; i++) {
+        let battleBro = battleBros[i]
+        battleBro.turnMeter += battleBro.speed*closestAvatarDistance
+    }*/
     updateBattleBrosHtmlText()
 }
 
@@ -1065,6 +1200,7 @@ function useAbility(abilityName, ability,battleBro,target) {
 }
 
 function endTurn(battleBro) {
+    battleBro.turnMeter -= 100
     updateBattleBrosHtmlText()
     calculateNextTurnFromTurnMetersAndSpeeds()
     updateEffectsAtTurnEnd(battleBro)
