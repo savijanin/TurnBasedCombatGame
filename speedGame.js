@@ -605,7 +605,7 @@ const infoAboutEffects = {
         name: 'defenceUp',
         image: 'images/effects/defenceUp.png',
         type: 'buff',
-        effectTags: ['stack','defence'],
+        effectTags: ['stack','up','defence'],
         apply: (unit) => {
             unit.armour *= 1.5
             unit.resistance *= 1.5
@@ -619,7 +619,7 @@ const infoAboutEffects = {
         name: 'healthUp',
         image: 'images/effects/healthUp.png',
         type: 'buff',
-        effectTags: ['stack','heal'],
+        effectTags: ['stack','up','maxhealth','heal'],
         apply: (unit) => {
             unit.maxHealth *= 1.15;
             heal(unit,unit,unit.maxHealth*0.13)
@@ -644,7 +644,7 @@ const infoAboutEffects = {
         name: 'healthDown',
         image: 'images/effects/healthDown.png',
         type: 'debuff',
-        effectTags: ['stack'],
+        effectTags: ['stack','down','maxhealth'],
         apply: (unit) => {
             unit.maxHealth /= 1.15;
             unit.health /= 1.15
