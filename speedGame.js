@@ -130,7 +130,7 @@ const infoAboutCharacters = {
         health: 50000,
         protection: 15000,
         speed: 111,
-        potency: 900,
+        potency: 1,
         tenacity: 1,
         critChance: 50,
         physicalDamage: 5000,
@@ -313,6 +313,7 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use(battleBro,target) {
             physicalDmg(battleBro,target,this.abilityDamage)
+            applyEffect(battleBro, target,'healthDown', 1);
         }
     },
     'test2': {
@@ -350,30 +351,42 @@ const infoAboutAbilities = {
         displayName: 'Wookie Rage',
         image: 'images/abilities/clonewarschewbacca_wookierage.png',
         abilityType: 'special',
-        cooldown: 3,
+        cooldown: 5,
         abilityTags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         use(battleBro,target) {
-            applyEffect(battleBro, 'taunt', 2);
-            applyEffect(battleBro, 'healthUp', 2);
+            applyEffect(battleBro, battleBro,'taunt', 2, true);
+            applyEffect(battleBro, battleBro,'healthUp', 2);
+            applyEffect(battleBro, battleBro,'healthUp', 2);
         }
     },
     'defiantRoar': {
         displayName: 'Defiant Roar',
         image: 'images/abilities/clonewarschewbacca_defiantroar.png',
+        abilityType: 'special',
+        cooldown: 5,
+        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
         desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
         zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
-        abilityType: 'special',
-        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
+        use(battleBro,target) {
+            dispel(battleBro,battleBro,'debuff')
+            heal(battleBro,battleBro,battleBro.maxHealth*0.5)
+            applyEffect(battleBro, battleBro,'defenceUp', 3);
+            if (Math.random() < 0.5) {
+                TMchange(battleBro,battleBro,25)
+            }
+        }
     },
     'ataru': {
         displayName: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
-        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
         abilityType: 'basic',
         abilityTags: ['turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
-        abilityDamageVariance: 500,
+        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
+        use(battleBro,target) {
+            specialDmg(battleBro,target,this.abilityDamage)
+        }
     },
     'masterstroke': {
         displayName: 'Masterstroke',
@@ -588,19 +601,36 @@ const infoAboutPassives = {
 }
 
 const infoAboutEffects = {
+    'defenceUp': {
+        name: 'defenceUp',
+        image: 'images/effects/defenceUp.png',
+        type: 'buff',
+        effectTags: ['stack','defence'],
+        apply: (unit) => {
+            unit.armour *= 1.5
+            unit.resistance *= 1.5
+        },
+        remove: (unit) => {
+            unit.armour /= 1.5
+            unit.resistance /= 1.5
+        }
+    },
     'healthUp': {
-        name: 'Health Up',
+        name: 'healthUp',
         image: 'images/effects/healthUp.png',
         type: 'buff',
-        effectTags: ['heal'],
+        effectTags: ['stack','heal'],
         apply: (unit) => {
             unit.maxHealth *= 1.15;
             heal(unit,unit,unit.maxHealth*0.13)
         },
-        remove: (unit) => { unit.maxHealth /= 1.15; }
+        remove: (unit) => {
+            unit.maxHealth /= 1.15;
+            unit.health = Math.min(unit.health,unit.maxHealth) // Make sure health doesn't surpass max health when max health is lowered
+        }
     },
     'taunt': {
-        name: 'Taunt',
+        name: 'taunt',
         image: 'images/effects/taunt.png',
         type: 'buff',
         effectTags: ['taunt'],
@@ -609,6 +639,20 @@ const infoAboutEffects = {
             changeTarget(unit)
         },
         remove: (unit) => { unit.taunting = false; }
+    },
+    'healthDown': {
+        name: 'healthDown',
+        image: 'images/effects/healthDown.png',
+        type: 'debuff',
+        effectTags: ['stack'],
+        apply: (unit) => {
+            unit.maxHealth /= 1.15;
+            unit.health /= 1.15
+        },
+        remove: (unit) => {
+            unit.maxHealth *= 1.15
+            unit.health *= 1.15
+        }
     }
 }
 
@@ -1045,20 +1089,26 @@ function showFloatingText(targetElement, value, color) {
   }, 2000); // matches animation duration
 }
 
-function applyEffect(battleBro, effectName, duration) {
+function applyEffect(battleBro, target, effectName, duration, isLocked = false) {
     const info = infoAboutEffects[effectName];
+    if (info.type == 'debuff' && Math.random() < (target.tenacity-battleBro.potency)*0.01) {
+        showFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
+        return
+    }
     const effect = {
         ...info,
-        duration: duration+1,
+        duration: target === battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
+        locked: isLocked === true,
         apply: info.apply,
         remove: info.remove,
     };
-    effect.apply(battleBro);
-    battleBro.buffs.push(effect);
-    updateEffectIcons(battleBro);
+    effect.apply(target);
+    target.buffs.push(effect);
+    updateEffectIcons(target);
 }
 
 function updateEffectsAtTurnEnd(battleBro) {
+
     for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
         const effect = battleBro.buffs[i];
         effect.duration -= 1;
@@ -1071,19 +1121,123 @@ function updateEffectsAtTurnEnd(battleBro) {
 }
 
 function updateEffectIcons(battleBro) {
+    // group effects that are the same for stacking
+    let groupedEffects = {}; // { effectName: { instances: [], effectInfo: {} } }
+    
+    for (let effect of battleBro.buffs) {
+        // group together instances of the same existing effects
+        let effectInfo = infoAboutEffects[effect.name]
+        if (!groupedEffects[effect.name]) {
+            groupedEffects[effect.name] = {
+                instances: [],
+                effectInfo: effectInfo
+            };
+        }
+        groupedEffects[effect.name].instances.push(effect);
+    }
+    
+    
+    // delete all instances of non-stackable effects except the instance with the longest duration
+    for (let effectName in groupedEffects) {
+        let { instances, effectInfo } = groupedEffects[effectName]; // copy instances and effectInfo from the effect
+
+        if (!effectInfo.effectTags.includes("stack")) {
+            // Find the instance with the longest duration
+            let longest = instances.reduce((prev, current) => {
+                return (prev.duration > current.duration) ? prev : current;
+            });
+
+            // Remove all other instances of this effect name from battleBro.buffs
+            battleBro.buffs = battleBro.buffs.filter(effect => {
+                // Keep the longest or any other effect
+                return effect.name !== effectName || effect === longest;
+            });
+        }
+    }
+
+
+    let displayEffects = [];
+
+    for (let effectName in groupedEffects) {
+        let { instances, effectInfo } = groupedEffects[effectName];
+
+        if (effectInfo.effectTags.includes("stack")) {
+            // STACKABLE: Show one icon with a counter
+            displayEffects.push({
+                name: effectName,
+                image: effectInfo.image,
+                count: instances.length,
+                duration: Math.max(...instances.map(e => e.duration)), // for optional sorting or tooltip
+            });
+        } else {
+            // NON-STACKABLE: There will only be a single instance remaining so we set that to 1
+            displayEffects.push({
+                name: effectName,
+                image: effectInfo.image,
+                count: 1, // always going to be just a single instance
+                duration: Math.max(...instances.map(e => e.duration)),
+            });
+        }
+    }
+    // render UI
     const container = battleBro.avatarHtmlElement.get(0).querySelector('.buffIcons');
     if (!container) {
         console.warn("Could not find buffIcons container for:", battleBro);
         return;
     }
+    /*console.log('buffs')
+    console.log(battleBro.buffs)
+    console.log('buffdisplays')
+    console.log(displayEffects)*/
     container.innerHTML = ''; // Clear old icons
-    battleBro.buffs.forEach(effect => {
+    displayEffects.forEach(effect => {
+            const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.width = '30px';
+        wrapper.style.height = '30px';
+        wrapper.style.marginRight = '4px'; // spacing between icons (optional)
+
         const img = document.createElement('img');
         img.src = effect.image;
         img.style.width = '30px';
         img.style.height = '30px';
-        container.appendChild(img);
+        img.style.display = 'block';
+
+        wrapper.appendChild(img);
+
+        if (effect.count > 1) {
+            const countDiv = document.createElement('div');
+            countDiv.innerText = effect.count;
+            countDiv.style.position = 'absolute';
+            countDiv.style.top = '0';
+            countDiv.style.right = '0';
+            countDiv.style.backgroundColor = 'rgba(170, 93, 93, 0)';
+            countDiv.style.color = 'white';
+            countDiv.style.fontSize = '12px';
+            countDiv.style.padding = '1px 3px';
+            countDiv.style.borderRadius = '8px';
+            countDiv.style.lineHeight = '1';
+            wrapper.appendChild(countDiv);
+        }
+
+        container.appendChild(wrapper);
     });
+}
+
+function dispel(battleBro, target, type) {
+    let dispelledEffects = target.buffs.filter(effect => effect.type === type && effect.isLocked !== true)
+    /*target.buffs = target.buffs.filter(effect => 
+        !dispelledEffects.includes(effect)
+    )*/
+    for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
+        const effect = battleBro.buffs[i];
+        if (dispelledEffects.includes(effect)) {
+            effect.remove(battleBro);
+            battleBro.buffs.splice(i, 1);
+        }
+    }
+    updateEffectIcons(target)
 }
 
 function reduceCooldowns(battleBro) {
