@@ -706,7 +706,7 @@ const infoAboutPassives = {
         abilityTags: [],
         attacked(owner,target,attacker) {
             if (Math.random() < 0.5 && owner==target) {
-                let abilityName=infoAboutCharacters[owner.character].abilities[1]
+                let abilityName=infoAboutCharacters[owner.character].abilities[0]
                 useAbility(abilityName,infoAboutAbilities[abilityName],owner,attacker)
             }
         }
@@ -778,11 +778,14 @@ const infoAboutPassives = {
             limitedActions: {
                 action: {
                     fn(owner,target,attacker) {
+                        console.log(''+attacker)
                         if (owner === attacker && target.buffs.find(e => e.name === 'targetLock')) {
                             owner.physicalDamage += 10;
                             owner.specialDamage += 10;
-                            console.log('thing1 buffAttack applied');
+                            //console.log('thing1 buffAttack applied');
+                            return true
                         }
+                        return false
                     },
                     limit: 5,
                 }
@@ -970,17 +973,25 @@ function createLimitedAction({
     }
 
     return function (...args) {
-        let actionName = args.pop() ?? 'action' // put actionName at the very end, defaulting to 'action' if it isn't called (it will never be called)
-        // Run limited action if exists and under limit
+        // Check if last arg is a valid actionName string
+        let possibleName = args[args.length - 1];
+        let actionName = (typeof possibleName === 'string' && limitedActions[possibleName])
+            ? args.pop() // remove it and use it
+            : 'action';  // default
+        //console.log(actionName)
+            // Run limited action if exists and under limit
         if (limitedActions[actionName]) {
             if (counters[actionName] < limitedActions[actionName].limit) {
-                limitedActions[actionName].fn.apply(this, args);
-                counters[actionName]++;
+                const didRun = limitedActions[actionName].fn.apply(this, args);
+                //console.log(''+didRun)
+                if (didRun) {
+                    counters[actionName]++;
+                }
             } else {
                 console.log(`Limited action '${actionName}' reached its max count (${limitedActions[actionName].limit})`);
             }
         } else {
-            console.log(`No limited action named '${actionName}' found.`);
+            //console.log(`No limited action named '${actionName}' found.`);
         }
 
         // Run all unlimited actions every time
@@ -1001,8 +1012,8 @@ function eventHandle (type, arg1, arg2, arg3, arg4, arg5, arg6) {
         for (let battleBro of battleBros) {
             for (let passive of battleBro.passives) {
                 infoAboutPassives[passive]?.[type]?.(battleBro, ...args)
-                console.log('sending over '+args+' over to function: '+type+' in '+battleBro.character+'\'s '+passive)
-                console.log(battleBro.passives)
+                //console.log('sending over '+args+' over to function: '+type+' in '+battleBro.character+'\'s '+passive)
+                //console.log(battleBro.passives)
             }
         }
     }
@@ -1665,8 +1676,8 @@ function updateAbilityCooldownUI(battleBro, abilityName) {
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
 
-    console.log(!!battleBro.buffs.find(effect => effect.name === 'abilityBlock'))
-    console.log(infoAboutAbilities[abilityName].abilityType !== 'basic')
+    //console.log(!!battleBro.buffs.find(effect => effect.name === 'abilityBlock'))
+    //console.log(infoAboutAbilities[abilityName].abilityType !== 'basic')
     if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock') == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ?cooldown : ''
@@ -1698,6 +1709,7 @@ function dodge(user,target) {
 }
 
 function physicalDmg(user,target,dmg) {
+    eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = (dmg * user.physicalDamage * 0.01) * (1-(Math.max(target.armour-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501)
@@ -1728,6 +1740,7 @@ function physicalDmg(user,target,dmg) {
 }
 
 function specialDmg(user,target,dmg) {
+    eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = (dmg * user.specialDamage * 0.01) * (1-(Math.max(target.resistance-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501)
@@ -1751,6 +1764,7 @@ function specialDmg(user,target,dmg) {
 }
 
 function trueDmg(user,target,dmg) {
+    eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = dmg
