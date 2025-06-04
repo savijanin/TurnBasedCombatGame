@@ -1505,7 +1505,13 @@ function applyEffect(battleBro, target, effectName, duration, isLocked = false) 
         apply: info.apply,
         remove: info.remove,
     };
-    effect.apply(target);
+    if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
+        effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
+        eventHandle('gainedEffect',target,battleBro,effectName)
+        console.log('effect applied')
+    } else {
+        console.log('second instance of non-stackable effect detected: apply function not called')
+    }
     target.buffs.push(effect);
     updateEffectIcons(target);
 }
@@ -1517,6 +1523,7 @@ function updateEffectsAtTurnEnd(battleBro) {
         effect.duration -= 1;
         if (effect.duration <= 0) {
             effect.remove(battleBro);
+            eventHandle('lostEffect',target,battleBro,effect.name)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1637,6 +1644,7 @@ function dispel(battleBro, target, type) {
         const effect = battleBro.buffs[i];
         if (dispelledEffects.includes(effect)) {
             effect.remove(battleBro);
+            eventHandle('lostEffect',target,battleBro,effect.name)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1652,6 +1660,7 @@ function removeEffect(battleBro,bufftag) {
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
         shortestDurationEffect.remove(battleBro)
+        eventHandle('lostEffect',target,battleBro,shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
         console.log(filteredEffects)
