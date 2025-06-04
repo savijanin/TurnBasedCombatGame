@@ -545,9 +545,8 @@ const infoAboutAbilities = {
         abilityDamage: 80,
         use(battleBro,target) {
             let locked = false
-            let dmg = this.abilityDamage
             if (target.buffs.find(effect => effect.name === 'targetLock')) {
-                dmg *= 1.5
+                battleBro.flatDamageDealt += 50
                 locked = true
             }
             if (infoAboutCharacters[target.character].tags.includes('tank') == true) {
@@ -560,6 +559,7 @@ const infoAboutAbilities = {
                 specialDmg(battleBro,target,dmg)
             }
             if (locked == true) {
+                battleBro.flatDamageDealt -= 50
                 applyEffect(battleBro,target,'daze', 2)
                 applyEffect(battleBro,target,'buffImmunity', 2)
             }
@@ -774,6 +774,27 @@ const infoAboutPassives = {
             owner.critChance += 25
             owner.defencePenetration += 30
         },
+        defeat (owner, target, attacker) {
+            if (owner==attacker) {
+                applyEffect(owner,owner,'stealth',1)
+                battleBro.cooldowns['Super Strike'] = 0
+                updateAbilityCooldownUI(owner,'Super Strike')
+            }
+        },
+        gainedEffect (owner, target, caster, effectName) {
+            if (owner==target && effectName=='stealth') {
+                console.log('power gained from stealth')
+                owner.accuracy += 100
+                owner.flatDamageDealt += 20
+            }
+        },
+        lostEffect (owner, target, caster, effectName) {
+            if (owner==target && effectName=='stealth') {
+                console.log('power lost from stealth')
+                owner.accuracy -= 100
+                owner.flatDamageDealt -= 20
+            }
+        },
         attacked: createLimitedAction({
             limitedActions: {
                 action: {
@@ -861,11 +882,19 @@ const infoAboutEffects = {
             unit.specialDamage -= 50
         }
     },
+    'stealth': {
+        name: 'stealth',
+        image: 'images/effects/stealth.png',
+        type: 'buff',
+        effectTags: ['stealth','target'],
+        apply: (unit) => { },
+        remove: (unit) => { }
+    },
     'taunt': {
         name: 'taunt',
         image: 'images/effects/taunt.png',
         type: 'buff',
-        effectTags: ['taunt'],
+        effectTags: ['taunt','target'],
         apply: (unit) => {
             unit.taunting = true
             changeTarget(unit)
@@ -941,12 +970,8 @@ const infoAboutEffects = {
         image: 'images/effects/targetLock.png',
         type: 'debuff',
         effectTags: ['targetLock'],
-        apply: (unit) => {
-            
-        },
-        remove: (unit) => {
-            
-        }
+        apply: (unit) => { },
+        remove: (unit) => { }
     },
     'tenacityDown': {
         name: 'tenacityDown',
@@ -1097,6 +1122,8 @@ function createBattleBroVars() {
         battleBro.defencePenetration = 0
         battleBro.maxHealth = battleBro.health
         battleBro.maxProtection = battleBro.protection
+        battleBro.flatDamageDealt = 100
+        battleBro.flatDamageReceived = 100
         battleBro.isDead = false
         battleBro.buffs = []
         battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
@@ -1638,11 +1665,18 @@ function removeEffect(battleBro,bufftag) {
 }
 
 function reduceCooldowns(battleBro) {
-    for (let abilityName in battleBro.cooldowns) {
+    /*for (let abilityName in battleBro.cooldowns) {
         if (battleBro.cooldowns[abilityName] > 0) {
             battleBro.cooldowns[abilityName] --;
             updateAbilityCooldownUI(battleBro, abilityName);
         }
+    }*/
+    for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
+        //console.log(abilityName)
+        if (battleBro.cooldowns[abilityName] > 0) {
+            battleBro.cooldowns[abilityName] --;
+        }
+        updateAbilityCooldownUI(battleBro, abilityName)
     }
     for (let skillData of battleBro.skillsData) {
         if (skillData.cooldown > 0) {
@@ -1650,12 +1684,12 @@ function reduceCooldowns(battleBro) {
             //updateAbilityCooldownUI(battleBro, skillData.skill.name);
         }
     }
-    if (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock')) {
+    /*if (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock')) {
         for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
             console.log(abilityName)
             updateAbilityCooldownUI(battleBro, abilityName)
         }
-    }
+    }*/
 }
 
 function updateAbilityCooldownUI(battleBro, abilityName) {
@@ -1712,7 +1746,7 @@ function physicalDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = (dmg * user.physicalDamage * 0.01) * (1-(Math.max(target.armour-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501)
+        let dealtdmg = ((dmg * user.physicalDamage * 0.01) * (1-(Math.max(target.armour-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
         let crit = false
         if (Math.random() < (user.critChance-target.critAvoidance)*0.01) {
             dealtdmg = dealtdmg * user.critDamage * 0.01
@@ -1743,7 +1777,7 @@ function specialDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = (dmg * user.specialDamage * 0.01) * (1-(Math.max(target.resistance-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501)
+        let dealtdmg = ((dmg * user.specialDamage * 0.01) * (1-(Math.max(target.resistance-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
         showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'cornflowerblue');
         if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'special')
         let prot = target.protection
@@ -1767,7 +1801,7 @@ function trueDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = dmg
+        let dealtdmg = dmg*user.flatDamageDealt*target.flatDamageReceived*0.0001
         showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'white')
         if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'true')
         let prot = target.protection
