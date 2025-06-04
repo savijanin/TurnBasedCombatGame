@@ -992,7 +992,7 @@ function createLimitedAction({
 
 const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
-    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2],
+    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // target,user,dealtdmg,'damagetype',crit true/false
     attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2],
 }
 function eventHandle (type, arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -1709,6 +1709,7 @@ function physicalDmg(user,target,dmg) {
         } else {
             showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'red');
         }
+        if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'physical',crit)
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
         if (prot < dealtdmg) {
@@ -1731,6 +1732,7 @@ function specialDmg(user,target,dmg) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = (dmg * user.specialDamage * 0.01) * (1-(Math.max(target.resistance-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501)
         showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'cornflowerblue');
+        if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'special')
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
         if (prot < dealtdmg) {
@@ -1752,7 +1754,8 @@ function trueDmg(user,target,dmg) {
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let dealtdmg = dmg
-        showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'white');
+        showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'white')
+        if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'true')
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
         if (prot < dealtdmg) {
