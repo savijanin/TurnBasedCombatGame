@@ -545,21 +545,21 @@ const infoAboutAbilities = {
         abilityDamage: 80,
         use(battleBro,target) {
             let locked = false
+            let dmg = this.abilityDamage
             if (target.buffs.find(effect => effect.name === 'targetLock')) {
-                battleBro.specialDamage *= 1.5
+                dmg *= 1.5
                 locked = true
             }
             if (infoAboutCharacters[target.character].tags.includes('tank') == true) {
-                battleBro.critChance *= 1.3
-                battleBro.critDamage *= 1.3
-                specialDmg(battleBro,target,this.abilityDamage)
-                battleBro.critChance /= 1.3
-                battleBro.critDamage /= 1.3
+                battleBro.critChance += 30
+                battleBro.critDamage += 30
+                specialDmg(battleBro,target,dmg)
+                battleBro.critChance -= 30
+                battleBro.critDamage -= 30
             } else {
-                specialDmg(battleBro,target,this.abilityDamage)
+                specialDmg(battleBro,target,dmg)
             }
             if (locked == true) {
-                battleBro.specialDamage /= 1.5
                 applyEffect(battleBro,target,'daze', 2)
                 applyEffect(battleBro,target,'buffImmunity', 2)
             }
@@ -568,12 +568,13 @@ const infoAboutAbilities = {
     'Super Strike': {
         displayName: "Super Strike",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'basic',
+        abilityType: 'special',
+        cooldown: 5,
         abilityTags: ['physical_damage', 'projectile_attack'],
-        abilityDamage: 117.8,
+        abilityDamage: 5000,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
         use(battleBro,target) {
-            
+            let hit = trueDmg(battleBro,target,this.abilityDamage)
         }
     },
     'jangoUnscrupulousGunfire': {
@@ -703,6 +704,12 @@ const infoAboutPassives = {
         desc: 'jabba\'s blubber grants him 50% counter chance',
         abilityType: 'unique',
         abilityTags: [],
+        attacked(owner,target,attacker) {
+            if (Math.random() < 0.5 && owner==target) {
+                let abilityName=infoAboutCharacters[owner.character].abilities[1]
+                useAbility(abilityName,infoAboutAbilities[abilityName],owner,attacker)
+            }
+        }
     },
     'wookieResolve': {
         displayName: 'Wookie Resolve',
@@ -711,6 +718,18 @@ const infoAboutPassives = {
         omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
         abilityType: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
+        start(owner) {
+            for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
+                ally.armour += 10
+                ally.resistance += 10
+                console.log('bonus defence given out from wookie resolve!')
+            }
+        },
+        damaged(owner,target,attacker) {
+            if (Math.random() < 0.5 && owner.team == target.team) {
+                applyEffect(owner,target,'defenceUp',3)
+            }
+        }
     },
     'grandMastersGuidance': {
         displayName: 'Grand Master\'s Guidance',
@@ -748,9 +767,27 @@ const infoAboutPassives = {
     'Elimination Protocol': {
         displayName: 'Elimination Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        desc: 'jabba\'s blubber grants him 50% counter chance',
+        desc: 'Super Striker has +25% Critical Chance and +30% Defense Penetration. Whenever he attacks an enemy with Target Lock, he gains +10% Offense (stacking, max 50%) for the rest of the encounter. If Super Striker defeats an enemy, he gains Stealth for 1 turn and resets the cooldown of Super Strike. While Stealthed, Super Striker gains +100% Accuracy and his attacks deal +20% damage.',
         abilityType: 'unique',
-        abilityTags: [],
+        abilityTags: ['cooldownReset'],
+        start (owner) {
+            owner.critChance += 25
+            owner.defencePenetration += 30
+        },
+        attacked: createLimitedAction({
+            limitedActions: {
+                action: {
+                    fn(owner,target,attacker) {
+                        if (owner === attacker && target.buffs.find(e => e.name === 'targetLock')) {
+                            owner.physicalDamage += 10;
+                            owner.specialDamage += 10;
+                            console.log('thing1 buffAttack applied');
+                        }
+                    },
+                    limit: 5,
+                }
+            }
+        })
     },
 }
 
@@ -761,12 +798,12 @@ const infoAboutEffects = {
         type: 'buff',
         effectTags: ['stack','up','defence'],
         apply: (unit) => {
-            unit.armour *= 1.5
-            unit.resistance *= 1.5
+            unit.armour += 50
+            unit.resistance += 50
         },
         remove: (unit) => {
-            unit.armour /= 1.5
-            unit.resistance /= 1.5
+            unit.armour -= 50
+            unit.resistance -= 50
         }
     },
     'defencePenetrationUp': {
@@ -813,12 +850,12 @@ const infoAboutEffects = {
         type: 'buff',
         effectTags: ['stack','up','offence'],
         apply: (unit) => {
-            unit.physicalDamage *= 1.5
-            unit.specialDamage *= 1.5
+            unit.physicalDamage += 50
+            unit.specialDamage += 50
         },
         remove: (unit) => {
-            unit.physicalDamage /= 1.5
-            unit.specialDamage /= 1.5
+            unit.physicalDamage -= 50
+            unit.specialDamage -= 50
         }
     },
     'taunt': {
@@ -890,10 +927,10 @@ const infoAboutEffects = {
         type: 'debuff',
         effectTags: ['down','potency'],
         apply: (unit) => {
-            unit.potency /= 100
+            unit.potency -= 100
         },
         remove: (unit) => {
-            unit.potency *= 100
+            unit.potency += 100
         }
     },
     'targetLock': {
@@ -914,14 +951,62 @@ const infoAboutEffects = {
         type: 'debuff',
         effectTags: ['down','potency'],
         apply: (unit) => {
-            unit.tenacity /= 100
+            unit.tenacity -= 100
         },
         remove: (unit) => {
-            unit.tenacity *= 100
+            unit.tenacity += 100
         }
     },
 }
 
+function createLimitedAction({
+    limitedActions = {}, // object: { actionName: { fn: function, limit: number } }
+    unlimitedActions = [], // array of functions
+    }) {
+    // Initialize counters for each limited action
+    const counters = {};
+    for (const key in limitedActions) {
+        counters[key] = 0;
+    }
+
+    return function (...args) {
+        let actionName = args.pop() ?? 'action' // put actionName at the very end, defaulting to 'action' if it isn't called (it will never be called)
+        // Run limited action if exists and under limit
+        if (limitedActions[actionName]) {
+            if (counters[actionName] < limitedActions[actionName].limit) {
+                limitedActions[actionName].fn.apply(this, args);
+                counters[actionName]++;
+            } else {
+                console.log(`Limited action '${actionName}' reached its max count (${limitedActions[actionName].limit})`);
+            }
+        } else {
+            console.log(`No limited action named '${actionName}' found.`);
+        }
+
+        // Run all unlimited actions every time
+        for (const unlimitedFn of unlimitedActions) {
+            unlimitedFn.apply(this, args);
+        }
+    };
+}
+
+const argsMap = {
+    start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
+    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2],
+    attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2],
+}
+function eventHandle (type, arg1, arg2, arg3, arg4, arg5, arg6) {
+    if (argsMap[type]) {
+        const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
+        for (let battleBro of battleBros) {
+            for (let passive of battleBro.passives) {
+                infoAboutPassives[passive]?.[type]?.(battleBro, ...args)
+                console.log('sending over '+args+' over to function: '+type+' in '+battleBro.character+'\'s '+passive)
+                console.log(battleBro.passives)
+            }
+        }
+    }
+}
 //var abilityImagesDivsPerTeam =[[],[]]
 var passiveImagesPerTeam = [[], []]
 
@@ -1003,6 +1088,10 @@ function createBattleBroVars() {
         battleBro.maxProtection = battleBro.protection
         battleBro.isDead = false
         battleBro.buffs = []
+        battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
+        battleBro.passives = battleBro.passives.filter(passive => {
+            return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
+        }) // remove leader passives of characters that aren't leaders
         battleBro.abilityImageDivs = []
         const abilities = infoAboutCharacters[battleBro.character].abilities || [];
         for (let i = 0; i < abilities.length; i++) {
@@ -1035,6 +1124,7 @@ function createBattleBroVars() {
             battleBro.cooldowns[skillName] = skill.initialCooldown || 0
         }
     }
+    eventHandle('start')
 }
 
 function updateBattleBrosHtmlText() {
@@ -1651,10 +1741,27 @@ function specialDmg(user,target,dmg) {
             heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
         }
         //logElement.innerHTML += `<span style="color: red;">+${Math.ceil(dealtdmg)}</span>`;
-        return dealtdmg
+        return [dealtdmg,false]
     } else {
         dodge(user,target)
-        return 0
+        return [0, 'dodged']
+    }
+}
+
+function trueDmg(user,target,dmg) {
+    if (Math.random() > target.evasion * 0.01) {
+        const logElement = target.avatarHtmlElement.children()[7].firstElementChild
+        let dealtdmg = dmg
+        showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'white');
+        let prot = target.protection
+        target.protection -= Math.min(dealtdmg, prot)
+        if (prot < dealtdmg) {
+            target.health -= dealtdmg-prot
+        }
+        return [dealtdmg,false]
+    } else {
+        dodge(user,target)
+        return [0, 'dodged']
     }
 }
 
