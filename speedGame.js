@@ -333,7 +333,6 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use(battleBro,target) {
             physicalDmg(battleBro,target,this.abilityDamage)
-            applyEffect(battleBro, target,'healthUp', 1);
             applyEffect(battleBro, battleBro,'offenceUp', 2);
         }
     },
@@ -459,13 +458,6 @@ const infoAboutAbilities = {
         abilityTags: ['turnmeter_recovery', 'buff_gain'],
     },
     'invincibleAssault': {
-        displayName: 'Masterstroke',
-        image: 'images/abilities/ability_grandmasteryoda_special01.png',
-        abilityType: 'special',
-        cooldown: 3,
-        abilityTags: ['bonus_turn', 'special_damage', 'buff_gain', 'copy'],
-        abilityDamage: 60.2,
-
         displayName: 'invincibleAssault',
         image: 'images/abilities/ability_macewindu_basic.png',
         abilityType: 'basic',
@@ -552,11 +544,11 @@ const infoAboutAbilities = {
             if (infoAboutCharacters[target.character].tags.includes('tank') == true) {
                 battleBro.critChance += 30
                 battleBro.critDamage += 30
-                specialDmg(battleBro,target,dmg)
+                specialDmg(battleBro,target,this.abilityDamage)
                 battleBro.critChance -= 30
                 battleBro.critDamage -= 30
             } else {
-                specialDmg(battleBro,target,dmg)
+                specialDmg(battleBro,target,this.abilityDamage)
             }
             if (locked == true) {
                 battleBro.flatDamageDealt -= 50
@@ -887,7 +879,18 @@ const infoAboutEffects = {
         image: 'images/effects/stealth.png',
         type: 'buff',
         effectTags: ['stealth','target'],
-        apply: (unit) => { },
+        apply: (unit) => {
+            removeEffect(unit,'taunt')
+            if (unit.isTarget == true) { // if the guy who just got stealth is the target, we need to set the target to another member of the same team
+                let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
+                unitTeam = unitTeam.splice(indexOf(unit),1)
+                if (unitTeam.filter(battleBro => battleBro.taunting).length == 0) {
+                    changeTarget(unitTeam[0])
+                } else { // if there's at least one other guy with taunt on the same team as the stealthed guy, make them the target
+                    changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0])
+                }
+            }
+        },
         remove: (unit) => { }
     },
     'taunt': {
@@ -897,9 +900,18 @@ const infoAboutEffects = {
         effectTags: ['taunt','target'],
         apply: (unit) => {
             unit.taunting = true
-            changeTarget(unit)
+            removeEffect(unit,'stealth')
+            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting) <= 1) changeTarget(unit) // don't switch the target if there's another member of this character's team taunting
         },
-        remove: (unit) => { unit.taunting = false; }
+        remove: (unit) => {
+            unit.taunting = false
+            if (unit.isTarget == true) { // check if this taunter is the target
+                let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
+                if (unitTeam.filter(battleBro => battleBro.taunting).length > 0) { // if there's another taunter
+                    changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
+                }
+            }
+        }
     },
     'abilityBlock': {
         name: 'abilityBlock',
@@ -1028,8 +1040,10 @@ function createLimitedAction({
 
 const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
-    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // target,user,dealtdmg,'damagetype',crit true/false
-    attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2],
+    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // target,attacker,dealtdmg,'damagetype',crit true/false
+    attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], //target,attacker
+    gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // target, caster, effectName
+    lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, caster, effectName, dispeller
 }
 function eventHandle (type, arg1, arg2, arg3, arg4, arg5, arg6) {
     if (argsMap[type]) {
@@ -1185,7 +1199,6 @@ function updateCurrentBattleBroSkillImages() {
     // Update ability images
     let battleBro = battleBros[selectedBattleBroNumber]
 
-    // Hide all ability images
     // Hide all ability images
     for (let bro of battleBros) {
         if (!bro.abilityImageDivs) continue;
@@ -1365,7 +1378,9 @@ function avatarClicked(clickedElement) {
 
     let foundBrosteam = battleBros.filter(battleBro => battleBro.team == foundBattleBro.team)
     if (foundBrosteam.filter(battleBro => battleBro.taunting).length == 0) {
-        changeTarget(foundBattleBro)
+        if (!foundBattleBro.buffs.find(effect => effect.name === 'stealth')) {
+            changeTarget(foundBattleBro)
+        }
     } else if (foundBattleBro.taunting == true) {
         changeTarget(foundBattleBro)
     } else {
@@ -1404,6 +1419,21 @@ function abilityClicked(clickedElement) {
     if (battleBro.cooldowns[abilityName] > 0) {
         console.log("Ability on cooldown!")
         return
+    }
+
+    // pasted ability hiding code from starting turn so that upon ally select or animation play the abilities are hidden.
+    for (let bro of battleBros) {
+        if (!bro.abilityImageDivs) continue;
+        for (let abilityImageDiv of bro.abilityImageDivs) {
+            abilityImageDiv.css({ 'display': 'none' });
+        }
+    }
+    // Hide ALL passive images from BOTH teams
+    for (let team = 0; team < 2; team++) {
+        let passiveImages = passiveImagesPerTeam[team];
+        for (let passiveImage of passiveImages) {
+            passiveImage.css({ 'display': 'none' });
+        }
     }
 
     let target = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team);
@@ -1502,6 +1532,7 @@ function applyEffect(battleBro, target, effectName, duration, isLocked = false) 
         ...info,
         duration: target === battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
         locked: isLocked === true,
+        caster: battleBro,
         apply: info.apply,
         remove: info.remove,
     };
@@ -1523,7 +1554,7 @@ function updateEffectsAtTurnEnd(battleBro) {
         effect.duration -= 1;
         if (effect.duration <= 0) {
             effect.remove(battleBro);
-            eventHandle('lostEffect',target,battleBro,effect.name)
+            eventHandle('lostEffect',battleBro,effect.caster,effect.name)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1644,7 +1675,7 @@ function dispel(battleBro, target, type) {
         const effect = battleBro.buffs[i];
         if (dispelledEffects.includes(effect)) {
             effect.remove(battleBro);
-            eventHandle('lostEffect',target,battleBro,effect.name)
+            eventHandle('lostEffect',target,effect.caster,effect.name,battleBro)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1652,7 +1683,7 @@ function dispel(battleBro, target, type) {
 }
 
 function removeEffect(battleBro,bufftag) {
-    console.log(battleBro.evasion)
+    //console.log(battleBro.evasion)
     let filteredEffects = battleBro.buffs.filter(effect => effect.effectTags.includes(bufftag) == true)
     if (filteredEffects.length > 0) {
         let shortestDurationEffect = filteredEffects.reduce((prev, current) => {
@@ -1660,16 +1691,16 @@ function removeEffect(battleBro,bufftag) {
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
         shortestDurationEffect.remove(battleBro)
-        eventHandle('lostEffect',target,battleBro,shortestDurationEffect.name)
+        eventHandle('lostEffect',battleBro,shortestDurationEffect.caster,shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
-        console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
+        /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
         console.log(filteredEffects)
         console.log(shortestDurationEffect)
         console.log(shortestDurationEffectIndex)
-        console.log(battleBro.evasion)
+        console.log(battleBro.evasion)*/
         updateEffectIcons(battleBro)
     } else {
-        console.log(bufftag + 'effect not found')
+        //console.log(bufftag + 'effect not found')
     }
 }
 
@@ -1755,7 +1786,7 @@ function physicalDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = ((dmg * user.physicalDamage * 0.01) * (1-(Math.max(target.armour-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
+        let dealtdmg = ((dmg * user.physicalDamage * 0.01) * (Math.max(1-(Math.max(target.armour-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001 // 20=100-80 where 80 is the max damage negation from armour
         let crit = false
         if (Math.random() < (user.critChance-target.critAvoidance)*0.01) {
             dealtdmg = dealtdmg * user.critDamage * 0.01
@@ -1786,7 +1817,7 @@ function specialDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = ((dmg * user.specialDamage * 0.01) * (1-(Math.max(target.resistance-user.defencePenetration,0)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
+        let dealtdmg = ((dmg * user.specialDamage * 0.01) * (Math.max(1-(Math.max(target.resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
         showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'cornflowerblue');
         if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'special')
         let prot = target.protection
@@ -1810,7 +1841,7 @@ function trueDmg(user,target,dmg) {
     eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01) {
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-        let dealtdmg = dmg*user.flatDamageDealt*target.flatDamageReceived*0.0001
+        let dealtdmg = Math.max(dmg*user.flatDamageDealt*target.flatDamageReceived*0.0001,0)
         showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, 'white')
         if (dealtdmg > 0) eventHandle('damaged',target,user,dealtdmg,'true')
         let prot = target.protection
