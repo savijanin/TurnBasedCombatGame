@@ -1503,11 +1503,11 @@ function endTurn(battleBro) {
     updateEffectsAtTurnEnd(battleBro)
 }
 
-function showFloatingText(targetElement, value, color) {
+function showFloatingText(targetElement, value, colour) {
   const floatText = document.createElement('span');
   floatText.className = 'floating-text';
   floatText.textContent = value;
-  floatText.style.color = color;
+  floatText.style.color = colour;
 
   // Position the text inside the target box
   floatText.style.left = '50%';
@@ -1539,6 +1539,7 @@ function applyEffect(battleBro, target, effectName, duration, isLocked = false) 
     if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
         effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
         eventHandle('gainedEffect',target,battleBro,effectName)
+        playStatusEffectGlow(target.avatarHtmlElement, effectName)
         console.log('effect applied')
     } else {
         console.log('second instance of non-stackable effect detected: apply function not called')
@@ -1653,8 +1654,8 @@ function updateEffectIcons(battleBro) {
             countDiv.style.position = 'absolute';
             countDiv.style.top = '0';
             countDiv.style.right = '0';
-            countDiv.style.backgroundColor = 'rgba(170, 93, 93, 0)';
-            countDiv.style.color = 'white';
+            countDiv.style.backgroundColour = 'rgba(24, 1, 1, 0.06)';
+            countDiv.style.colour = 'white';
             countDiv.style.fontSize = '12px';
             countDiv.style.padding = '1px 3px';
             countDiv.style.borderRadius = '8px';
@@ -1664,6 +1665,41 @@ function updateEffectIcons(battleBro) {
 
         container.appendChild(wrapper);
     });
+}
+
+function playStatusEffectGlow(characterDiv, effectName) {
+    let colour;
+    const type = infoAboutEffects[effectName]?.type;
+    if (infoAboutEffects[effectName].colour) {
+        colour = infoAboutEffects[effectName]?.colour // if the effect already has a defined colour, set it to that
+    } else if (type === 'buff') {
+        colour = '#50C878'; // green
+    } else if (type === 'debuff') {
+        colour = '#880808'; // red
+    } else {
+        colour = '#6495ED'; // blue-ish
+    }
+
+    const glow = document.createElement('div');
+    glow.style.position = 'absolute';
+    glow.style.left = '50%';
+    glow.style.top = '50%';
+    glow.style.transform = 'translate(-50%, -50%)';
+    glow.style.width = '60px';
+    glow.style.height = '60px';
+    glow.style.borderRadius = '50%';
+    glow.style.backgroundColor = colour;
+    glow.style.opacity = '0.6';
+    glow.style.boxShadow = `0 0 20px 10px ${colour}`;
+    glow.style.pointerEvents = 'none';
+    glow.style.zIndex = '10';
+    glow.style.animation = 'fadeOutGlow 0.8s ease-out forwards';
+
+    characterDiv.get(0).appendChild(glow);
+
+    setTimeout(() => {
+        glow.remove();
+    }, 800);
 }
 
 function dispel(battleBro, target, type) {
@@ -1805,7 +1841,7 @@ function physicalDmg(user,target,dmg) {
         if (user.healthSteal > 0 && prot < dealtdmg) {
             heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
         }
-        //logElement.innerHTML += `<span style="color: red;">+${Math.ceil(dealtdmg)}</span>`;
+        //logElement.innerHTML += `<span style="colour: red;">+${Math.ceil(dealtdmg)}</span>`;
         return [dealtdmg, crit]
     } else {
         dodge(user,target)
@@ -1829,7 +1865,7 @@ function specialDmg(user,target,dmg) {
         if (user.healthSteal > 0 && prot < dealtdmg) {
             heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
         }
-        //logElement.innerHTML += `<span style="color: red;">+${Math.ceil(dealtdmg)}</span>`;
+        //logElement.innerHTML += `<span style="colour: red;">+${Math.ceil(dealtdmg)}</span>`;
         return [dealtdmg,false]
     } else {
         dodge(user,target)
