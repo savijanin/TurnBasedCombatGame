@@ -1527,7 +1527,7 @@ async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) 
     }
     battleBro.cooldowns[abilityName] = ability.cooldown || 0
     await updateAbilityCooldownUI(battleBro, abilityName)
-    if (hasTurn==true) await endTurn(battleBro)
+    if (hasTurn==true && animation==false) await endTurn(battleBro)
 }
 
 async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, type, color = '#FF0000') {
@@ -1573,8 +1573,22 @@ async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn
     // Remove after animation
     await wait(600)
     projectile.remove();
-    //let abilityUsed = ability.use?.(battleBro,target)
-    //if (hasTurn==true) endTurn(battleBro)
+    let abilityUsed = ability.use?.(battleBro,target)
+    let attack
+    if (type) {
+        attack=battleBro.queuedAttacks.shift()
+    }
+    if (battleBro.queuedAttacks.length > 0) {
+        let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
+        useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],hasTurn,battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
+    } else {
+        if (attack) {
+            checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
+        } else {
+            checkAttacks() // otherwise check normally
+        }
+    }
+    //if (hasTurn==true && battleBro.queuedAttacks.length == 0) endTurn(battleBro) placeholder: end the turn when the select battleBro has no attacks remaining
     return 'projectile hit'
 }
 
@@ -1585,11 +1599,32 @@ async function endTurn(battleBro) {
     await updateEffectsAtTurnEnd(battleBro)
 }
 
+async function checkAttacks(type) {
+    //let allQueuedAttacks = [[],[]]
+    let enemyTeamHasAttacks
+    for (let battleBro of battleBros) {
+        if (battleBro.queuedAttacks.length > 0) {
+            if (battleBro.team == battleBros[selectedBattleBroNumber].team) {
+                return
+            } else {
+                enemyTeamHasAttacks = true
+            }
+        }
+    }
+    if (enemyTeamHasAttacks==true&&type!=='counter') { // engage counters if the selected Bro's team's attacks are all spent
+        await engageCounters()
+    } else if (enemyTeamHasAttacks!==true) { // end the turn when no-one has any attacks anymore
+        await endTurn(battleBros[selectedBattleBroNumber])
+    }
+}
+
 async function assist(battleBro, target, caller, abilityIndex=0) {
     console.log(caller.character+' calls '+battleBro.character+' to assist on '+target)
-    let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
+    let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
+    battleBro.queuedAttacks.unshift([target,'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
     await useAbility(abilityName,battleBro,target,false,'assist')
 }
+
 async function addAttackToQueue(battleBro, target) {
     if (battleBros[selectedBattleBroNumber].team!==battleBro.team) {
         console.log('counter attack logged')
@@ -1597,6 +1632,15 @@ async function addAttackToQueue(battleBro, target) {
     } else {
         console.log('bonus attack logged')
         battleBro.queuedAttacks.push([target,'bonus'])
+    }
+}
+
+async function engageCounters() {
+    for (let battleBro of battleBros) {
+        if (battleBro.queuedAttacks.length > 0) {
+            let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
+            await useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],false,battleBro.queuedAttacks[0][1])
+        }
     }
 }
 
