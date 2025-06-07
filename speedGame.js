@@ -1,7 +1,8 @@
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
-var isAnythingElseRunningHereAtTheSameTime = 0
+//var isAnythingElseRunningHereAtTheSameTime = 0
+var engagingCounters = false
 const wait = ms => new Promise(res => setTimeout(res, ms))
 
 var battleBros = [
@@ -442,24 +443,39 @@ const infoAboutAbilities = {
                     }
                 }
             }
+            for (let ally of battleBros.filter(ally => ally.team == battleBro.team && ally!==battleBro)) {
+                if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
+                    battleBro.turnMeter += 100
+                }
+            }
         }
     },
     'unstoppableForce': {
         displayName: 'Unstoppable Force',
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
-        desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
         abilityType: 'special',
+        cooldown: 4,
         abilityTags: ['attack', 'debuff_gain', 'special_damage'],
         abilityDamage: 299.9,
-        abilityDamageVariance: 500,
+        desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
+        use: async function (battleBro, target) {
+            let hit = await dealDmg(battleBro,target,this.abilityDamage,'special')
+            if (hit[0] > 0) {
+                await TMchange(battleBro,target,-70)
+                if (target.health < target.maxHealth) await applyEffect(battleBro,target,'stun',1)
+            }
+        }
     },
     'battleMeditation': {
         displayName: 'Battle Meditation',
         image: 'images/abilities/ability_grandmasteryoda_special03.png',
-        desc: 'Yoda gains Tenacity Up and Protection Up (30%) for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns, with a 50% chance to also grant Yoda 35% Turn Meter.',
-        zeta_desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
         abilityType: 'special',
+        cooldown: 4,
         abilityTags: ['turnmeter_recovery', 'buff_gain'],
+        desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
+        use: async function (battleBro,target) {
+
+        }
     },
     'invincibleAssault': {
         displayName: 'invincibleAssault',
@@ -524,7 +540,7 @@ const infoAboutAbilities = {
                 let enemyLeaders = battleBros.filter(guy => guy.team == target.team).filter(guy => guy.isLeader == true)
                 console.log(enemyLeaders)
                 for (let enemyLeader of enemyLeaders) {
-                    await applyEffect(battleBro, enemyLeader, 'targetLock', 2)
+                    await applyEffect(battleBro, enemyLeader, 'targetLock', 3)
                 }
             }
             if (hit[1] == true) {
@@ -568,9 +584,25 @@ const infoAboutAbilities = {
         cooldown: 5,
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 5000,
-        desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
+        desc: 'Deal true damage to target enemy, inflict Doomed, Fear and Bleed for 3 turns to target enemy. If this ability scores a critical hit, use this ability again. If this ability defeats an enemy, inflict Fear to all enemies for 1 turn.',
         use: async function (battleBro, target) {
+            await applyEffect(battleBro, target, 'doomed', 3)
             let hit = await dealDmg(battleBro, target, this.abilityDamage, 'true')
+            await applyEffect(battleBro, target, 'fear', 3)
+            await applyEffect(battleBro, target, 'bleed', 3)
+            if (hit[1] == true) {
+                await applyEffect(battleBro, target, 'doomed', 3)
+                await dealDmg(battleBro, target, this.abilityDamage, 'true')
+                await applyEffect(battleBro, target, 'fear', 3)
+                await applyEffect(battleBro, target, 'bleed', 3)
+            }
+            if (target.isDead == true) {
+                for (let enemy of battleBros) {
+                    if (enemy.team !== battleBro.team) {
+                        await applyEffect(battleBro,enemy,'fear',1)
+                    }
+                }
+            }
         }
     },
     'jangoUnscrupulousGunfire': {
@@ -935,6 +967,20 @@ const infoAboutEffects = {
         },
         remove: async function (unit) { }
     },
+    'bleed': {
+        name: 'bleed',
+        image: 'images/effects/bleed.png',
+        type: 'debuff',
+        effectTags: ['stack', 'speed', 'tenacity', 'maxhealth', 'loseOnHeal'],
+        apply: async function (unit) {
+            unit.tenacity -= 5
+            unit.speedPercent -= 5
+        },
+        remove: async function (unit) {
+            unit.tenacity += 5
+            unit.speedPercent += 5
+        }
+    },
     'buffImmunity': {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
@@ -957,6 +1003,33 @@ const infoAboutEffects = {
         },
         remove: async function (unit) {
 
+        }
+    },
+    'doomed': {
+        name: 'doomed',
+        image: 'images/effects/doomed.png',
+        type: 'debuff',
+        effectTags: ['stopRevive', 'conditional'],
+        apply: async function (unit) {
+
+        },
+        remove: async function (unit) {
+            if (unit.isDead == true) unit.cantRevive = true
+        }
+    },
+    'fear': {
+        name: 'fear',
+        image: 'images/effects/fear.png',
+        type: 'debuff',
+        effectTags: ['stack', 'singleUse', 'lostOnHit', 'stun'],
+        apply: async function (unit) {
+            unit.evasion -= 10000
+        },
+        remove: async function (unit, removalType) {
+            unit.evasion += 10000
+            if (removalType == 'removed') {
+                changeCooldowns(unit, 1)
+            }
         }
     },
     'healthDown': {
@@ -983,6 +1056,16 @@ const infoAboutEffects = {
         },
         remove: async function (unit) {
             unit.potency += 100
+        }
+    },
+    'stun': {
+        name: 'stun',
+        image: 'images/effects/stun.png',
+        type: 'debuff',
+        effectTags: ['stun'],
+        apply: async function (unit) {
+        },
+        remove: async function (unit) {
         }
     },
     'targetLock': {
@@ -1059,22 +1142,16 @@ async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
             for (let passive of battleBro.passives) {
-                if (isAnythingElseRunningHereAtTheSameTime != 0) {
-                    console.log("ERROR: isAnythingElseRunningHereAtTheSameTime = " + isAnythingElseRunningHereAtTheSameTime)
-                }
-                isAnythingElseRunningHereAtTheSameTime++
                 fct = infoAboutPassives[passive]?.[type]
                 if (fct) {
-                    console.log("Calling infoAboutPassives " + passive + " " + type)
+                    //console.log("Calling infoAboutPassives " + passive + " " + type)
                     ret = await fct(battleBro, ...args)
-                    console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
+                    //console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
                 } else {
                     ret = "<not defined>"
-                    console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
+                    //console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
                 }
-                isAnythingElseRunningHereAtTheSameTime--
-                //console.log('sending over '+args+' over to function: '+type+' in '+battleBro.character+'\'s '+passive)
-                //console.log(battleBro.passives)
+
             }
         }
     }
@@ -1158,9 +1235,11 @@ async function createBattleBroVars() {
         battleBro.defencePenetration = 0
         battleBro.maxHealth = battleBro.health
         battleBro.maxProtection = battleBro.protection
+        battleBro.speedPercent = 100 // using this to manipulate speed via buffs etc
         battleBro.flatDamageDealt = 100
         battleBro.flatDamageReceived = 100
         battleBro.isDead = false
+        battleBro.cantRevive = false
         battleBro.queuedAttacks = []
         battleBro.buffs = []
         battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
@@ -1267,7 +1346,7 @@ async function updateCurrentBattleBroSkillImages() {
             abilityCooldown.innerText = processedAbility.cooldown ? processedAbility.cooldown : ''
         }
     }
-    await reduceCooldowns(battleBro)
+    await changeCooldowns(battleBro, -1)
     let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     if (characterPassives) {
         for (i = 0; i < characterPassives.length; i++) {
@@ -1336,11 +1415,11 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
         maxTurnMeter = Math.max(...avatarTurnMeters)
     }*/
-    let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / battleBro.speed)
+    let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / (battleBro.speed * battleBro.speedPercent * 0.01))
     let closestAvatarDistance = Math.min(...avatarDistances)
     for (let battleBro of battleBros) {
         if (battleBro.speed) {
-            battleBro.turnMeter += battleBro.speed * closestAvatarDistance
+            battleBro.turnMeter += battleBro.speed * battleBro.speedPercent * 0.01 * closestAvatarDistance
         }
     }
     console.log('avatar distances:', avatarDistances)
@@ -1609,6 +1688,7 @@ async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn
 
 async function endTurn(battleBro) {
     battleBro.turnMeter -= 100
+    engagingCounters = false
     await updateBattleBrosHtmlText()
     await calculateNextTurnFromTurnMetersAndSpeeds()
     await updateEffectsAtTurnEnd(battleBro)
@@ -1646,14 +1726,17 @@ async function assist(battleBro, target, caller, abilityIndex = 0) {
 async function addAttackToQueue(battleBro, target) {
     if (battleBros[selectedBattleBroNumber].team !== battleBro.team) {
         console.log('counter attack logged')
-        battleBro.queuedAttacks.push([target, 'counter'])
-    } else {
+        let currentTarget = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team)
+        currentTarget = (currentTarget.taunting==true) ? currentTarget : target
+        battleBro.queuedAttacks.push([currentTarget, 'counter'])
+    } else if (engagingCounters == false) {
         console.log('bonus attack logged')
         battleBro.queuedAttacks.push([target, 'bonus'])
     }
 }
 
 async function engageCounters() {
+    engagingCounters = true // enemy team is now counter attacking!
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
@@ -1770,7 +1853,7 @@ async function updateEffectsAtTurnEnd(battleBro) {
         const effect = battleBro.buffs[i];
         effect.duration -= 1;
         if (effect.duration <= 0) {
-            await effect.remove(battleBro);
+            await effect.remove(battleBro, 'expired');
             await eventHandle('lostEffect', battleBro, effect.caster, effect.name)
             battleBro.buffs.splice(i, 1);
         }
@@ -1891,7 +1974,7 @@ async function dispel(battleBro, target, type) {
     for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
         const effect = battleBro.buffs[i];
         if (dispelledEffects.includes(effect)) {
-            await effect.remove(battleBro);
+            await effect.remove(battleBro, 'dispelled');
             await eventHandle('lostEffect', target, effect.caster, effect.name, battleBro)
             battleBro.buffs.splice(i, 1);
         }
@@ -1907,7 +1990,7 @@ async function removeEffect(battleBro, bufftag) {
             return (prev.duration < current.duration) ? prev : current;
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
-        await shortestDurationEffect.remove(battleBro)
+        await shortestDurationEffect.remove(battleBro, 'removed')
         await eventHandle('lostEffect', battleBro, shortestDurationEffect.caster, shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
@@ -1921,7 +2004,7 @@ async function removeEffect(battleBro, bufftag) {
     }
 }
 
-async function reduceCooldowns(battleBro) {
+async function changeCooldowns(battleBro, amount = -1) {
     /*for (let abilityName in battleBro.cooldowns) {
         if (battleBro.cooldowns[abilityName] > 0) {
             battleBro.cooldowns[abilityName] --;
@@ -1931,13 +2014,13 @@ async function reduceCooldowns(battleBro) {
     for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
         //console.log(abilityName)
         if (battleBro.cooldowns[abilityName] > 0) {
-            battleBro.cooldowns[abilityName]--;
+            battleBro.cooldowns[abilityName] += amount;
         }
         await updateAbilityCooldownUI(battleBro, abilityName)
     }
     for (let skillData of battleBro.skillsData) {
         if (skillData.cooldown > 0) {
-            skillData.cooldown--;
+            skillData.cooldown += amount;
             //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
         }
     }
