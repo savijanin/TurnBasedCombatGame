@@ -1,6 +1,7 @@
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
+const wait = ms => new Promise(res => setTimeout(res, ms))
 
 var battleBros = [
     // Team 0 (left side)
@@ -699,8 +700,8 @@ const infoAboutPassives = {
         attacked(owner,target,attacker) {
             if (Math.random() < 1 && owner==target) {
                 //let abilityName=infoAboutCharacters[owner.character].abilities[0]
-                //useAbility(abilityName,infoAboutAbilities[abilityName],owner,attacker)
-                addCounterToQueue(owner, attacker)
+                //useAbility(abilityName,owner,attacker)
+                addAttackToQueue(owner, attacker)
             }
         }
     },
@@ -1139,8 +1140,8 @@ function createBattleBroVars() {
         battleBro.maxProtection = battleBro.protection
         battleBro.flatDamageDealt = 100
         battleBro.flatDamageReceived = 100
-        battleBro.queuedAttacks = {}
         battleBro.isDead = false
+        battleBro.queuedAttacks = []
         battleBro.buffs = []
         battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
         battleBro.passives = battleBro.passives.filter(passive => {
@@ -1368,7 +1369,7 @@ function avatarClicked(clickedElement) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
             pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
             //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
-            useAbility(pendingAbility.abilityName,pendingAbility.ability,pendingAbility.user,pendingAbility.target,true)
+            useAbility(pendingAbility.abilityName,pendingAbility.user,pendingAbility.target,true)
             //endTurn(pendingAbility.user)
             pendingAbility = null
             return
@@ -1470,7 +1471,7 @@ function abilityClicked(clickedElement) {
             break
         }
     }*/
-    useAbility(abilityName,infoAboutAbilities[abilityName],battleBro,target,true)
+    useAbility(abilityName,battleBro,target,true)
     /* old physical damage command that operated with tags
     if (tags) {
         for (let tag of tags) {
@@ -1492,21 +1493,48 @@ function abilityClicked(clickedElement) {
     // a = 0
 }
 
-function useAbility(abilityName,ability,battleBro,target,hasTurn=false) {
+function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) {
+    let ability = infoAboutAbilities[abilityName]
     let abilityFunction
     let animation = false
     if (ability.abilityTags.includes("projectile_attack")) {
         animation = true
-        abilityFunction = playProjectileAttackAnimation(
+        let taskDone = false
+        playProjectileAttackAnimation(
             battleBro,
             target,
             ability,
             hasTurn,
+            type,
             "#00FFFF" // note-to-self-vary-colour
-        );
-    } else {
-        abilityFunction = ability.use?.(battleBro,target)
+            ).then(data => {
+            console.log('Received:', data);
+            abilityFunction = data
+            taskDone = true
+        }).catch(err => {
+            console.error('Error:', err);
+            taskDone = true
+        })
+        /*abilityFunction = await playProjectileAttackAnimation(
+            battleBro,
+            target,
+            ability,
+            hasTurn,
+            type,
+            "#00FFFF" // note-to-self-vary-colour
+        );*/
+
+        // wait for async task to complete
+        const interval = setInterval(() => {
+            if (taskDone) {
+                clearInterval(interval);
+                console.log('Detected asyncTask completion');
+            } else {
+                console.log('Waiting...');
+            }
+        }, 100); // poll every 100ms
     }
+    abilityFunction = ability.use?.(battleBro,target)
     console.log(abilityName)
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
@@ -1514,17 +1542,10 @@ function useAbility(abilityName,ability,battleBro,target,hasTurn=false) {
     }
     battleBro.cooldowns[abilityName] = ability.cooldown || 0
     updateAbilityCooldownUI(battleBro, abilityName)
-    if (hasTurn==true && animation == false) endTurn(battleBro)
+    if (hasTurn==true) endTurn(battleBro)
 }
 
-function endTurn(battleBro) {
-    battleBro.turnMeter -= 100
-    updateBattleBrosHtmlText()
-    calculateNextTurnFromTurnMetersAndSpeeds()
-    updateEffectsAtTurnEnd(battleBro)
-}
-
-function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, color = '#FF0000') {
+async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, type, color = '#FF0000') {
     const attackerDiv = battleBro.avatarHtmlElement.children()//.eq(0),  or wherever the character image is
     const targetDiv = target.avatarHtmlElement.children()//.eq(0),    same here
     const projectile = document.createElement('div');
@@ -1565,30 +1586,56 @@ function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, colo
     projectile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
     // Remove after animation
-    setTimeout(() => {
-        projectile.remove();
-        let abilityUsed = ability.use?.(battleBro,target)
-        if (hasTurn==true) endTurn(battleBro)
-        return abilityUsed
-    }, 600);
+    await wait(600)
+    projectile.remove();
+    //let abilityUsed = ability.use?.(battleBro,target)
+    //if (hasTurn==true) endTurn(battleBro)
+    return 'projectile hit'
 }
 
-function addCounterToQueue(battleBro, target) {
-    if (battleBros[selectedBattleBroNumber] == target) {
+function endTurn(battleBro) {
+    battleBro.turnMeter -= 100
+    updateBattleBrosHtmlText()
+    calculateNextTurnFromTurnMetersAndSpeeds()
+    updateEffectsAtTurnEnd(battleBro)
+}
+
+function assist(battleBro, target, caller, abilityIndex=0) {
+    console.log(caller.character+' calls '+battleBro.character+' to assist on '+target)
+    let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
+    useAbility(abilityName,battleBro,target,false,'assist')
+}
+function addAttackToQueue(battleBro, target) {
+    if (battleBros[selectedBattleBroNumber].team!==battleBro.team) {
         console.log('counter attack logged')
+        battleBro.queuedAttacks.push([target,'counter'])
+    } else {
+        console.log('bonus attack logged')
+        battleBro.queuedAttacks.push([target,'bonus'])
     }
 }
 
-function counter(battleBro) {
-    for (let enemy of battleBros.filter(enemy => enemy.team !== battleBro.team)) {
-        while (enemy.queuedCounters > 0) {
-            let abilityName = infoAboutCharacters[enemy.character].abilities[0]
-            useAbility(abilityName,infoAboutAbilities[abilityName],enemy,battleBro,false)
-            enemy.queuedCounters--
-            //updateBattleBrosHtmlText()
+/*function engageQueuedAttacks() {
+    for (const [type,attacker,target] of queuedAttacks) {
+        let abilityName = infoAboutCharacters[attacker.character].abilities[0]
+        if (useAbility(abilityName,attacker,target,false,type)) {
+            setTimeout(() => {},601)
         }
+        console.log(attacker.character+' '+type+'s on '+target.character+' using '+abilityName)
     }
-}
+    console.log(queuedAttacks)
+    queuedAttacks = [] // all attacks have been iterated over so we don't need them anymore
+      -----------------------------------AI Generated helpful code that provides an alternate method of removing attacks from queuedAttacks
+    while (queuedEffects.length > 0) {
+        const [type, applier, target] = queuedEffects.shift();
+
+        if (thing === true) {
+            queuedEffects.push([newType, newApplier, newTarget]);
+        }
+
+        // No need to remove the current one — it's already removed by shift()
+    }
+}*/
 
 function showFloatingText(targetElement, value, colour) {
   const floatText = document.createElement('span');
@@ -1924,7 +1971,7 @@ function dealDmg(user,target,dmg,type) {
         } else if (type=='special') {
             dealtdmg = ((dmg * user.specialDamage * 0.01) * (Math.max(1-(Math.max(target.resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001 // uses resistance/special damage instead of armour/physical damage
             colour = 'cornflowerblue'
-        } else if (type=='true') {
+        } else if (type==='true') {
             dealtdmg = Math.max(dmg*user.flatDamageDealt*target.flatDamageReceived*0.0001,0) // nice and simple true damage doesn't have damage variance
             colour = 'white'
         } else if (type=='ultra') {
@@ -1937,7 +1984,7 @@ function dealDmg(user,target,dmg,type) {
                 colour = 'purple'
             }
         } else if (type=='silver') {
-            dealtdmg = ((dmg * user.specialDamage * 0.015) * (Math.max(1-(Math.max(infoAboutCharacters[target.character].resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*dmg*user.specialDamage*0.01))*user.flatDamageDealt*target.flatDamageReceived*0.0001 // lots of damage variance and ignores resistance buffs
+            dealtdmg = ((dmg * user.specialDamage * 0.015) * (Math.max(1-(Math.max(infoAboutCharacters[target.character].resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*dmg*user.specialDamage*0.01))*user.flatDamageDealt*target.flatDamageReceived*0.000001* user.critDamage // lots of damage variance and ignores resistance buffs
             colour = 'silver'
             crit = true // always crits
         } else if (type=='shadow') {
