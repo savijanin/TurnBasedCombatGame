@@ -163,7 +163,7 @@ const infoAboutCharacters = {
     },
     'CloneWarsChewbacca': {
         image: 'images/avatars/CloneWarsChewbacca.png',
-        health: 43470+52371,
+        health: 43470 + 52371,
         protection: 0,
         speed: 126,
         potency: 28,
@@ -269,7 +269,7 @@ const infoAboutCharacters = {
         armour: 23.36,
         resistance: 32.34,
         healthSteal: 20,
-        tags: ['neutral', 'attacker', 'mercenary','oliv','unalignedForceUser'],
+        tags: ['neutral', 'attacker', 'mercenary', 'oliv', 'unalignedForceUser'],
         abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Blade', 'Super Strike'],
         passiveAbilities: ['Elimination Protocol'],
         charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
@@ -330,12 +330,12 @@ const infoAboutAbilities = {
         displayName: 'JABBA Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
-        abilityTags: ['attack','physical_damage', 'projectile_attack'],
+        abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
         abilityDamage: 100,
         desc: 'This is a test, deal physical damage to target enemy.',
-        use: async function(battleBro,target) {
-            await dealDmg(battleBro,target,this.abilityDamage,'physical')
-            await applyEffect(battleBro, battleBro,'offenceUp', 2);
+        use: async function (battleBro, target) {
+            await dealDmg(battleBro, target, this.abilityDamage, 'physical')
+            await applyEffect(battleBro, battleBro, 'offenceUp', 2);
         }
     },
     'test2': {
@@ -343,15 +343,15 @@ const infoAboutAbilities = {
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         abilityType: 'special',
         cooldown: 3,
-        abilityTags: ['attack','special_damage','health_recovery','target_ally'],
+        abilityTags: ['attack', 'special_damage', 'health_recovery', 'target_ally'],
         abilityDamage: 160,
         desc: 'Heal target ally + special dmg dealt',
-        use: async function(battleBro,target) {
-            await dealDmg(battleBro,target,this.abilityDamage,'special')
+        use: async function (battleBro, target) {
+            await dealDmg(battleBro, target, this.abilityDamage, 'special')
             // insert target ally part
             console.log('Waiting for ally target...')
         },
-        allyUse: async function(battleBro, ally) {
+        allyUse: async function (battleBro, ally) {
             await heal(battleBro, ally, battleBro.physicalDamage)
         }
     },
@@ -359,14 +359,14 @@ const infoAboutAbilities = {
         displayName: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
-        abilityTags: ['attack','physical_damage', 'projectile_attack'],
+        abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
         abilityDamage: 117.8,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
-        use: async function(battleBro,target) {
-            let hits = await dealDmg(battleBro,target,this.abilityDamage,'physical')
+        use: async function (battleBro, target) {
+            let hits = await dealDmg(battleBro, target, this.abilityDamage, 'physical')
             let hit = hits[0]
             if (hit > 0 && Math.random() < 0.55) {
-                await TMchange(battleBro,target,-50)
+                await TMchange(battleBro, target, -50)
             }
         }
     },
@@ -377,10 +377,10 @@ const infoAboutAbilities = {
         cooldown: 5,
         abilityTags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
-        use: async function(battleBro,target) {
-            await applyEffect(battleBro, battleBro,'taunt', 2, true);
-            await applyEffect(battleBro, battleBro,'healthUp', 2);
-            await applyEffect(battleBro, battleBro,'healthUp', 2);
+        use: async function (battleBro, target) {
+            await applyEffect(battleBro, battleBro, 'taunt', 2, true);
+            await applyEffect(battleBro, battleBro, 'healthUp', 2);
+            await applyEffect(battleBro, battleBro, 'healthUp', 2);
         }
     },
     'defiantRoar': {
@@ -391,12 +391,12 @@ const infoAboutAbilities = {
         abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
         desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
         zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
-        use: async function(battleBro,target) {
-            await dispel(battleBro,battleBro,'debuff')
-            await heal(battleBro,battleBro,battleBro.maxHealth*0.5)
-            await applyEffect(battleBro, battleBro,'defenceUp', 3);
+        use: async function (battleBro, target) {
+            await dispel(battleBro, battleBro, 'debuff')
+            await heal(battleBro, battleBro, battleBro.maxHealth * 0.5)
+            await applyEffect(battleBro, battleBro, 'defenceUp', 3);
             if (Math.random() < 0.5) {
-                await TMchange(battleBro,battleBro,25)
+                await TMchange(battleBro, battleBro, 25)
             }
         }
     },
@@ -404,21 +404,21 @@ const infoAboutAbilities = {
         displayName: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         abilityType: 'basic',
-        abilityTags: ['attack','turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
+        abilityTags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
         desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
-        use: async function(battleBro,target) {
-            let hits = await dealDmg(battleBro,target,this.abilityDamage,'special')
+        use: async function (battleBro, target) {
+            let hits = await dealDmg(battleBro, target, this.abilityDamage, 'special')
             let hit = hits[0]
             if (hit > 0) {
-                await applyEffect(battleBro, target,'potencyDown', 1);
+                await applyEffect(battleBro, target, 'potencyDown', 1);
             }
-            if (target.health >= target.maxHealth*0.5) {
-                await TMchange(battleBro,battleBro,40)
-                await applyEffect(battleBro, battleBro,'foresight', 2);
+            if (target.health >= target.maxHealth * 0.5) {
+                await TMchange(battleBro, battleBro, 40)
+                await applyEffect(battleBro, battleBro, 'foresight', 2);
             } else {
-                await applyEffect(battleBro, battleBro,'offenceUp', 2);
-                await applyEffect(battleBro, battleBro,'defencePenetrationUp', 2);
+                await applyEffect(battleBro, battleBro, 'offenceUp', 2);
+                await applyEffect(battleBro, battleBro, 'defencePenetrationUp', 2);
             }
         }
     },
@@ -427,18 +427,18 @@ const infoAboutAbilities = {
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         abilityType: 'special',
         cooldown: 3,
-        abilityTags: ['attack','bonus_turn', 'special_damage', 'buff_gain', 'copy'],
+        abilityTags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
         abilityDamage: 60.2,
         desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
-        use: async function(battleBro,target) {
+        use: async function (battleBro, target) {
             for (let enemy of battleBros) {
                 if (enemy.team !== battleBro.team) {
-                    await dealDmg(battleBro,enemy,this.abilityDamage,'special')
+                    await dealDmg(battleBro, enemy, this.abilityDamage, 'special')
                     let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
                     console.log(copiedEffects)
                     for (let buff of copiedEffects) {
                         console.log(buff)
-                        await applyEffect(battleBro,battleBro,buff.name,3)
+                        await applyEffect(battleBro, battleBro, buff.name, 3)
                     }
                 }
             }
@@ -449,7 +449,7 @@ const infoAboutAbilities = {
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
         desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
         abilityType: 'special',
-        abilityTags: ['attack','debuff_gain', 'special_damage'],
+        abilityTags: ['attack', 'debuff_gain', 'special_damage'],
         abilityDamage: 299.9,
         abilityDamageVariance: 500,
     },
@@ -465,13 +465,13 @@ const infoAboutAbilities = {
         displayName: 'invincibleAssault',
         image: 'images/abilities/ability_macewindu_basic.png',
         abilityType: 'basic',
-        abilityTags: ['attack','special_damage'],
+        abilityTags: ['attack', 'special_damage'],
         abilityDamage: 154.3,
         desc: "Meal Special damage to target enemy and inflict Ability Block for 1 turn. This attack deals bonus damage equal to 5% of Mace's Max Health. If Mace is above 50% Health, he gains 15% Turn Meter. If Mace is below 50% Health, he recovers Health equal to 100% of the damage dealt.",
-        use: async function(battleBro,target) {
-            let hit = await dealDmg(battleBro,target,this.abilityDamage,'special')
+        use: async function (battleBro, target) {
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'special')
             if (hit[0] > 0) {
-                await applyEffect(battleBro,target,'abilityBlock',1)
+                await applyEffect(battleBro, target, 'abilityBlock', 1)
             }
         }
     },
@@ -489,25 +489,25 @@ const infoAboutAbilities = {
         displayName: "Lethal Swing",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
-        abilityTags: ['attack','physical_damage'],
+        abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 117.8,
         desc: 'Deals physical damage and inflicts Tenacity Down and Potency Down, this ability ignores defence and can\'t be evaded. If this ability scores a critical hit, inflict Ability Block on a random enemy.',
-        use: async function(battleBro,target) {
+        use: async function (battleBro, target) {
             let savedArmour = target.armour
             let savedEvasion = target.evasion
             target.armour = 0
             target.evasion = 0
-            let hit = await dealDmg(battleBro,target,this.abilityDamage,'physical')
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'physical')
             target.armour += savedArmour
             target.evasion += savedEvasion
             if (hit[0] > 0) {
-                await applyEffect(battleBro, target,'potencyDown', 1);
-                await applyEffect(battleBro, target,'tenacityDown', 1);
+                await applyEffect(battleBro, target, 'potencyDown', 1);
+                await applyEffect(battleBro, target, 'tenacityDown', 1);
             }
             if (hit[1] == true) { // crit condition
                 let enemyTeam = battleBros.filter(guy => guy.team == target.team)
                 let randomIndex = Math.floor(Math.random() * enemyTeam.length)
-                await applyEffect(battleBro, enemyTeam[randomIndex],'abilityBlock', 2);
+                await applyEffect(battleBro, enemyTeam[randomIndex], 'abilityBlock', 2);
             }
         }
     },
@@ -516,19 +516,19 @@ const infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'special',
         cooldown: 3,
-        abilityTags: ['attack','physical_damage'],
+        abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 130,
-        use: async function(battleBro,target) {
-            let hit = await dealDmg(battleBro,target,this.abilityDamage,'physical')
+        use: async function (battleBro, target) {
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'physical')
             if (hit[0] > 0) {
                 let enemyLeaders = battleBros.filter(guy => guy.team == target.team).filter(guy => guy.isLeader == true)
                 console.log(enemyLeaders)
                 for (let enemyLeader of enemyLeaders) {
-                    await applyEffect(battleBro,enemyLeader,'targetLock', 2)
+                    await applyEffect(battleBro, enemyLeader, 'targetLock', 2)
                 }
             }
             if (hit[1] == true) {
-                await dealDmg(battleBro,target,this.abilityDamage*0.5,'special')
+                await dealDmg(battleBro, target, this.abilityDamage * 0.5, 'special')
             }
         }
     },
@@ -537,9 +537,9 @@ const infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'special',
         cooldown: 4,
-        abilityTags: ['attack','special_damage'],
+        abilityTags: ['attack', 'special_damage'],
         abilityDamage: 80,
-        use: async function(battleBro,target) {
+        use: async function (battleBro, target) {
             let locked = false
             if (target.buffs.find(effect => effect.name === 'targetLock')) {
                 battleBro.flatDamageDealt += 50
@@ -548,16 +548,16 @@ const infoAboutAbilities = {
             if (infoAboutCharacters[target.character].tags.includes('tank') == true) {
                 battleBro.critChance += 30
                 battleBro.critDamage += 30
-                await dealDmg(battleBro,target,this.abilityDamage,'special')
+                await dealDmg(battleBro, target, this.abilityDamage, 'special')
                 battleBro.critChance -= 30
                 battleBro.critDamage -= 30
             } else {
-                await dealDmg(battleBro,target,this.abilityDamage,'special')
+                await dealDmg(battleBro, target, this.abilityDamage, 'special')
             }
             if (locked == true) {
                 battleBro.flatDamageDealt -= 50
-                await applyEffect(battleBro,target,'daze', 2)
-                await applyEffect(battleBro,target,'buffImmunity', 2)
+                await applyEffect(battleBro, target, 'daze', 2)
+                await applyEffect(battleBro, target, 'buffImmunity', 2)
             }
         }
     },
@@ -566,11 +566,11 @@ const infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'special',
         cooldown: 5,
-        abilityTags: ['attack','physical_damage'],
+        abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 5000,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
-        use: async function(battleBro,target) {
-            let hit = await dealDmg(battleBro,target,this.abilityDamage,'true')
+        use: async function (battleBro, target) {
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'true')
         }
     },
     'jangoUnscrupulousGunfire': {
@@ -626,7 +626,7 @@ const infoAboutAbilities = {
         abilityDamageVariance: 0,
         // New
         needsEnemyTarget: 1,
-        attackFct: async function(inputs) {
+        attackFct: async function (inputs) {
             await damageEnemy(inputs)
             await applyEffectsToEnemy(inputs, ['Daze'])
         },
@@ -641,7 +641,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 0,
         cooldownAfterUse: 2,
         initialCooldown: 0,
-        attackFct: async function(inputs) {
+        attackFct: async function (inputs) {
             await damageAllEnemies(inputs)
         },
     },
@@ -655,7 +655,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
         cooldownAfterUse: 4,
         initialCooldown: 1,
-        attackFct: async function(inputs) {
+        attackFct: async function (inputs) {
             await applyEffectsToEnemy(inputs, ['Eaten'])
         },
     },
@@ -670,7 +670,7 @@ const infoAboutAbilities = {
         cooldownAfterUse: 4,
         initialCooldown: 2,
         selectThisSkillLastPerTurn: true,
-        attackFct: async function(inputs) {
+        attackFct: async function (inputs) {
             await applyEffectsToSelf(inputs, ['Burrowed'])
             // Change Unburrow cooldown to 0
             let battleBro = battleBros[inputs.battleBroNumber]
@@ -687,7 +687,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 0,
         cooldownAfterUse: 9,
         initialCooldown: 9,
-        attackFct: async function(inputs) {
+        attackFct: async function (inputs) {
             //await removeEffectsFromSelf(inputs, ['Burrowed'])
         },
     },
@@ -700,8 +700,8 @@ const infoAboutPassives = {
         desc: 'jabba\'s blubber grants him 50% counter chance',
         abilityType: 'unique',
         abilityTags: [],
-        attacked: async function(owner,target,attacker) {
-            if (Math.random() < 1 && owner==target) {
+        attacked: async function (owner, target, attacker) {
+            if (Math.random() < 1 && owner == target) {
                 //let abilityName=infoAboutCharacters[owner.character].abilities[0]
                 //await useAbility(abilityName,owner,attacker)
                 await addAttackToQueue(owner, attacker)
@@ -716,16 +716,16 @@ const infoAboutPassives = {
         omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
         abilityType: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
-        start: async function(owner) {
+        start: async function (owner) {
             for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
                 ally.armour += 10
                 ally.resistance += 10
                 console.log('bonus defence given out from wookie resolve!')
             }
         },
-        damaged: async function(owner,target,attacker) {
+        damaged: async function (owner, target, attacker) {
             if (Math.random() < 0.5 && owner.team == target.team) {
-                await applyEffect(owner,target,'defenceUp',3)
+                await applyEffect(owner, target, 'defenceUp', 3)
             }
         }
     },
@@ -768,26 +768,26 @@ const infoAboutPassives = {
         desc: 'Super Striker has +25% Critical Chance and +30% Defense Penetration. Whenever he attacks an enemy with Target Lock, he gains +10% Offense (stacking, max 50%) for the rest of the encounter. If Super Striker defeats an enemy, he gains Stealth for 1 turn and resets the cooldown of Super Strike. While Stealthed, Super Striker gains +100% Accuracy and his attacks deal +20% damage.',
         abilityType: 'unique',
         abilityTags: ['cooldownReset'],
-        start: async function(owner) {
+        start: async function (owner) {
             owner.critChance += 25
             owner.defencePenetration += 30
         },
-        defeat: async function(owner, target, attacker) {
-            if (owner==attacker) {
-                await applyEffect(owner,owner,'stealth',1)
+        defeat: async function (owner, target, attacker) {
+            if (owner == attacker) {
+                await applyEffect(owner, owner, 'stealth', 1)
                 battleBro.cooldowns['Super Strike'] = 0
-                await updateAbilityCooldownUI(owner,'Super Strike')
+                await updateAbilityCooldownUI(owner, 'Super Strike')
             }
         },
-        gainedEffect: async function(owner, target, caster, effectName) {
-            if (owner==target && effectName=='stealth') {
+        gainedEffect: async function (owner, target, caster, effectName) {
+            if (owner == target && effectName == 'stealth') {
                 console.log('power gained from stealth')
                 owner.accuracy += 100
                 owner.flatDamageDealt += 20
             }
         },
-        lostEffect: async function(owner, target, caster, effectName) {
-            if (owner==target && effectName=='stealth') {
+        lostEffect: async function (owner, target, caster, effectName) {
+            if (owner == target && effectName == 'stealth') {
                 console.log('power lost from stealth')
                 owner.accuracy -= 100
                 owner.flatDamageDealt -= 20
@@ -820,12 +820,12 @@ const infoAboutEffects = {
         name: 'defenceUp',
         image: 'images/effects/defenceUp.png',
         type: 'buff',
-        effectTags: ['stack','up','defence'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'up', 'defence'],
+        apply: async function (unit) {
             unit.armour += 50
             unit.resistance += 50
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.armour -= 50
             unit.resistance -= 50
         }
@@ -834,11 +834,11 @@ const infoAboutEffects = {
         name: 'defencePenetrationUp',
         image: 'images/effects/defencePenetrationUp.png',
         type: 'buff',
-        effectTags: ['stack','up','defence'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'up', 'defence'],
+        apply: async function (unit) {
             unit.defencePenetration += 50
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.defencePenetration -= 50
         }
     },
@@ -846,11 +846,11 @@ const infoAboutEffects = {
         name: 'foresight',
         image: 'images/effects/foresight.png',
         type: 'buff',
-        effectTags: ['stack','singleUse','foresight','evasion'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'singleUse', 'foresight', 'evasion'],
+        apply: async function (unit) {
             unit.evasion += 100
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.evasion -= 100
         }
     },
@@ -858,26 +858,26 @@ const infoAboutEffects = {
         name: 'healthUp',
         image: 'images/effects/healthUp.png',
         type: 'buff',
-        effectTags: ['stack','up','maxhealth','heal'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'up', 'maxhealth', 'heal'],
+        apply: async function (unit) {
             unit.maxHealth *= 1.15;
-            await heal(unit,unit,unit.maxHealth*0.13)
+            await heal(unit, unit, unit.maxHealth * 0.13)
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.maxHealth /= 1.15;
-            unit.health = Math.min(unit.health,unit.maxHealth) // Make sure health doesn't surpass max health when max health is lowered
+            unit.health = Math.min(unit.health, unit.maxHealth) // Make sure health doesn't surpass max health when max health is lowered
         }
     },
     'offenceUp': {
         name: 'offenceUp',
         image: 'images/effects/offenceUp.png',
         type: 'buff',
-        effectTags: ['stack','up','offence'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'up', 'offence'],
+        apply: async function (unit) {
             unit.physicalDamage += 50
             unit.specialDamage += 50
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.physicalDamage -= 50
             unit.specialDamage -= 50
         }
@@ -886,12 +886,12 @@ const infoAboutEffects = {
         name: 'stealth',
         image: 'images/effects/stealth.png',
         type: 'buff',
-        effectTags: ['stealth','target'],
-        apply: async function(unit) {
-            await removeEffect(unit,'taunt')
+        effectTags: ['stealth', 'target'],
+        apply: async function (unit) {
+            await removeEffect(unit, 'taunt')
             if (unit.isTarget == true) { // if the guy who just got stealth is the target, we need to set the target to another member of the same team
                 let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
-                unitTeam = unitTeam.splice(indexOf(unit),1)
+                unitTeam = unitTeam.splice(indexOf(unit), 1)
                 if (unitTeam.filter(battleBro => battleBro.taunting).length == 0) {
                     await changeTarget(unitTeam[0])
                 } else { // if there's at least one other guy with taunt on the same team as the stealthed guy, make them the target
@@ -899,19 +899,19 @@ const infoAboutEffects = {
                 }
             }
         },
-        remove: async function(unit) { }
+        remove: async function (unit) { }
     },
     'taunt': {
         name: 'taunt',
         image: 'images/effects/taunt.png',
         type: 'buff',
-        effectTags: ['taunt','target'],
-        apply: async function(unit) {
+        effectTags: ['taunt', 'target'],
+        apply: async function (unit) {
             unit.taunting = true
-            await removeEffect(unit,'stealth')
+            await removeEffect(unit, 'stealth')
             if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changeTarget(unit) // don't switch the target if there's another member of this character's team taunting
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.taunting = false
             if (unit.isTarget == true) { // check if this taunter is the target
                 let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
@@ -926,49 +926,49 @@ const infoAboutEffects = {
         image: 'images/effects/abilityBlock.png',
         type: 'debuff',
         effectTags: [],
-        apply: async function(unit) {
+        apply: async function (unit) {
             /*console.log(infoAboutCharacters[unit.character].abilities)
             for (let abilityName of infoAboutCharacters[unit.character].abilities) {
                 console.log(abilityName)
                 await updateAbilityCooldownUI(unit, abilityName)
             }*/
         },
-        remove: async function(unit) {}
+        remove: async function (unit) { }
     },
     'buffImmunity': {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
         type: 'debuff',
         effectTags: ['buffImmunity'],
-        apply: async function(unit) {
-            
+        apply: async function (unit) {
+
         },
-        remove: async function(unit) {
-            
+        remove: async function (unit) {
+
         }
     },
     'daze': {
         name: 'daze',
         image: 'images/effects/daze.png',
         type: 'debuff',
-        effectTags: ['stopAssist','stopCounter','stopTMgain'],
-        apply: async function(unit) {
-            
+        effectTags: ['stopAssist', 'stopCounter', 'stopTMgain'],
+        apply: async function (unit) {
+
         },
-        remove: async function(unit) {
-            
+        remove: async function (unit) {
+
         }
     },
     'healthDown': {
         name: 'healthDown',
         image: 'images/effects/healthDown.png',
         type: 'debuff',
-        effectTags: ['stack','down','maxhealth'],
-        apply: async function(unit) {
+        effectTags: ['stack', 'down', 'maxhealth'],
+        apply: async function (unit) {
             unit.maxHealth /= 1.15
             unit.health /= 1.15
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.maxHealth *= 1.15
             unit.health *= 1.15
         }
@@ -977,11 +977,11 @@ const infoAboutEffects = {
         name: 'potencyDown',
         image: 'images/effects/potencyDown.png',
         type: 'debuff',
-        effectTags: ['down','potency'],
-        apply: async function(unit) {
+        effectTags: ['down', 'potency'],
+        apply: async function (unit) {
             unit.potency -= 100
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.potency += 100
         }
     },
@@ -990,18 +990,18 @@ const infoAboutEffects = {
         image: 'images/effects/targetLock.png',
         type: 'debuff',
         effectTags: ['targetLock'],
-        apply: async function(unit) { },
-        remove: async function(unit) { }
+        apply: async function (unit) { },
+        remove: async function (unit) { }
     },
     'tenacityDown': {
         name: 'tenacityDown',
         image: 'images/effects/tenacityDown.png',
         type: 'debuff',
-        effectTags: ['down','potency'],
-        apply: async function(unit) {
+        effectTags: ['down', 'potency'],
+        apply: async function (unit) {
             unit.tenacity -= 100
         },
-        remove: async function(unit) {
+        remove: async function (unit) {
             unit.tenacity += 100
         }
     },
@@ -1010,7 +1010,7 @@ const infoAboutEffects = {
 async function createLimitedAction({
     limitedActions = {}, // object: { actionName: { fn: function, limit: number } }
     unlimitedActions = [], // array of functions
-    }) {
+}) {
     // Initialize counters for each limited action
     const counters = {};
     for (const key in limitedActions) {
@@ -1024,7 +1024,7 @@ async function createLimitedAction({
             ? args.pop() // remove it and use it
             : 'action';  // default
         //console.log(actionName)
-            // Run limited action if exists and under limit
+        // Run limited action if exists and under limit
         if (limitedActions[actionName]) {
             if (counters[actionName] < limitedActions[actionName].limit) {
                 const didRun = await limitedActions[actionName].fn.apply(this, args);
@@ -1053,7 +1053,7 @@ const argsMap = {
     gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // target, caster, effectName
     lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, caster, effectName, dispeller
 }
-async function eventHandle (type, arg1, arg2, arg3, arg4, arg5, arg6) {
+async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
     console.log("eventHandle", type, arg1, arg2, arg3, arg4, arg5, arg6)
     if (argsMap[type]) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
@@ -1171,7 +1171,7 @@ async function createBattleBroVars() {
         const abilities = infoAboutCharacters[battleBro.character].abilities || [];
         for (let i = 0; i < abilities.length; i++) {
             let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
-            console.log(''+battleBro.team)
+            console.log('' + battleBro.team)
             if (battleBro.team == 0) {
                 newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
             } else {
@@ -1208,7 +1208,7 @@ async function updateBattleBrosHtmlText() {
         //let broHtmlElement = battleBro.avatarHtmlElement.get(0)
         if (battleBro.health > 0) {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.health)
-        } else{
+        } else {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
             battleBro.isDead = true
         }
@@ -1284,40 +1284,40 @@ async function updateCurrentBattleBroSkillImages() {
 }
 
 $(document).ready(function () {
-  (async () => {
-    console.log('App started')
+    (async () => {
+        console.log('App started')
 
-    // How to move an image
-    /*
-    var position = $('#jabbaTemplate').position()
-    $('#jabbaTemplate').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
-    */
+        // How to move an image
+        /*
+        var position = $('#jabbaTemplate').position()
+        $('#jabbaTemplate').css({ 'left': position.left + 10 + 'px', 'top': position.top + 'px' });
+        */
 
-    // How to change text
-    //$('#jabbaHealth').text("dead")
+        // How to change text
+        //$('#jabbaHealth').text("dead")
 
-    await createBattleBroVars()
-    await createBattleBroImages()
-    await updateBattleBrosHtmlText()
+        await createBattleBroVars()
+        await createBattleBroImages()
+        await updateBattleBrosHtmlText()
 
-    // Buttons and keyboard shortcuts
-    $('#button1').on('click', calculateNextTurnFromTurnMetersAndSpeeds)
-    $('#button_startKraytRaid').on('click', startKraytRaid)
+        // Buttons and keyboard shortcuts
+        $('#button1').on('click', calculateNextTurnFromTurnMetersAndSpeeds)
+        $('#button_startKraytRaid').on('click', startKraytRaid)
 
-    $(document).on("keypress", async function (e) {
-        if (e.originalEvent.key == 'n') { // Can also use e.which
-            await calculateNextTurnFromTurnMetersAndSpeeds()
-        }
-        if (e.originalEvent.key == 'K') { // Can also use e.which
-            await startKraytRaid()
-        }
-        if (e.originalEvent.key == 'a') {
-            await runOnAuto(false)
-        }
-    });
+        $(document).on("keypress", async function (e) {
+            if (e.originalEvent.key == 'n') { // Can also use e.which
+                await calculateNextTurnFromTurnMetersAndSpeeds()
+            }
+            if (e.originalEvent.key == 'K') { // Can also use e.which
+                await startKraytRaid()
+            }
+            if (e.originalEvent.key == 'a') {
+                await runOnAuto(false)
+            }
+        });
 
-    console.log('avatarTurnMeters:', battleBros.map(battleBro => battleBro.turnMeter))
-  })();
+        console.log('avatarTurnMeters:', battleBros.map(battleBro => battleBro.turnMeter))
+    })();
 })
 
 async function calculateNextTurnFromTurnMetersAndSpeeds() {
@@ -1336,11 +1336,11 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
         maxTurnMeter = Math.max(...avatarTurnMeters)
     }*/
-    let avatarDistances = battleBros.map(battleBro => (100-battleBro.turnMeter)/battleBro.speed)
+    let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / battleBro.speed)
     let closestAvatarDistance = Math.min(...avatarDistances)
     for (let battleBro of battleBros) {
         if (battleBro.speed) {
-            battleBro.turnMeter += battleBro.speed*closestAvatarDistance
+            battleBro.turnMeter += battleBro.speed * closestAvatarDistance
         }
     }
     console.log('avatar distances:', avatarDistances)
@@ -1383,14 +1383,14 @@ async function avatarClicked(clickedElement) {
             foundBattleBro = battleBro
         }
     }
-    
+
     if (pendingAbility) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
             await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
             //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
-            await useAbility(pendingAbility.abilityName,pendingAbility.user,pendingAbility.target,true)
+            await useAbility(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
             pendingAbility = null
             return
         } else {
@@ -1472,7 +1472,7 @@ async function abilityClicked(clickedElement) {
     if (tags) {
         if (tags.includes('target_ally')) {
             console.log('Ally-targeting ability selected. Waiting for ally click...')
-            await showFloatingText(battleBro.avatarHtmlElement.children()[7].firstElementChild,'Ally Click','white')
+            await showFloatingText(battleBro.avatarHtmlElement.children()[7].firstElementChild, 'Ally Click', 'white')
             pendingAbility = {
                 user: battleBro,
                 ability: infoAboutAbilities[abilityName],
@@ -1481,7 +1481,7 @@ async function abilityClicked(clickedElement) {
             }
             return
         }
-    } else{
+    } else {
         console.log('where tags')
     }
     /*let target - old for loop finding
@@ -1491,7 +1491,7 @@ async function abilityClicked(clickedElement) {
             break
         }
     }*/
-    if (!pendingAbility) await useAbility(abilityName,battleBro,target,true)
+    if (!pendingAbility) await useAbility(abilityName, battleBro, target, true)
     /* old physical damage command that operated with tags
     if (tags) {
         for (let tag of tags) {
@@ -1510,7 +1510,7 @@ async function abilityClicked(clickedElement) {
     // a = 0
 }
 
-async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) {
+async function useAbility(abilityName, battleBro, target, hasTurn = false, type = null) {
     let ability = infoAboutAbilities[abilityName]
     let animation = false
     if (ability.abilityTags.includes("projectile_attack")) {
@@ -1523,7 +1523,7 @@ async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) 
             hasTurn,
             type,
             "#00FFFF" // note-to-self-vary-colour
-            )
+        )
         /*abilityFunction = await playProjectileAttackAnimation(
             battleBro,
             target,
@@ -1536,7 +1536,7 @@ async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) 
     }
     let abilityUsed
     if (ability.use)
-        abilityUsed = await ability.use(battleBro,target)
+        abilityUsed = await ability.use(battleBro, target)
     console.log(abilityName)
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
@@ -1544,11 +1544,11 @@ async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) 
     }
     let attack
     if (type) {
-        attack=(battleBro.queuedAttacks.length > 0) ? battleBro.queuedAttacks.shift() : null // if this attack is a counter, assist, or bonus then remove it from the list of queued attacks
+        attack = (battleBro.queuedAttacks.length > 0) ? battleBro.queuedAttacks.shift() : null // if this attack is a counter, assist, or bonus then remove it from the list of queued attacks
     }
     if (battleBro.queuedAttacks.length > 0) {
         let abilityName = infoAboutCharacters[battleBro.character].abilities[0] // basic ability
-        await useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],hasTurn,battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
+        await useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], hasTurn, battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
     } else {
         if (attack) {
             await checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
@@ -1628,28 +1628,28 @@ async function checkAttacks(type) {
             }
         }
     }
-    if (enemyTeamHasAttacks==true&&type!=='counter') { // engage counters if the selected Bro's team's attacks are all spent
+    if (enemyTeamHasAttacks == true && type !== 'counter') { // engage counters if the selected Bro's team's attacks are all spent
         await engageCounters()
         console.log('engaging counter attacks')
-    } else if (enemyTeamHasAttacks!==true) { // end the turn when no-one has any attacks anymore
+    } else if (enemyTeamHasAttacks !== true) { // end the turn when no-one has any attacks anymore
         await endTurn(battleBros[selectedBattleBroNumber])
     }
 }
 
-async function assist(battleBro, target, caller, abilityIndex=0) {
-    console.log(caller.character+' calls '+battleBro.character+' to assist on '+target)
+async function assist(battleBro, target, caller, abilityIndex = 0) {
+    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
-    battleBro.queuedAttacks.unshift([target,'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    await useAbility(abilityName,battleBro,target,false,'assist')
+    battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
+    await useAbility(abilityName, battleBro, target, false, 'assist')
 }
 
 async function addAttackToQueue(battleBro, target) {
-    if (battleBros[selectedBattleBroNumber].team!==battleBro.team) {
+    if (battleBros[selectedBattleBroNumber].team !== battleBro.team) {
         console.log('counter attack logged')
-        battleBro.queuedAttacks.push([target,'counter'])
+        battleBro.queuedAttacks.push([target, 'counter'])
     } else {
         console.log('bonus attack logged')
-        battleBro.queuedAttacks.push([target,'bonus'])
+        battleBro.queuedAttacks.push([target, 'bonus'])
     }
 }
 
@@ -1657,7 +1657,7 @@ async function engageCounters() {
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
-            await useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],false,battleBro.queuedAttacks[0][1])
+            await useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1])
         }
     }
 }
@@ -1694,7 +1694,7 @@ async function showFloatingText(targetElement, value, colour) {
     floatText.style.left = '50%';
     floatText.style.top = '0';
     floatText.style.transform = 'translateX(-50%)';
-    
+
     targetElement.appendChild(floatText);
 
     // Remove it after animation ends
@@ -1738,9 +1738,9 @@ async function playStatusEffectGlow(characterDiv, effectName) {
     }, 800);
 }
 
-async function applyEffect(battleBro, target, effectName, duration=1, isLocked = false) {
+async function applyEffect(battleBro, target, effectName, duration = 1, isLocked = false) {
     const info = infoAboutEffects[effectName];
-    if (info.type == 'debuff' && Math.random() < (target.tenacity-battleBro.potency)*0.01) {
+    if (info.type == 'debuff' && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
         await showFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
         return
     }
@@ -1754,7 +1754,7 @@ async function applyEffect(battleBro, target, effectName, duration=1, isLocked =
     };
     if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
         await effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
-        await eventHandle('gainedEffect',target,battleBro,effectName)
+        await eventHandle('gainedEffect', target, battleBro, effectName)
         await playStatusEffectGlow(target.avatarHtmlElement, effectName)
         console.log('effect applied')
     } else {
@@ -1771,7 +1771,7 @@ async function updateEffectsAtTurnEnd(battleBro) {
         effect.duration -= 1;
         if (effect.duration <= 0) {
             await effect.remove(battleBro);
-            await eventHandle('lostEffect',battleBro,effect.caster,effect.name)
+            await eventHandle('lostEffect', battleBro, effect.caster, effect.name)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1781,7 +1781,7 @@ async function updateEffectsAtTurnEnd(battleBro) {
 async function updateEffectIcons(battleBro) {
     // group effects that are the same for stacking
     let groupedEffects = {}; // { effectName: { instances: [], effectInfo: {} } }
-    
+
     for (let effect of battleBro.buffs) {
         // group together instances of the same existing effects
         let effectInfo = infoAboutEffects[effect.name]
@@ -1793,8 +1793,8 @@ async function updateEffectIcons(battleBro) {
         }
         groupedEffects[effect.name].instances.push(effect);
     }
-    
-    
+
+
     // delete all instances of non-stackable effects except the instance with the longest duration
     for (let effectName in groupedEffects) {
         let { instances, effectInfo } = groupedEffects[effectName]; // copy instances and effectInfo from the effect
@@ -1849,7 +1849,7 @@ async function updateEffectIcons(battleBro) {
     console.log(displayEffects)*/
     container.innerHTML = ''; // Clear old icons
     displayEffects.forEach(effect => {
-            const wrapper = document.createElement('div');
+        const wrapper = document.createElement('div');
         wrapper.style.position = 'relative';
         wrapper.style.display = 'inline-block';
         wrapper.style.width = '30px';
@@ -1892,14 +1892,14 @@ async function dispel(battleBro, target, type) {
         const effect = battleBro.buffs[i];
         if (dispelledEffects.includes(effect)) {
             await effect.remove(battleBro);
-            await eventHandle('lostEffect',target,effect.caster,effect.name,battleBro)
+            await eventHandle('lostEffect', target, effect.caster, effect.name, battleBro)
             battleBro.buffs.splice(i, 1);
         }
     }
     await updateEffectIcons(target)
 }
 
-async function removeEffect(battleBro,bufftag) {
+async function removeEffect(battleBro, bufftag) {
     //console.log(battleBro.evasion)
     let filteredEffects = battleBro.buffs.filter(effect => effect.effectTags.includes(bufftag) == true)
     if (filteredEffects.length > 0) {
@@ -1908,7 +1908,7 @@ async function removeEffect(battleBro,bufftag) {
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
         await shortestDurationEffect.remove(battleBro)
-        await eventHandle('lostEffect',battleBro,shortestDurationEffect.caster,shortestDurationEffect.name)
+        await eventHandle('lostEffect', battleBro, shortestDurationEffect.caster, shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
         console.log(filteredEffects)
@@ -1931,7 +1931,7 @@ async function reduceCooldowns(battleBro) {
     for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
         //console.log(abilityName)
         if (battleBro.cooldowns[abilityName] > 0) {
-            battleBro.cooldowns[abilityName] --;
+            battleBro.cooldowns[abilityName]--;
         }
         await updateAbilityCooldownUI(battleBro, abilityName)
     }
@@ -1956,7 +1956,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const characterAbilities = infoAboutCharacters[battleBro.character].abilities
     const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
-    
+
     /*const abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
     const index = battleBro.team === 0 ? abilityIndex : (characterAbilities.length - abilityIndex - 1);
     const abilityImageDiv = abilityImagesDivsForCurrentTeam[index]*/
@@ -1971,7 +1971,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     //console.log(infoAboutAbilities[abilityName].abilityType !== 'basic')
     if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock') == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
-        cooldownSpan.innerText = (cooldown > 0) ?cooldown : ''
+        cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
         cooldownSpan.style.display = 'block';
         img.style.pointerEvents = 'none'; // prevent clicking
     } else {
@@ -1981,7 +1981,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     }
 }
 
-async function dodge(user,target) {
+async function dodge(user, target) {
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     if (target.protection > 0) {
         if (Math.random() > 0.5) {
@@ -1996,84 +1996,84 @@ async function dodge(user,target) {
             await showFloatingText(logElement, 'DODGED', 'white');
         }
     }
-    await removeEffect(target,'foresight')
+    await removeEffect(target, 'foresight')
 }
 
-async function dealDmg(user,target,dmg,type) {
+async function dealDmg(user, target, dmg, type) {
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
-    await eventHandle('attacked',target,user)
-    if (Math.random() > target.evasion * 0.01 && !['shadow','massive','percentage'].includes(type)) { // shadow, massive, and percentage damage can't be evaded.
+    await eventHandle('attacked', target, user)
+    if (Math.random() > target.evasion * 0.01 && !['shadow', 'massive', 'percentage'].includes(type)) { // shadow, massive, and percentage damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
         let colour // prepare the colour for the damage types
         let dealtdmg
-        if (type=='physical') {
-            dealtdmg = ((dmg * user.physicalDamage * 0.01) * (Math.max(1-(Math.max(target.armour-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001 // 20=100-80 where 80 is the max damage negation from defence
-            if (Math.random() < (user.critChance-target.critAvoidance)*0.01) { // physical attacks can crit
+        if (type == 'physical') {
+            dealtdmg = ((dmg * user.physicalDamage * 0.01) * (Math.max(1 - (Math.max(target.armour - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // 20=100-80 where 80 is the max damage negation from defence
+            if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // physical attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'yellow' // change colour upon crit!
                 crit = true
             } else {
                 colour = 'red'
             }
-        } else if (type=='special') {
-            dealtdmg = ((dmg * user.specialDamage * 0.01) * (Math.max(1-(Math.max(target.resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001 // uses resistance/special damage instead of armour/physical damage
+        } else if (type == 'special') {
+            dealtdmg = ((dmg * user.specialDamage * 0.01) * (Math.max(1 - (Math.max(target.resistance - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // uses resistance/special damage instead of armour/physical damage
             colour = 'cornflowerblue'
-        } else if (type==='true') {
-            dealtdmg = Math.max(dmg*user.flatDamageDealt*target.flatDamageReceived*0.0001,0) // nice and simple true damage doesn't have damage variance
+        } else if (type === 'true') {
+            dealtdmg = Math.max(dmg * user.flatDamageDealt * target.flatDamageReceived * 0.0001, 0) // nice and simple true damage doesn't have damage variance
             colour = 'white'
-        } else if (type=='ultra') {
-            dealtdmg = ((dmg * (user.physicalDamage+user.specialDamage) * 0.01) * (Math.max(1-(Math.max(target.armour+target.resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*501))*user.flatDamageDealt*target.flatDamageReceived*0.0001
-            if (Math.random() < (user.critChance-target.critAvoidance)*0.01) { // ultra attacks can crit
+        } else if (type == 'ultra') {
+            dealtdmg = ((dmg * (user.physicalDamage + user.specialDamage) * 0.01) * (Math.max(1 - (Math.max(target.armour + target.resistance - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001
+            if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // ultra attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'violet' // change colour upon crit!
                 crit = true
             } else {
                 colour = 'purple'
             }
-        } else if (type=='silver') {
-            dealtdmg = ((dmg * user.specialDamage * 0.015) * (Math.max(1-(Math.max(infoAboutCharacters[target.character].resistance-user.defencePenetration,0),20)/100)) - Math.floor(Math.random()*dmg*user.specialDamage*0.01))*user.flatDamageDealt*target.flatDamageReceived*0.000001* user.critDamage // lots of damage variance and ignores resistance buffs
+        } else if (type == 'silver') {
+            dealtdmg = ((dmg * user.specialDamage * 0.015) * (Math.max(1 - (Math.max(infoAboutCharacters[target.character].resistance - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * dmg * user.specialDamage * 0.01)) * user.flatDamageDealt * target.flatDamageReceived * 0.000001 * user.critDamage // lots of damage variance and ignores resistance buffs
             colour = 'silver'
             crit = true // always crits
-        } else if (type=='shadow') {
-            dealtdmg = Math.max(dmg*Math.min(user.flatDamageDealt,100)*Math.max(target.flatDamageReceived,100)*0.0001,0)
+        } else if (type == 'shadow') {
+            dealtdmg = Math.max(dmg * Math.min(user.flatDamageDealt, 100) * Math.max(target.flatDamageReceived, 100) * 0.0001, 0)
             colour = 'midnightblue'
-        } else if (type=='massive') {
+        } else if (type == 'massive') {
             dealtdmg = 99999
             colour = 'white'
-        } else if (type=='percentage') {
-            dealtdmg = Math.max(dmg*target.maxHealth*target.flatDamageReceived*0.0001,0) // in this case 'dmg' would the the percentage of health dealt as damage
+        } else if (type == 'percentage') {
+            dealtdmg = Math.max(dmg * target.maxHealth * target.flatDamageReceived * 0.0001, 0) // in this case 'dmg' would the the percentage of health dealt as damage
             colour = 'white'
         }
-        
-        if (dealtdmg > 0) await eventHandle('damaged',target,user,dealtdmg,type,crit) // passive effects upon damage
+
+        if (dealtdmg > 0) await eventHandle('damaged', target, user, dealtdmg, type, crit) // passive effects upon damage
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
         if (prot < dealtdmg) {
-            target.health -= dealtdmg-prot
+            target.health -= dealtdmg - prot
         }
         // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
         if (user.healthSteal > 0 && prot < dealtdmg) {
-            await heal(user,user,(dealtdmg-prot)*user.healthSteal*0.01)
+            await heal(user, user, (dealtdmg - prot) * user.healthSteal * 0.01)
         }
         //logElement.innerHTML += `<span style="colour: red;">+${Math.ceil(dealtdmg)}</span>`;
         await showFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, colour);
         return [dealtdmg, crit]
     } else {
-        await dodge(user,target)
+        await dodge(user, target)
         return [0, 'dodged']
     }
 }
 
-async function heal(user,target,healing) {
+async function heal(user, target, healing) {
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-    await showFloatingText(logElement, `-${Math.ceil(Math.min(target.maxHealth-target.health,healing))}`, 'green');
-    target.health = Math.min(target.health+healing,target.maxHealth)
+    await showFloatingText(logElement, `-${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
+    target.health = Math.min(target.health + healing, target.maxHealth)
 }
 
-async function TMchange(user,target,change) {
+async function TMchange(user, target, change) {
     target.turnMeter += change
-    target.turnMeter = (target.turnMeter<0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
+    target.turnMeter = (target.turnMeter < 0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
 }
 
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
