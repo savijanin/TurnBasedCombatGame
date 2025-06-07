@@ -910,7 +910,7 @@ const infoAboutEffects = {
             if (unit.isTarget == true) { // check if this taunter is the target
                 let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
                 if (unitTeam.filter(battleBro => battleBro.taunting).length > 0) { // if there's another taunter
-                    changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
+                    await changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
                 }
             }
         }
@@ -1179,7 +1179,7 @@ async function createBattleBroVars() {
             battleBro.cooldowns[skillName] = skill.initialCooldown || 0
         }
     }
-    eventHandle('start')
+    await eventHandle('start')
 }
 
 async function updateBattleBrosHtmlText() {
@@ -1247,7 +1247,7 @@ async function updateCurrentBattleBroSkillImages() {
             abilityCooldown.innerText = processedAbility.cooldown ? processedAbility.cooldown : ''
         }
     }
-    reduceCooldowns(battleBro)
+    await reduceCooldowns(battleBro)
     let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     if (characterPassives) {
         for (i = 0; i < characterPassives.length; i++) {
@@ -1368,10 +1368,9 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
+            await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
             //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
             await useAbility(pendingAbility.abilityName,pendingAbility.user,pendingAbility.target,true)
-            //endTurn(pendingAbility.user)
             pendingAbility = null
             return
         } else {
@@ -1472,7 +1471,7 @@ async function abilityClicked(clickedElement) {
             break
         }
     }*/
-    await useAbility(abilityName,battleBro,target,true)
+    if (!pendingAbility) await useAbility(abilityName,battleBro,target,true)
     /* old physical damage command that operated with tags
     if (tags) {
         for (let tag of tags) {
@@ -1485,9 +1484,6 @@ async function abilityClicked(clickedElement) {
         console.log('tags haven\'t been defined!')
     }
     */
-    if (!pendingAbility) {
-        //endTurn(battleBro)
-    }
 
     // let a = clickedElement.attr("data-test1")
     // let b = clickedElement.attr("data-abilityNumber")
@@ -1496,7 +1492,6 @@ async function abilityClicked(clickedElement) {
 
 async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) {
     let ability = infoAboutAbilities[abilityName]
-    let abilityFunction
     let animation = false
     if (ability.abilityTags.includes("projectile_attack")) {
         animation = true
@@ -1519,15 +1514,31 @@ async function useAbility(abilityName,battleBro,target,hasTurn=false,type=null) 
         );*/
 
     }
-    abilityFunction = await ability.use?.(battleBro,target)
+    let abilityUsed
+    if (ability.use)
+        abilityUsed = await ability.use(battleBro,target)
     console.log(abilityName)
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
         return;
     }
+    let attack
+    if (type) {
+        attack=(battleBro.queuedAttacks.length > 0) ? battleBro.queuedAttacks.shift() : null // if this attack is a counter, assist, or bonus then remove it from the list of queued attacks
+    }
+    if (battleBro.queuedAttacks.length > 0) {
+        let abilityName = infoAboutCharacters[battleBro.character].abilities[0] // basic ability
+        await useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],hasTurn,battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
+    } else {
+        if (attack) {
+            await checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
+        } else {
+            await checkAttacks() // otherwise check normally
+        }
+    }
     battleBro.cooldowns[abilityName] = ability.cooldown || 0
     await updateAbilityCooldownUI(battleBro, abilityName)
-    if (hasTurn==true && animation==false) await endTurn(battleBro)
+    //if (hasTurn==true) await endTurn(battleBro)
 }
 
 async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, type, color = '#FF0000') {
@@ -1573,22 +1584,6 @@ async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn
     // Remove after animation
     await wait(600)
     projectile.remove();
-    let abilityUsed = ability.use?.(battleBro,target)
-    let attack
-    if (type) {
-        attack=battleBro.queuedAttacks.shift()
-    }
-    if (battleBro.queuedAttacks.length > 0) {
-        let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
-        useAbility(abilityName,battleBro,battleBro.queuedAttacks[0][0],hasTurn,battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
-    } else {
-        if (attack) {
-            checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
-        } else {
-            checkAttacks() // otherwise check normally
-        }
-    }
-    //if (hasTurn==true && battleBro.queuedAttacks.length == 0) endTurn(battleBro) placeholder: end the turn when the select battleBro has no attacks remaining
     return 'projectile hit'
 }
 
@@ -1600,19 +1595,22 @@ async function endTurn(battleBro) {
 }
 
 async function checkAttacks(type) {
-    //let allQueuedAttacks = [[],[]]
+    console.log('checkingattacks')
     let enemyTeamHasAttacks
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             if (battleBro.team == battleBros[selectedBattleBroNumber].team) {
+                console.log('selected guys team still has some attacks to run through')
                 return
             } else {
                 enemyTeamHasAttacks = true
+                console.log('enemyTeamHasAttacks')
             }
         }
     }
     if (enemyTeamHasAttacks==true&&type!=='counter') { // engage counters if the selected Bro's team's attacks are all spent
         await engageCounters()
+        console.log('engaging counter attacks')
     } else if (enemyTeamHasAttacks!==true) { // end the turn when no-one has any attacks anymore
         await endTurn(battleBros[selectedBattleBroNumber])
     }
@@ -1667,22 +1665,22 @@ async function engageCounters() {
 }*/
 
 async function showFloatingText(targetElement, value, colour) {
-  const floatText = document.createElement('span');
-  floatText.className = 'floating-text';
-  floatText.textContent = value;
-  floatText.style.color = colour;
+    const floatText = document.createElement('span');
+    floatText.className = 'floating-text';
+    floatText.textContent = value;
+    floatText.style.color = colour;
 
-  // Position the text inside the target box
-  floatText.style.left = '50%';
-  floatText.style.top = '0';
-  floatText.style.transform = 'translateX(-50%)';
-  
-  targetElement.appendChild(floatText);
+    // Position the text inside the target box
+    floatText.style.left = '50%';
+    floatText.style.top = '0';
+    floatText.style.transform = 'translateX(-50%)';
+    
+    targetElement.appendChild(floatText);
 
-  // Remove it after animation ends
-  setTimeout(() => {
-    floatText.remove();
-  }, 2000); // matches animation duration
+    // Remove it after animation ends
+    setTimeout(() => {
+        floatText.remove();
+    }, 2000); // matches animation duration
 }
 
 async function playStatusEffectGlow(characterDiv, effectName) {
@@ -1735,8 +1733,8 @@ async function applyEffect(battleBro, target, effectName, duration=1, isLocked =
         remove: info.remove,
     };
     if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
-        effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
-        eventHandle('gainedEffect',target,battleBro,effectName)
+        await effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
+        await eventHandle('gainedEffect',target,battleBro,effectName)
         await playStatusEffectGlow(target.avatarHtmlElement, effectName)
         console.log('effect applied')
     } else {
@@ -1752,8 +1750,8 @@ async function updateEffectsAtTurnEnd(battleBro) {
         const effect = battleBro.buffs[i];
         effect.duration -= 1;
         if (effect.duration <= 0) {
-            effect.remove(battleBro);
-            eventHandle('lostEffect',battleBro,effect.caster,effect.name)
+            await effect.remove(battleBro);
+            await eventHandle('lostEffect',battleBro,effect.caster,effect.name)
             battleBro.buffs.splice(i, 1);
         }
     }
@@ -1873,7 +1871,7 @@ async function dispel(battleBro, target, type) {
     for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
         const effect = battleBro.buffs[i];
         if (dispelledEffects.includes(effect)) {
-            effect.remove(battleBro);
+            await effect.remove(battleBro);
             await eventHandle('lostEffect',target,effect.caster,effect.name,battleBro)
             battleBro.buffs.splice(i, 1);
         }
@@ -1889,7 +1887,7 @@ async function removeEffect(battleBro,bufftag) {
             return (prev.duration < current.duration) ? prev : current;
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
-        shortestDurationEffect.remove(battleBro)
+        await shortestDurationEffect.remove(battleBro)
         await eventHandle('lostEffect',battleBro,shortestDurationEffect.caster,shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
@@ -1982,6 +1980,7 @@ async function dodge(user,target) {
 }
 
 async function dealDmg(user,target,dmg,type) {
+    //if (user.team===battleBros[selectedBattleBroNumber].team) {
     await eventHandle('attacked',target,user)
     if (Math.random() > target.evasion * 0.01 && !['shadow','massive','percentage'].includes(type)) { // shadow, massive, and percentage damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
