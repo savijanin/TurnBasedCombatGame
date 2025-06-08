@@ -353,7 +353,7 @@ const infoAboutAbilities = {
             console.log('Waiting for ally target...')
         },
         allyUse: async function (battleBro, ally) {
-            await heal(battleBro, ally, battleBro.physicalDamage)
+            await heal(battleBro, ally, battleBro.physicalDamage,'protection')
         }
     },
     'bowcaster': {
@@ -852,6 +852,42 @@ const infoAboutPassives = {
 }
 
 const infoAboutEffects = {
+    'accuracyUp': {
+        name: 'accuracyUp',
+        image: 'images/effects/accuracyUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'accuracy'],
+        apply: async function (unit) {
+            unit.accuracy += 100
+        },
+        remove: async function (unit) {
+            unit.accuracy -= 100
+        }
+    },
+    'criticalChanceUp': {
+        name: 'criticalChanceUp',
+        image: 'images/effects/criticalChanceUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'critChance'],
+        apply: async function (unit) {
+            unit.critChance += 25
+        },
+        remove: async function (unit) {
+            unit.critChance -= 25
+        }
+    },
+    'criticalDamageUp': {
+        name: 'criticalDamageUp',
+        image: 'images/effects/criticalDamageUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'critDamage'],
+        apply: async function (unit) {
+            unit.critDamage += 50
+        },
+        remove: async function (unit) {
+            unit.critDamage -= 50
+        }
+    },
     'defenceUp': {
         name: 'defenceUp',
         image: 'images/effects/defenceUp.png',
@@ -878,6 +914,18 @@ const infoAboutEffects = {
             unit.defencePenetration -= 50
         }
     },
+    'evasionUp': {
+        name: 'evasionUp',
+        image: 'images/effects/evasionUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'evasion'],
+        apply: async function (unit) {
+            unit.evasion += 15
+        },
+        remove: async function (unit) {
+            unit.evasion -= 15
+        }
+    },
     'foresight': {
         name: 'foresight',
         image: 'images/effects/foresight.png',
@@ -888,6 +936,18 @@ const infoAboutEffects = {
         },
         remove: async function (unit) {
             unit.evasion -= 100
+        }
+    },
+    'healthStealUp': {
+        name: 'healthStealUp',
+        image: 'images/effects/healthStealUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'healthSteal'],
+        apply: async function (unit) {
+            unit.healthSteal += 50
+        },
+        remove: async function (unit) {
+            unit.healthSteal -= 50
         }
     },
     'healthUp': {
@@ -916,6 +976,44 @@ const infoAboutEffects = {
         remove: async function (unit) {
             unit.physicalDamage -= 50
             unit.specialDamage -= 50
+        }
+    },
+    'potencyUp': {
+        name: 'potencyUp',
+        image: 'images/effects/potencyUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'potency'],
+        apply: async function (unit) {
+            unit.potency += 100
+        },
+        remove: async function (unit) {
+            unit.potency -= 100
+        }
+    },
+    'protectionUp': {
+        name: 'protectionUp',
+        image: 'images/effects/protectionUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'protection', 'protectionHeal'],
+        apply: async function (unit) {
+            unit.maxProtection *= 1.15;
+            await heal(unit, unit, unit.maxProtection * 0.13, 'protection')
+        },
+        remove: async function (unit) {
+            unit.maxProtection /= 1.15;
+            unit.protection = Math.min(unit.protection, unit.maxProtection) // Make sure prot doesn't surpass max prot when max prot is lowered
+        }
+    },
+    'speedUp': {
+        name: 'speedUp',
+        image: 'images/effects/speedUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'speed'],
+        apply: async function (unit) {
+            unit.speedPercent += 25
+        },
+        remove: async function (unit) {
+            unit.speedPercent -= 25
         }
     },
     'stealth': {
@@ -957,6 +1055,19 @@ const infoAboutEffects = {
             }
         }
     },
+    'tenacityUp': {
+        name: 'tenacityUp',
+        image: 'images/effects/tenacityUp.png',
+        type: 'buff',
+        effectTags: ['stack', 'up', 'tenacity'],
+        apply: async function (unit) {
+            unit.tenacity+=100
+        },
+        remove: async function (unit) {
+            unit.tenacity-=100
+        }
+    },
+    // ----------------------------------------------------------------- DEBUFFS -----------------------------------------------------------------
     'abilityBlock': {
         name: 'abilityBlock',
         image: 'images/effects/abilityBlock.png',
@@ -970,6 +1081,18 @@ const infoAboutEffects = {
             }*/
         },
         remove: async function (unit) { }
+    },
+    'accuracyDown': {
+        name: 'accuracyDown',
+        image: 'images/effects/accuracyDown.png',
+        type: 'debuff',
+        effectTags: ['stack','down', 'accuracy'],
+        apply: async function (unit) {
+            unit.accuracy -= 15
+        },
+        remove: async function (unit) {
+            unit.accuracy += 15
+        }
     },
     'bleed': {
         name: 'bleed',
@@ -995,6 +1118,30 @@ const infoAboutEffects = {
         },
         remove: async function (unit) {
 
+        }
+    },
+    'criticalChanceDown': {
+        name: 'criticalChanceDown',
+        image: 'images/effects/criticalChanceDown.png',
+        type: 'debuff',
+        effectTags: ['stack','down', 'critChance'],
+        apply: async function (unit) {
+            unit.critChance -= 25
+        },
+        remove: async function (unit) {
+            unit.critChance += 25
+        }
+    },
+    'criticalDamageDown': {
+        name: 'criticalDamageDown',
+        image: 'images/effects/criticalDamageDown.png',
+        type: 'debuff',
+        effectTags: ['stack','down', 'critDamage'],
+        apply: async function (unit) {
+            unit.critDamage -= 50
+        },
+        remove: async function (unit) {
+            unit.critDamage += 50
         }
     },
     'daze': {
@@ -1054,7 +1201,7 @@ const infoAboutEffects = {
         name: 'potencyDown',
         image: 'images/effects/potencyDown.png',
         type: 'debuff',
-        effectTags: ['down', 'potency'],
+        effectTags: ['stack','down', 'potency'],
         apply: async function (unit) {
             unit.potency -= 100
         },
@@ -1084,7 +1231,7 @@ const infoAboutEffects = {
         name: 'tenacityDown',
         image: 'images/effects/tenacityDown.png',
         type: 'debuff',
-        effectTags: ['down', 'potency'],
+        effectTags: ['stack','down', 'potency'],
         apply: async function (unit) {
             unit.tenacity -= 100
         },
@@ -1853,7 +2000,7 @@ async function assist(battleBro, target, caller, abilityIndex = 0) {
     console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
     battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    await useAbility(abilityName, battleBro, target, false, 'assist')
+    useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
 }
 
 async function addAttackToQueue(battleBro, target) {
@@ -1873,7 +2020,7 @@ async function engageCounters() {
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
-            await useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1])
+            useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
         }
     }
 }
@@ -2218,7 +2365,7 @@ async function dodge(user, target) {
 async function dealDmg(user, target, dmg, type) {
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
     if (type!=='shadow') await eventHandle('attacked', target, user) // activate passive conditions upon being attacke dunless the damage is shadow damage
-    if (Math.random() > target.evasion * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
+    if (Math.random() > (target.evasion-user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
         let colour // prepare the colour for the damage types
@@ -2295,10 +2442,15 @@ async function dealDmg(user, target, dmg, type) {
     }
 }
 
-async function heal(user, target, healing) {
+async function heal(user, target, healing, type='health') {
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-    await showFloatingText(logElement, `-${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
-    target.health = Math.min(target.health + healing, target.maxHealth)
+    if (type=='health') {
+        await showFloatingText(logElement, `+${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
+        target.health = Math.min(target.health + healing, target.maxHealth)
+    } else { // healing protection
+        await showFloatingText(logElement, `+${Math.ceil(Math.min(target.maxProtection - target.protection, healing))}`, 'turquoise');
+        target.protection = Math.min(target.protection + healing, target.maxProtection)
+    }
 }
 
 async function TMchange(user, target, change) {
