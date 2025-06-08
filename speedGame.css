@@ -28,6 +28,12 @@ body {
     transform: translateX(-50%);
 }
 
+.projectile-animation {
+  transform-origin: center center;
+  position: absolute;
+  will-change: transform;
+}
+
 #myAbilities img {
     position: absolute;
 }
@@ -87,5 +93,24 @@ body {
     100% {
         opacity: 0;
         transform: translate(-50%, -50%) scale(1.5);
+    }
+}
+
+.spark {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, yellow, orange);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 1;
+    animation: spark-fly 0.5s ease-out forwards;
+    z-index: 20;
+}
+
+@keyframes spark-fly {
+    to {
+        transform: translate(var(--dx), var(--dy));
+        opacity: 0;
     }
 }

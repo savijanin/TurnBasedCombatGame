@@ -361,6 +361,7 @@ const infoAboutAbilities = {
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
         abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
+        projectile: 'redLaser',
         abilityDamage: 117.8,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
         use: async function (battleBro, target) {
@@ -443,7 +444,7 @@ const infoAboutAbilities = {
                     }
                 }
             }
-            for (let ally of battleBros.filter(ally => ally.team == battleBro.team && ally!==battleBro)) {
+            for (let ally of battleBros.filter(ally => ally.team == battleBro.team && ally !== battleBro)) {
                 if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
                     battleBro.turnMeter += 100
                 }
@@ -459,10 +460,10 @@ const infoAboutAbilities = {
         abilityDamage: 299.9,
         desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
         use: async function (battleBro, target) {
-            let hit = await dealDmg(battleBro,target,this.abilityDamage,'special')
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'special')
             if (hit[0] > 0) {
-                await TMchange(battleBro,target,-70)
-                if (target.health < target.maxHealth) await applyEffect(battleBro,target,'stun',1)
+                await TMchange(battleBro, target, -70)
+                if (target.health < target.maxHealth) await applyEffect(battleBro, target, 'stun', 1)
             }
         }
     },
@@ -473,7 +474,7 @@ const infoAboutAbilities = {
         cooldown: 4,
         abilityTags: ['turnmeter_recovery', 'buff_gain'],
         desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
-        use: async function (battleBro,target) {
+        use: async function (battleBro, target) {
 
         }
     },
@@ -579,13 +580,15 @@ const infoAboutAbilities = {
     },
     'Super Strike': {
         displayName: "Super Strike",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStrike.png',
         abilityType: 'special',
         cooldown: 5,
         abilityTags: ['attack', 'physical_damage'],
-        abilityDamage: 5000,
+        abilityDamage: 10000,
         desc: 'Deal true damage to target enemy, inflict Doomed, Fear and Bleed for 3 turns to target enemy. If this ability scores a critical hit, use this ability again. If this ability defeats an enemy, inflict Fear to all enemies for 1 turn.',
         use: async function (battleBro, target) {
+            let savedEvasion = target.evasion
+            target.evasion -= savedEvasion
             await applyEffect(battleBro, target, 'doomed', 3)
             let hit = await dealDmg(battleBro, target, this.abilityDamage, 'true')
             await applyEffect(battleBro, target, 'fear', 3)
@@ -599,10 +602,11 @@ const infoAboutAbilities = {
             if (target.isDead == true) {
                 for (let enemy of battleBros) {
                     if (enemy.team !== battleBro.team) {
-                        await applyEffect(battleBro,enemy,'fear',1)
+                        await applyEffect(battleBro, enemy, 'fear', 1)
                     }
                 }
             }
+            target.evasion+=savedEvasion
         }
     },
     'jangoUnscrupulousGunfire': {
@@ -1591,17 +1595,18 @@ async function abilityClicked(clickedElement) {
 
 async function useAbility(abilityName, battleBro, target, hasTurn = false, type = null) {
     let ability = infoAboutAbilities[abilityName]
-    let animation = false
+    let animation = null
     if (ability.abilityTags.includes("projectile_attack")) {
-        animation = true
+        animation = 'projectile'
         let taskDone = false
         await playProjectileAttackAnimation(
             battleBro,
             target,
-            ability,
+            abilityName,
             hasTurn,
             type,
-            "#00FFFF" // note-to-self-vary-colour
+            ability.projectile || null,
+            "#00FFFF"
         )
         /*abilityFunction = await playProjectileAttackAnimation(
             battleBro,
@@ -1612,6 +1617,17 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
             "#00FFFF" // note-to-self-vary-colour
         );*/
 
+    } else if (ability.abilityTags.includes("attack")) {
+        animation = 'melee'
+        await playMeleeAttackAnimation(
+            battleBro,
+            target,
+            abilityName,
+            hasTurn,
+            type,
+            ability.projectile || null,
+            "#00FFFF"
+        )
     }
     let abilityUsed
     if (ability.use)
@@ -1620,6 +1636,9 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
         return;
+    }
+    if (animation=='melee') {
+        await wait(200)
     }
     let attack
     if (type) {
@@ -1640,18 +1659,46 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
     //if (hasTurn==true) await endTurn(battleBro)
 }
 
-async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn, type, color = '#FF0000') {
+async function playProjectileAttackAnimation(battleBro, target, abilityName, hasTurn, type, imageName, colour = '#00FFFF') {
     const attackerDiv = battleBro.avatarHtmlElement.children()//.eq(0),  or wherever the character image is
     const targetDiv = target.avatarHtmlElement.children()//.eq(0),    same here
-    const projectile = document.createElement('div');
+    let projectile
+    if (imageName) {
+        projectile = document.createElement('img');
+        projectile.src = `images/projectiles/${imageName}.png`
+    } else {
+        projectile = document.createElement('div');
+    }
     projectile.className = 'projectile-animation';
     projectile.style.position = 'absolute';
-    projectile.style.width = '20px';
-    projectile.style.height = '20px';
-    projectile.style.backgroundColor = color;
-    projectile.style.borderRadius = '50%';
+    if (!imageName) {
+        projectile.style.width = '20px';
+        projectile.style.height = '20px';
+        projectile.style.backgroundColor = colour;
+        projectile.style.borderRadius = '50%';
+    } else {
+        // wait for image to load before setting dimensions
+        await new Promise((resolve, reject) => {
+            projectile.onload = () => {
+                projectile.style.width = `${projectile.naturalWidth}px`;
+                projectile.style.height = `${projectile.naturalHeight}px`;
+                console.log("Image dimensions set.");
+                resolve();
+            };
+            projectile.onerror = reject;
+        });
+        /*projectile.onload = function () {
+            projectile.style.width = `${projectile.naturalWidth}px`;
+            projectile.style.height = `${projectile.naturalHeight}px`;
+            console.log("Image dimensions set.");
+        };*/
+    }
     projectile.style.zIndex = '10';
-    projectile.style.transition = 'transform 0.6s ease';
+    if (imageName == 'redLaser') {
+        projectile.style.transition = 'transform 0.6s linear'
+    } else {
+        projectile.style.transition = 'transform 0.6s ease'
+    }
 
     // Get screen positions
     const attackerRect = attackerDiv.get(0).getBoundingClientRect();
@@ -1676,15 +1723,101 @@ async function playProjectileAttackAnimation(battleBro, target, ability, hasTurn
     void projectile.offsetWidth;
 
     // Animate to target
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    projectile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    const deltaX = endX - startX
+    const deltaY = endY - startY
+
+    if (imageName) {
+        // Normalize direction vector
+        const magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const normX = deltaX / magnitude;
+        const normY = deltaY / magnitude;
+        // Offset: move slightly *less* in the direction of travel
+        const adjustedDeltaX = deltaX - normX * (projectile.naturalWidth / 2);//1.3
+        const adjustedDeltaY = deltaY - normY * (projectile.naturalHeight / 2);//0.1
+        //const adjustedDeltaX = (deltaX - (projectile.naturalWidth))
+        //const adjustedDeltaY = (deltaY - (projectile.naturalHeight / 2))
+
+        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // Radians → Degrees
+        console.log(angle + '')
+        projectile.style.transform = `
+            translate(${adjustedDeltaX}px, ${adjustedDeltaY}px)
+            rotate(${angle}deg)
+            `
+    } else {
+        projectile.style.transform = `translate(${deltaX}px, ${deltaY}px)`
+    }
 
     // Remove after animation
     await wait(600)
     projectile.remove();
     return 'projectile hit'
 }
+
+async function playMeleeAttackAnimation(attacker, target, abilityName, hasTurn, type, imageName, colour = '#00FFFF') {
+    const attackerDiv = attacker.avatarHtmlElement.children()//.eq(0),  or wherever the character image is
+    const targetDiv = target.avatarHtmlElement.children()//.eq(0),    same here
+    // Get screen positions
+    const attackerRect = attackerDiv.get(0).getBoundingClientRect();
+    const targetRect = targetDiv.get(0).getBoundingClientRect();
+
+    // Distance to move (from center to center)
+    const deltaX = targetRect.left + targetRect.width / 2 - (attackerRect.left + attackerRect.width / 2);
+    const deltaY = targetRect.top + targetRect.height / 2 - (attackerRect.top + attackerRect.height / 2);
+
+    // Save original transform so we can return smoothly
+    const originalTransform = attackerDiv.css("transform");
+
+    // Move toward target
+    attackerDiv.css({
+        transition: 'transform 0.2s ease',
+        zIndex: 1000 // in front of target
+    });
+
+    await wait(10); // allow style to apply
+    attackerDiv.css("transform", `translate(${deltaX * 0.9}px, ${deltaY * 0.9}px)`); // Move part of the way
+
+    // Wait for lunge to complete
+    await wait(200);
+
+    // Wait a short moment after impact
+    await wait(100);
+
+    // Return to original position
+    attackerDiv.css({
+        transition: 'transform 0.2s ease',
+        transform: originalTransform || 'none'
+    });
+}
+
+async function playSparkImpact(x, y, primaryColour = 'yellow', secondaryColour = 'orange', numberOfSparks = 8) {
+    for (let i = 0; i < numberOfSparks; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'spark';
+
+        // Random angle and distance
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.max(20,numberOfSparks*2.5) + Math.random() * 10;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+
+        // Set position and animation vector
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        spark.style.setProperty('--dx', `${dx}px`);
+        spark.style.setProperty('--dy', `${dy}px`);
+
+        // Set custom colour glow using radial gradient!
+        spark.style.background = `radial-gradient(circle, ${primaryColour}, ${secondaryColour})`;
+
+        document.body.appendChild(spark);
+
+        // Remove spark after animation
+        setTimeout(() => {
+            spark.remove();
+        }, 500);
+    }
+}
+
 
 async function endTurn(battleBro) {
     battleBro.turnMeter -= 100
@@ -1727,7 +1860,7 @@ async function addAttackToQueue(battleBro, target) {
     if (battleBros[selectedBattleBroNumber].team !== battleBro.team) {
         console.log('counter attack logged')
         let currentTarget = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team)
-        currentTarget = (currentTarget.taunting==true) ? currentTarget : target
+        currentTarget = (currentTarget.taunting == true) ? currentTarget : target
         battleBro.queuedAttacks.push([currentTarget, 'counter'])
     } else if (engagingCounters == false) {
         console.log('bonus attack logged')
@@ -2084,24 +2217,31 @@ async function dodge(user, target) {
 
 async function dealDmg(user, target, dmg, type) {
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
-    await eventHandle('attacked', target, user)
-    if (Math.random() > target.evasion * 0.01 && !['shadow', 'massive', 'percentage'].includes(type)) { // shadow, massive, and percentage damage can't be evaded.
+    if (type!=='shadow') await eventHandle('attacked', target, user) // activate passive conditions upon being attacke dunless the damage is shadow damage
+    if (Math.random() > target.evasion * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
         let colour // prepare the colour for the damage types
+        const targetRect = target.avatarHtmlElement.children().get(0).getBoundingClientRect() // get the avatar location of the target for spark effects
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        let secondaryColour
         let dealtdmg
         if (type == 'physical') {
             dealtdmg = ((dmg * user.physicalDamage * 0.01) * (Math.max(1 - (Math.max(target.armour - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // 20=100-80 where 80 is the max damage negation from defence
             if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // physical attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'yellow' // change colour upon crit!
+                secondaryColour = 'orange'
                 crit = true
             } else {
                 colour = 'red'
+                secondaryColour = 'orange'
             }
         } else if (type == 'special') {
             dealtdmg = ((dmg * user.specialDamage * 0.01) * (Math.max(1 - (Math.max(target.resistance - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // uses resistance/special damage instead of armour/physical damage
             colour = 'cornflowerblue'
+            secondaryColour = 'cyan'
         } else if (type === 'true') {
             dealtdmg = Math.max(dmg * user.flatDamageDealt * target.flatDamageReceived * 0.0001, 0) // nice and simple true damage doesn't have damage variance
             colour = 'white'
@@ -2110,17 +2250,21 @@ async function dealDmg(user, target, dmg, type) {
             if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // ultra attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'violet' // change colour upon crit!
+                secondaryColour = 'orchid'
                 crit = true
             } else {
                 colour = 'purple'
+                secondaryColour = 'orchid'
             }
         } else if (type == 'silver') {
             dealtdmg = ((dmg * user.specialDamage * 0.015) * (Math.max(1 - (Math.max(infoAboutCharacters[target.character].resistance - user.defencePenetration, 0), 20) / 100)) - Math.floor(Math.random() * dmg * user.specialDamage * 0.01)) * user.flatDamageDealt * target.flatDamageReceived * 0.000001 * user.critDamage // lots of damage variance and ignores resistance buffs
             colour = 'silver'
+            secondaryColour = 'platinum'
             crit = true // always crits
         } else if (type == 'shadow') {
-            dealtdmg = Math.max(dmg * Math.min(user.flatDamageDealt, 100) * Math.max(target.flatDamageReceived, 100) * 0.0001, 0)
+            dealtdmg = Math.max((dmg - Math.floor(Math.random() * 501)) * Math.min(user.flatDamageDealt, 100) * Math.max(target.flatDamageReceived, 100) * 0.0001, 0)
             colour = 'midnightblue'
+            secondaryColour = 'black'
         } else if (type == 'massive') {
             dealtdmg = 99999
             colour = 'white'
@@ -2129,7 +2273,10 @@ async function dealDmg(user, target, dmg, type) {
             colour = 'white'
         }
 
-        if (dealtdmg > 0) await eventHandle('damaged', target, user, dealtdmg, type, crit) // passive effects upon damage
+        if (dealtdmg > 0) {
+            await playSparkImpact(endX,endY,colour,secondaryColour,Math.ceil(dealtdmg/625))
+            if (type!=='shadow') await eventHandle('damaged', target, user, dealtdmg, type, crit) // passive effects upon damage that isn't shadow damage
+        }
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
         if (prot < dealtdmg) {
