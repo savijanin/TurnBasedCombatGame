@@ -383,7 +383,7 @@ const infoAboutAbilities = {
         abilityTags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         use: async function (battleBro, target) {
-            await applyEffect(battleBro, battleBro, 'taunt', 2, 1, true);
+            await applyEffect(battleBro, battleBro, 'taunt', 2, 1, false, true);
             await applyEffect(battleBro, battleBro, 'healthUp', 2, 2);
         }
     },
@@ -449,6 +449,7 @@ const infoAboutAbilities = {
             for (let ally of battleBros.filter(ally => ally.team == battleBro.team && ally !== battleBro)) {
                 if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
                     battleBro.turnMeter += 100
+                    return
                 }
             }
         }
@@ -538,7 +539,7 @@ const infoAboutAbilities = {
             if (enemyHadShatterpoint) {
                 await TMchange(battleBro, ally, 100 - ally.turnMeter)
                 await TMchange(ally, battleBro, ally.turnMeter)
-                await applyEffect(battleBro, battleBro, 'resilientDefence', 100, 2)
+                await applyEffect(battleBro, battleBro, 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
         }
     },
@@ -836,19 +837,87 @@ const infoAboutPassives = {
     'vaapad': {
         displayName: 'Vaapad',
         image: 'images/abilities/abilityui_passive_def.png',
-        desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         zeta_desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         abilityType: 'unique',
         abilityTags: ['dispel', 'buff_gain'],
+        start: async function (owner) {
+            owner.maxHealth *= 1.3
+            owner.health *= 1.3
+
+            // Create memory space for this passive
+            if (!owner.customData) owner.customData = {}
+            owner.customData.passive4 = {
+                gotResilientDefenseThisCycle: false,
+                allyWithProtectionDamaged: false,
+            }
+        },
+        damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            // Only care if the target is an ally of the owner
+            if (target.team === owner.team && target !== owner && target.protection > 0) {
+                if (!owner.customData) owner.customData = {}
+                if (!owner.customData.passive4) owner.customData.passive4 = {}
+
+                owner.customData.passive4.allyWithProtectionDamaged = true // an ally has had its protection damaged!
+            }
+        },
+        endedTurn: async function (owner, selectedBro) {
+            // Only trigger if it's *someone else's* turn ending
+            if (selectedBro !== owner) {
+                const memory = owner.customData?.passive4
+                if (!memory) return;
+
+                if (
+                    memory.allyWithProtectionDamaged &&
+                    !memory.gotResilientDefenseThisCycle
+                ) {
+                    await applyEffect(owner, owner, 'resilientDefence', 999, 3)
+
+                    memory.gotResilientDefenseThisCycle = true;
+                    memory.allyWithProtectionDamaged = false;
+                }
+            } else {
+                // If it's owner's own turn ending, reset memory flag
+                const memory = owner.customData?.passive4;
+                if (memory) {
+                    memory.gotResilientDefenseThisCycle = false;
+                    memory.allyWithProtectionDamaged = false;
+                }
+            }
+        },
     },
     'senseWeakness': {
         displayName: 'Sense Weakness',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
-        zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Galactic Republic Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
+        zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         abilityType: 'unique',
-        abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery']
+        abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
+        start: async function (owner) {
+            owner.offence *= 1.3
+        },
+        startedTurn: async function (owner, selectedBro) {
+            if (owner == selectedBro) {
+                let enemyTeam = battleBros.filter(unit => unit.team !== owner.team)
+                for (let enemy of enemyTeam) {
+                    await dispel(owner, enemy, 'stealth')
+                }
+                let randomEnemy = enemyTeam[Math.floor(Math.random() * enemyTeam.length)]
+                await applyEffect(owner, randomEnemy, 'speedDown', 1)
+                await applyEffect(owner, randomEnemy, 'shatterpoint', 1, 1, false)
+            }
+        },
+        damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (attacker.team === owner.team) {
+                if (target.buffs.find(e => e.name = 'shatterpoint')) {
+                    for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
+                        await heal(owner,ally,ally.maxProtection*0.1,'protection')
+                        if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
+                            await applyEffect (owner,ally,'foresight',1)
+                        }
+                    }
+                }
+            }
+        }
     },
     'Elimination Protocol': {
         displayName: 'Elimination Protocol',
@@ -1442,6 +1511,8 @@ const argsMap = {
     attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], //target,attacker
     gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // target, caster, effectName
     lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, caster, effectName, dispeller
+    startedTurn: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1], // guy who started their turn
+    endedTurn: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1], // guy who ended their turn
 }
 async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
     console.log("eventHandle", type, arg1, arg2, arg3, arg4, arg5, arg6)
@@ -1764,6 +1835,7 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         await endTurn(battleBros[closestAvatar])
         return
     }
+    await eventHandle('startedTurn', battleBros[closestAvatar])
     if (battleBros[closestAvatar].buffs.find(e => e.effectTags.includes('stun'))) {
         await endTurn(battleBros[closestAvatar])
         return
@@ -2163,6 +2235,7 @@ async function playSparkImpact(x, y, primaryColour = 'yellow', secondaryColour =
 async function endTurn(battleBro) {
     battleBro.turnMeter -= 100
     engagingCounters = false
+    await eventHandle('endedTurn', battleBro)
     await updateBattleBrosHtmlText()
     await calculateNextTurnFromTurnMetersAndSpeeds()
     await updateEffectsAtTurnEnd(battleBro)
@@ -2310,10 +2383,10 @@ async function playStatusEffectGlow(characterDiv, effectName) {
     }, 800);
 }
 
-async function applyEffect(battleBro, target, effectName, duration = 1, stacks = 1, isLocked = false) {
+async function applyEffect(battleBro, target, effectName, duration = 1, stacks = 1, resistable = true, isLocked = false) {
     const info = infoAboutEffects[effectName];
     for (i = 0; i < stacks; i++) {
-        if (info.type == 'debuff' && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
+        if (info.type == 'debuff' && resistable == true && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
             await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
             return
         }
@@ -2478,8 +2551,15 @@ async function updateEffectIcons(battleBro) {
 }
 
 async function dispel(battleBro, target, type = null, dispelLocked = false) {
-    if (!battleBro) dispelLocked = true // if there's no dispeller then we're dispelling ALL of these effects
-    const dispelledEffects = (type) ? target.buffs.filter(effect => effect.type === type && (effect.isLocked !== true || dispelLocked == true)) : target.buffs.filter(effect => effect.isLocked !== true || dispelLocked == true)
+    if (!battleBro) dispelLocked = true // if there's no dispeller then we're probably dispelling ALL of these effects, including locked ones
+    let dispelledEffects
+    if (type && type !== 'buff' && type !== 'debuff' && type !== 'misc') { // if there's no type selected then we're dispelling a specific effect
+        dispelledEffects = target.buffs.filter(effect => effect.name === type && (effect.isLocked !== true || dispelLocked == true))
+    } else if (type) {
+        dispelledEffects = target.buffs.filter(effect => effect.type === type && (effect.isLocked !== true || dispelLocked == true))
+    } else { // dispel all effects if type=null
+        dispelledEffects = target.buffs.filter(effect => effect.isLocked !== true || dispelLocked == true)
+    }
     for (let i = target.buffs.length - 1; i >= 0; i--) {
         const effect = target.buffs[i];
         if (dispelledEffects.includes(effect)) {
@@ -2654,8 +2734,8 @@ async function dealDmg(user, target, dmg, type, triggerEventHandlers = true) {
         if (dealtdmg > 0) {
             await playSparkImpact(endX, endY, colour, secondaryColour, Math.ceil(dealtdmg / 625))
             // } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
-            if (target.buffs.find(e => e.effectTags.includes('loseOnHit'))) await removeEffect(target, 'loseOnHit')
             if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('damaged', target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg) // passive effects upon damage that isn't shadow damage
+            if (target.buffs.find(e => e.effectTags.includes('loseOnHit'))) await removeEffect(target, 'loseOnHit')
         }
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
