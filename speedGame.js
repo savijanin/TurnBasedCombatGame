@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* global $ */
+
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
@@ -536,7 +539,7 @@ const infoAboutAbilities = {
         }
     },
     'thisPartysOver': {
-        displayName: "This party\'s over",
+        displayName: "This party's over",
         image: 'images/abilities/ability_macewindu_special02.png',
         abilityType: 'special',
         cooldown: 3,
@@ -550,7 +553,7 @@ const infoAboutAbilities = {
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
             let enemyHadShatterpoint = target.buffs?.find(e => e.name === 'shatterpoint')
-            promise = await assist(ally, target, battleBro)
+            await assist(ally, target, battleBro)
             await heal(battleBro, ally, ally.maxProtection * 0.3, 'protection')
             await heal(battleBro, battleBro, battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
@@ -559,7 +562,6 @@ const infoAboutAbilities = {
                 console.log(100 - ally.turnMeter)
                 await applyEffect(battleBro, battleBro, 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
-            //await promise
         }
     },
     'Lethal Swing': {
@@ -1202,7 +1204,7 @@ const infoAboutEffects = {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.taunting = true
             await removeEffect(unit, 'stealth')
-            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
+            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length == 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -1639,14 +1641,13 @@ async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
             for (let passive of battleBro.passives) {
-                fct = infoAboutPassives[passive]?.[type]
+                let fct = infoAboutPassives[passive]?.[type]
                 if (fct) {
                     //console.log("Calling infoAboutPassives " + passive + " " + type)
-                    ret = await fct(battleBro, ...args)
-                    //console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
+                    let ret = await fct(battleBro, ...args)
+                    console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
                 } else {
-                    ret = "<not defined>"
-                    //console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
+                    console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
                 }
 
             }
@@ -1769,7 +1770,7 @@ async function createBattleBroVars() {
         battleBro.skillsData = []
         for (let skillName of infoAboutCharacter?.abilities || []) {
             let skill = JSON.parse(JSON.stringify(infoAboutAbilities[skillName]))
-            skillData = {
+            let skillData = {
                 skill: skill,
                 cooldown: skill.initialCooldown,
             }
@@ -1836,7 +1837,7 @@ async function updateCurrentBattleBroSkillImages() {
     // loop over battlebro abilities and display them
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
     if (battleBro.skillsData) {
-        for (i = 0; i < battleBro.skillsData.length; i++) {
+        for (let i = 0; i < battleBro.skillsData.length; i++) {
             let processedAbility = battleBro.skillsData[i]
             let imagePngPath = processedAbility.skill.image
 
@@ -1865,7 +1866,7 @@ async function updateCurrentBattleBroSkillImages() {
     await changeCooldowns(battleBro, -1)
     let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     if (characterPassives) {
-        for (i = 0; i < characterPassives.length; i++) {
+        for (let i = 0; i < characterPassives.length; i++) {
             let processingPassive = characterPassives[i]
             let imagePngPath = infoAboutPassives[processingPassive].image
 
@@ -2005,9 +2006,10 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
+            let promise1 = pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
             //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
-            await useAbility(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
+            let promise2 = useAbility(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
+            await Promise.all([promise1, promise2])
             pendingAbility = null
             return
         } else {
@@ -2423,8 +2425,7 @@ async function assist(battleBro, target, caller, abilityIndex = 0) {
     await wait(50)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
     battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    var promise = useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
-    return promise
+    await useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
 }
 
 async function addAttackToQueue(battleBro, target) {
@@ -2443,12 +2444,15 @@ async function addAttackToQueue(battleBro, target) {
 async function engageCounters() {
     await logFunctionCall('engageCounters', ...arguments)
     engagingCounters = true // enemy team is now counter attacking!
+    let promises = []
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
-            useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
+            let promise = useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
+            promises.push(promise)
         }
     }
+    await Promise.all(promises)
 }
 
 /*async function engageQueuedAttacks() { await logFunctionCall('engageQueuedAttacks', ...arguments)
@@ -2548,7 +2552,7 @@ async function playStatusEffectGlow(characterDiv, effectName) {
 async function applyEffect(battleBro, target, effectName, duration = 1, stacks = 1, resistable = true, isLocked = false) {
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
-    for (i = 0; i < stacks; i++) {
+    for (let i = 0; i < stacks; i++) {
         if (info.type == 'debuff' && resistable == true && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
             await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
             return
@@ -3025,7 +3029,7 @@ async function startKraytRaid() {
 
 async function runOnAuto(runForever = true) {
     await logFunctionCall('runOnAuto', ...arguments)
-    count = 0
+    let count = 0
     try {
         while (runForever || count++ == 0) {
             // Click next
