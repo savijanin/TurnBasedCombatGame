@@ -1252,7 +1252,7 @@ const infoAboutEffects = {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.taunting = true
             await removeEffect(unit, 'stealth')
-            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
+            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length == 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -2390,12 +2390,12 @@ async function endTurn(battleBro) {
 
 async function checkAttacks(type) {
     await logFunctionCall('checkAttacks', ...arguments)
-    console.log('checkingattacks')
+    console.log("checkAttacks called. Type:", type, "Pending:", pendingAttackCount, "Engaged:", engagingCounters);
     while (pendingAttackCount > 1) {
         console.log(pendingAttackCount)
         await wait(50)
     }
-    let enemyTeamHasAttacks
+    let enemyTeamHasAttacks = false
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             if (battleBro.team == battleBros[selectedBattleBroNumber].team) {
@@ -2407,21 +2407,23 @@ async function checkAttacks(type) {
             }
         }
     }
-    if (enemyTeamHasAttacks == true && type !== 'counter') { // engage counters if the selected Bro's team's attacks are all spent
+    if (enemyTeamHasAttacks == true && type !== 'counter' && engagingCounters!==true) { // engage counters if the selected Bro's team's attacks are all spent
+        engagingCounters = true
         await engageCounters()
         console.log('engaging counter attacks')
     } else if (enemyTeamHasAttacks !== true) { // end the turn when no-one has any attacks anymore
         await endTurn(battleBros[selectedBattleBroNumber])
+        engagingCounters=false
     }
 }
 
 async function assist(battleBro, target, caller, abilityIndex = 0) {
     await logFunctionCall('assist', ...arguments)
-    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target)
+    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target.character)
     await wait(50)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
     battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    promise = useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
+    var promise = useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
     return promise
 }
 
