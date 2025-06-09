@@ -339,7 +339,7 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (battleBro, target) {
             await dealDmg(battleBro, target, this.abilityDamage, 'physical')
-            await applyEffect(battleBro, battleBro, 'offenceUp', 2, true);
+            await applyEffect(battleBro, battleBro, 'offenceUp', 2);
         }
     },
     'test2': {
@@ -347,7 +347,7 @@ const infoAboutAbilities = {
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         abilityType: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'special_damage', 'health_recovery', 'target_ally'],
+        abilityTags: ['target_ally', 'attack', 'special_damage', 'health_recovery'],
         abilityDamage: 160,
         desc: 'Heal target ally + special dmg dealt',
         use: async function (battleBro, target) {
@@ -355,7 +355,7 @@ const infoAboutAbilities = {
             // insert target ally part
             console.log('Waiting for ally target...')
         },
-        allyUse: async function (battleBro, ally) {
+        allyUse: async function (battleBro, ally, target) {
             await heal(battleBro, ally, battleBro.physicalDamage, 'protection')
         }
     },
@@ -383,9 +383,8 @@ const infoAboutAbilities = {
         abilityTags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         use: async function (battleBro, target) {
-            await applyEffect(battleBro, battleBro, 'taunt', 2, true);
-            await applyEffect(battleBro, battleBro, 'healthUp', 2);
-            await applyEffect(battleBro, battleBro, 'healthUp', 2);
+            await applyEffect(battleBro, battleBro, 'taunt', 2, 1, true);
+            await applyEffect(battleBro, battleBro, 'healthUp', 2, 2);
         }
     },
     'defiantRoar': {
@@ -490,22 +489,58 @@ const infoAboutAbilities = {
         desc: "Meal Special damage to target enemy and inflict Ability Block for 1 turn. This attack deals bonus damage equal to 5% of Mace's Max Health. If Mace is above 50% Health, he gains 15% Turn Meter. If Mace is below 50% Health, he recovers Health equal to 100% of the damage dealt.",
         use: async function (battleBro, target) {
             let hit = await dealDmg(battleBro, target, this.abilityDamage, 'special')
+            let hit2 = await dealDmg(battleBro, target, battleBro.maxHealth * 0.05, 'true', false)
             if (hit[0] > 0) {
                 await applyEffect(battleBro, target, 'abilityBlock', 1)
+            }
+            if (battleBro.health > battleBro.maxHealth * 0.5) {
+                await TMchange(battleBro, battleBro, 15)
+            } else {
+                await heal(battleBro, battleBro, hit[0] + hit2[0])
             }
         }
     },
     'smite': {
         displayName: 'smite',
         image: 'images/abilities/ability_macewindu_special01.png',
+        abilityType: 'special',
+        cooldown: 3,
         abilityTags: ['attack', 'special_damage'],
-        desc: "Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter."
+        abilityDamage: 184,
+        desc: "Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter.",
+        use: async function (battleBro, target) {
+            let enemyHadShatterpoint = target.buffs?.find(e => e.name === 'shatterpoint')
+            dispel(battleBro, target, 'buff')
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'special')
+            if (enemyHadShatterpoint) {
+                await applyEffect(battleBro, target, 'stun', 1)
+                await TMchange(battleBro, target, -50)
+                await TMchange(battleBro, battleBro, 50)
+            }
+        }
     },
     'thisPartysOver': {
-        displayName: "This party's over",
+        displayName: "This party\'s over",
         image: 'images/abilities/ability_macewindu_special02.png',
-        abilityTags: ['attack', 'special_damage'],
-        desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection."
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['target_ally', 'attack', 'special_damage'],
+        abilityDamage: 184,
+        desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection.",
+        use: async function (battleBro, target) {
+            let hit = await dealDmg(battleBro, target, this.abilityDamage, 'special')
+        },
+        allyUse: async function (battleBro, ally, target) {
+            let enemyHadShatterpoint = target.buffs?.find(e => e.name === 'shatterpoint')
+            await assist(ally, target, battleBro)
+            await heal(battleBro, ally, ally.maxProtection * 0.3, 'protection')
+            await heal(battleBro, battleBro, battleBro.maxProtection * 0.3, 'protection')
+            if (enemyHadShatterpoint) {
+                await TMchange(battleBro, ally, 100 - ally.turnMeter)
+                await TMchange(ally, battleBro, ally.turnMeter)
+                await applyEffect(battleBro, battleBro, 'resilientDefence', 100, 2)
+            }
+        }
     },
     'Lethal Swing': {
         displayName: "Lethal Swing",
@@ -785,6 +820,18 @@ const infoAboutPassives = {
         desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
         abilityType: 'leader',
         abilityTags: ['health_recovery'],
+        start: async function (owner) {
+            for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
+                ally.maxHealth *= 1.2
+                ally.health *= 1.2
+                ally.offence *= 1.2
+            }
+        },
+        damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (owner.team == attacker.team && crit == true) {
+                await heal(attacker, attacker, target.maxHealth * 0.1)
+            }
+        }
     },
     'vaapad': {
         displayName: 'Vaapad',
@@ -1007,6 +1054,28 @@ const infoAboutEffects = {
             unit.protection = Math.min(unit.protection, unit.maxProtection) // Make sure prot doesn't surpass max prot when max prot is lowered
         }
     },
+    'resilientDefence': {
+        name: 'resilientDefence',
+        image: 'images/effects/resilientDefence.png',
+        type: 'buff',
+        effectTags: ['stack', 'taunt', 'target', 'loseOnHit'],
+        apply: async function (unit) {
+            unit.taunting = true
+            await removeEffect(unit, 'stealth')
+            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
+        },
+        remove: async function (unit) {
+            if (!(unit.buffs.find(e => e.effectTags.includes('taunt')))) {
+                unit.taunting = false
+                if (unit.isTarget == true) { // check if this taunter is the target
+                    let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
+                    if (unitTeam.filter(battleBro => battleBro.taunting).length > 0) { // if there's another taunter
+                        await changingTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
+                    }
+                }
+            }
+        }
+    },
     'speedUp': {
         name: 'speedUp',
         image: 'images/effects/speedUp.png',
@@ -1026,15 +1095,7 @@ const infoAboutEffects = {
         effectTags: ['stealth', 'target'],
         apply: async function (unit) {
             await removeEffect(unit, 'taunt')
-            if (unit.isTarget == true) { // if the guy who just got stealth is the target, we need to set the target to another member of the same team
-                let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team && battleBro.isDead == false)
-                unitTeam = unitTeam.splice(unitTeam.indexOf(unit), 1)
-                if (unitTeam.filter(battleBro => battleBro.taunting).length == 0) {
-                    await changeTarget(unitTeam[0])
-                } else { // if there's at least one other guy with taunt on the same team as the stealthed guy, make them the target
-                    await changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0])
-                }
-            }
+            await switchTarget(unit)
         },
         remove: async function (unit) { }
     },
@@ -1046,14 +1107,14 @@ const infoAboutEffects = {
         apply: async function (unit) {
             unit.taunting = true
             await removeEffect(unit, 'stealth')
-            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changeTarget(unit) // don't switch the target if there's another member of this character's team taunting
+            if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length = 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
         },
         remove: async function (unit) {
             unit.taunting = false
             if (unit.isTarget == true) { // check if this taunter is the target
                 let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
                 if (unitTeam.filter(battleBro => battleBro.taunting).length > 0) { // if there's another taunter
-                    await changeTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
+                    await changingTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
                 }
             }
         }
@@ -1201,7 +1262,7 @@ const infoAboutEffects = {
         name: 'fear',
         image: 'images/effects/fear.png',
         type: 'debuff',
-        effectTags: ['stack', 'singleUse', 'lostOnHit', 'stun'],
+        effectTags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
         apply: async function (unit) {
             unit.evasion -= 10000
         },
@@ -1276,6 +1337,20 @@ const infoAboutEffects = {
             unit.protection *= 1.15
         }
     },
+    'shatterpoint': {
+        name: 'shatterpoint',
+        image: 'images/effects/shatterpoint.png',
+        type: 'debuff',
+        effectTags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
+        apply: async function (unit) { },
+        remove: async function (unit) {
+            unit.armour *= 0.9
+            unit.resistance *= 0.9
+            unit.maxHealth /= 1.1
+            unit.health /= 1.1
+            unit.offence *= 0.9
+        }
+    },
     'speedDown': {
         name: 'speedDown',
         image: 'images/effects/speedDown.png',
@@ -1292,10 +1367,12 @@ const infoAboutEffects = {
         name: 'stun',
         image: 'images/effects/stun.png',
         type: 'debuff',
-        effectTags: ['stun'],
+        effectTags: ['stun', 'evasion'],
         apply: async function (unit) {
+            unit.evasion -= 200
         },
         remove: async function (unit) {
+            unit.evasion += 200
         }
     },
     'targetLock': {
@@ -1523,6 +1600,7 @@ async function updateBattleBrosHtmlText() {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
             battleBro.isDead = true
             await dispel(null, battleBro)
+            await switchTarget(battleBro)
             // change avatar look to be dead
             const img = battleBro.avatarHtmlElement.children()
             img.css({
@@ -1534,16 +1612,6 @@ async function updateBattleBrosHtmlText() {
                 pointerEvents: 'none'                      // disables interaction
             })
             await wait(500)
-
-            if (battleBro.isTarget == true) { // if the guy who just got stealth is the target, we need to set the target to another member of the same team
-                let battleBroTeam = battleBros.filter(ally => ally.team == battleBro.team && ally.isDead == false)
-                battleBroTeam = battleBroTeam.splice(battleBroTeam.indexOf(battleBro), 1)
-                if (battleBroTeam.filter(ally => ally.taunting).length == 0) {
-                    await changeTarget(battleBroTeam[0])
-                } else { // if there's at least one other guy with taunt on the same team as the stealthed guy, make them the target
-                    await changeTarget(battleBroTeam.filter(ally => ally.taunting)[0])
-                }
-            }
         }
         battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.protection)
         battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.turnMeter)
@@ -1696,6 +1764,10 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         await endTurn(battleBros[closestAvatar])
         return
     }
+    if (battleBros[closestAvatar].buffs.find(e => e.effectTags.includes('stun'))) {
+        await endTurn(battleBros[closestAvatar])
+        return
+    }
 }
 
 async function selectBattleBro(battleBroNumber) {
@@ -1726,7 +1798,7 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro)
+            await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
             //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
             await useAbility(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
             pendingAbility = null
@@ -1737,20 +1809,35 @@ async function avatarClicked(clickedElement) {
         }
     }
 
-    let foundBrosteam = battleBros.filter(battleBro => battleBro.team == foundBattleBro.team)
-    if (foundBrosteam.filter(battleBro => battleBro.taunting).length == 0) {
-        if (foundBattleBro.buffs.find(effect => effect.name === 'stealth') || foundBattleBro.isDead == true) {
-            return
+    await changeTarget(foundBattleBro)
+}
+
+async function changeTarget(target) {
+    let targetTeam = battleBros.filter(ally => ally.team == target.team)
+    if (targetTeam.filter(ally => ally.taunting).length == 0) {
+        if (!(target.buffs.find(effect => effect.name === 'stealth') || target.isDead == true)) {
+            await changingTarget(target)
         }
-        await changeTarget(foundBattleBro)
-    } else if (foundBattleBro.taunting == true) {
-        await changeTarget(foundBattleBro)
+    } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
+        await changingTarget(target)
     } else {
         return
     }
 }
 
-async function changeTarget(target) {
+async function switchTarget(battleBro) {
+    if (battleBro.isTarget == true) { // if this guy is the target, we need to set the target to another member of the same team
+        let battleBroTeam = battleBros.filter(ally => ally.team == battleBro.team && ally.isDead == false)
+        battleBroTeam = battleBroTeam.splice(battleBroTeam.indexOf(battleBro), 1)
+        if (battleBroTeam.filter(battleBro => battleBro.taunting).length == 0) {
+            await changingTarget(battleBroTeam[0])
+        } else { // if there's at least one other guy with taunt on the same team as this guy, make them the target
+            await changingTarget(battleBroTeam.filter(battleBro => battleBro.taunting)[0])
+        }
+    }
+}
+
+async function changingTarget(target) {
     // Set isTarget=false to all other battleBros from the same team
     for (let battleBro of battleBros) {
         if (battleBro.team == target.team) {
@@ -2223,30 +2310,32 @@ async function playStatusEffectGlow(characterDiv, effectName) {
     }, 800);
 }
 
-async function applyEffect(battleBro, target, effectName, duration = 1, isLocked = false) {
+async function applyEffect(battleBro, target, effectName, duration = 1, stacks = 1, isLocked = false) {
     const info = infoAboutEffects[effectName];
-    if (info.type == 'debuff' && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
-        await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
-        return
+    for (i = 0; i < stacks; i++) {
+        if (info.type == 'debuff' && Math.random() < (target.tenacity - battleBro.potency) * 0.01) {
+            await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
+            return
+        }
+        const effect = {
+            ...info,
+            duration: target === battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
+            isLocked: isLocked,
+            caster: battleBro,
+            apply: info.apply,
+            remove: info.remove,
+        };
+        if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
+            await effect.apply(target, effect.caster) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
+            await eventHandle('gainedEffect', target, battleBro, effectName)
+            await playStatusEffectGlow(target.avatarHtmlElement, effectName)
+            console.log('effect applied')
+        } else {
+            console.log('second instance of non-stackable effect detected: apply async function not called')
+        }
+        target.buffs.push(effect);
+        await updateEffectIcons(target);
     }
-    const effect = {
-        ...info,
-        duration: target === battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
-        isLocked: isLocked,
-        caster: battleBro,
-        apply: info.apply,
-        remove: info.remove,
-    };
-    if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
-        await effect.apply(target, effect.caster) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
-        await eventHandle('gainedEffect', target, battleBro, effectName)
-        await playStatusEffectGlow(target.avatarHtmlElement, effectName)
-        console.log('effect applied')
-    } else {
-        console.log('second instance of non-stackable effect detected: apply async function not called')
-    }
-    target.buffs.push(effect);
-    await updateEffectIcons(target);
 }
 
 async function updateEffectsAtTurnEnd(battleBro) {
@@ -2255,9 +2344,9 @@ async function updateEffectsAtTurnEnd(battleBro) {
         const effect = battleBro.buffs[i];
         effect.duration -= 1;
         if (effect.duration <= 0) {
-            await effect.remove(battleBro, 'expired', effect.caster);
+            battleBro.buffs.splice(i, 1)
+            await effect.remove(battleBro, 'expired', effect.caster)
             await eventHandle('lostEffect', battleBro, effect.caster, effect.name)
-            battleBro.buffs.splice(i, 1);
         }
     }
     await updateEffectIcons(battleBro);
@@ -2394,9 +2483,9 @@ async function dispel(battleBro, target, type = null, dispelLocked = false) {
     for (let i = target.buffs.length - 1; i >= 0; i--) {
         const effect = target.buffs[i];
         if (dispelledEffects.includes(effect)) {
-            await effect.remove(target, 'dispelled', effect.caster);
+            target.buffs.splice(i, 1)
+            await effect.remove(target, 'dispelled', effect.caster)
             await eventHandle('lostEffect', target, effect?.caster, effect.name, battleBro)
-            target.buffs.splice(i, 1);
         }
     }
     await updateEffectIcons(target)
@@ -2410,9 +2499,9 @@ async function removeEffect(battleBro, bufftag) {
             return (prev.duration < current.duration) ? prev : current;
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
+        battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         await shortestDurationEffect.remove(battleBro, 'removed', shortestDurationEffect.caster)
         await eventHandle('lostEffect', battleBro, shortestDurationEffect.caster, shortestDurationEffect.name)
-        battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
         console.log(filteredEffects)
         console.log(shortestDurationEffect)
@@ -2502,9 +2591,9 @@ async function dodge(user, target) {
     await removeEffect(target, 'foresight')
 }
 
-async function dealDmg(user, target, dmg, type, triggerEvent = true) {
+async function dealDmg(user, target, dmg, type, triggerEventHandlers = true) {
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
-    if (type !== 'shadow' && triggerEvent == true) await eventHandle('attacked', target, user) // activate passive conditions upon being attacked unless the damage is shadow damage
+    if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('attacked', target, user) // activate passive conditions upon being attacked unless the damage is shadow damage
     if (Math.random() > (target.evasion - user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
@@ -2564,7 +2653,9 @@ async function dealDmg(user, target, dmg, type, triggerEvent = true) {
 
         if (dealtdmg > 0) {
             await playSparkImpact(endX, endY, colour, secondaryColour, Math.ceil(dealtdmg / 625))
-            if (type !== 'shadow' && triggerEvent == true) await eventHandle('damaged', target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg) // passive effects upon damage that isn't shadow damage
+            // } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
+            if (target.buffs.find(e => e.effectTags.includes('loseOnHit'))) await removeEffect(target, 'loseOnHit')
+            if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('damaged', target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg) // passive effects upon damage that isn't shadow damage
         }
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
@@ -2573,7 +2664,7 @@ async function dealDmg(user, target, dmg, type, triggerEvent = true) {
         }
         // user.health = Math.min(user.health+dealtdmg*healthsteal*0.01,infoAboutCharacters[user.character].health)
         if (user.healthSteal > 0 && prot < dealtdmg) {
-            await heal(user, user, (dealtdmg - prot) * user.healthSteal * 0.01)
+            await heal(user, user, (dealtdmg - prot) * user.healthSteal * 0.01, 'health', true)
         }
         //logElement.innerHTML += `<span style="colour: red;">+${Math.ceil(dealtdmg)}</span>`;
         await addFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, colour);
@@ -2585,8 +2676,9 @@ async function dealDmg(user, target, dmg, type, triggerEvent = true) {
     }
 }
 
-async function heal(user, target, healing, type = 'health') {
+async function heal(user, target, healing, type = 'health', isHealthSteal = false) {
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
+    if (isHealthSteal == false && target.buffs.find(e => e.effectTags.includes('loseOnHeal'))) await removeEffect(target, 'loseOnHeal')
     if (type == 'health') {
         await addFloatingText(logElement, `+${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
         target.health = Math.min(target.health + healing, target.maxHealth)
@@ -2596,7 +2688,11 @@ async function heal(user, target, healing, type = 'health') {
     }
 }
 
-async function TMchange(user, target, change) {
+async function TMchange(user, target, change, resistable = true) {
+    if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
+        await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
+        return
+    }
     target.turnMeter += change
     target.turnMeter = (target.turnMeter < 0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
 }
