@@ -263,7 +263,7 @@ const infoAboutCharacters = {
         image: 'images/avatars/superStriker.png',
         imageSize: 100,
         health: 28450,
-        protection: 0,
+        protection: 37828,
         speed: 172,
         potency: 55,
         tenacity: 22,
@@ -339,7 +339,7 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (battleBro, target) {
             await dealDmg(battleBro, target, this.abilityDamage, 'physical')
-            await applyEffect(battleBro, battleBro, 'offenceUp', 2);
+            await applyEffect(battleBro, battleBro, 'offenceUp', 2, true);
         }
     },
     'test2': {
@@ -608,7 +608,7 @@ const infoAboutAbilities = {
             }
             target.evasion += savedEvasion
 
-            if (target.isDead == false && Math.random() < (battleBro.critChance-target.critAvoidance)*0.01) { // && hit[1] == true
+            if (target.isDead == false && Math.random() < (battleBro.critChance - target.critAvoidance) * 0.01) { // && hit[1] == true
                 await wait(300)
                 await useAbility('Super Strike', battleBro, target, false, 'chained')
             }
@@ -813,10 +813,10 @@ const infoAboutPassives = {
             owner.critChance += 25
             owner.defencePenetration += 30
         },
-        defeat: async function (owner, target, attacker) {
-            if (owner == attacker) {
+        damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (owner == attacker && hitPointsRemaining < 0) {
                 await applyEffect(owner, owner, 'stealth', 1)
-                battleBro.cooldowns['Super Strike'] = 0
+                owner.cooldowns['Super Strike'] = 0
                 await updateAbilityCooldownUI(owner, 'Super Strike')
             }
         },
@@ -959,7 +959,7 @@ const infoAboutEffects = {
         name: 'healthUp',
         image: 'images/effects/healthUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'maxhealth', 'heal'],
+        effectTags: ['stack', 'up', 'maxHealth', 'heal'],
         apply: async function (unit) {
             unit.maxHealth *= 1.15;
             await heal(unit, unit, unit.maxHealth * 0.13)
@@ -1101,7 +1101,7 @@ const infoAboutEffects = {
         name: 'bleed',
         image: 'images/effects/bleed.png',
         type: 'debuff',
-        effectTags: ['stack', 'speed', 'tenacity', 'maxhealth', 'loseOnHeal'],
+        effectTags: ['stack', 'speed', 'tenacity', 'maxHealth', 'loseOnHeal'],
         apply: async function (unit) {
             unit.tenacity -= 5
             unit.speedPercent -= 5
@@ -1205,7 +1205,7 @@ const infoAboutEffects = {
         apply: async function (unit) {
             unit.evasion -= 10000
         },
-        remove: async function (unit, removalType) {
+        remove: async function (unit, caster, removalType) {
             unit.evasion += 10000
             if (removalType == 'removed') {
                 changeCooldowns(unit, 1)
@@ -1216,7 +1216,7 @@ const infoAboutEffects = {
         name: 'healthDown',
         image: 'images/effects/healthDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'maxhealth'],
+        effectTags: ['stack', 'down', 'maxHealth'],
         apply: async function (unit) {
             unit.maxHealth /= 1.15
             unit.health /= 1.15
@@ -1260,6 +1260,32 @@ const infoAboutEffects = {
         },
         remove: async function (unit) {
             unit.potency += 100
+        }
+    },
+    'protectionDown': {
+        name: 'protectionDown',
+        image: 'images/effects/protectionDown.png',
+        type: 'debuff',
+        effectTags: ['stack', 'down', 'maxProtection'],
+        apply: async function (unit) {
+            unit.maxProtection /= 1.15
+            unit.protection /= 1.15
+        },
+        remove: async function (unit) {
+            unit.maxProtection *= 1.15
+            unit.protection *= 1.15
+        }
+    },
+    'speedDown': {
+        name: 'speedDown',
+        image: 'images/effects/speedDown.png',
+        type: 'debuff',
+        effectTags: ['stack', 'down', 'speed'],
+        apply: async function (unit) {
+            unit.speedPercent -= 25
+        },
+        remove: async function (unit) {
+            unit.speedPercent += 25
         }
     },
     'stun': {
@@ -1335,14 +1361,14 @@ async function createLimitedAction({
 
 const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
-    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // target,attacker,dealtdmg,'damagetype',crit true/false
+    damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points minus dealtdmg
     attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], //target,attacker
     gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // target, caster, effectName
     lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, caster, effectName, dispeller
 }
 async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
     console.log("eventHandle", type, arg1, arg2, arg3, arg4, arg5, arg6)
-    if (arg1?.isDead==true || arg2?.isDead==true) return
+    if (arg1?.isDead == true || arg2?.isDead == true) return
     if (argsMap[type]) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
@@ -1496,6 +1522,19 @@ async function updateBattleBrosHtmlText() {
         } else {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
             battleBro.isDead = true
+            await dispel(null, battleBro)
+            // change avatar look to be dead
+            const img = battleBro.avatarHtmlElement.children()
+            img.css({
+                transition: 'transform 0.5s ease'
+            })
+            img.css({
+                filter: 'grayscale(100%) brightness(50%)', // grey and dim
+                transform: 'rotate(180deg)',               // flipped upside down
+                pointerEvents: 'none'                      // disables interaction
+            })
+            await wait(500)
+
             if (battleBro.isTarget == true) { // if the guy who just got stealth is the target, we need to set the target to another member of the same team
                 let battleBroTeam = battleBros.filter(ally => ally.team == battleBro.team && ally.isDead == false)
                 battleBroTeam = battleBroTeam.splice(battleBroTeam.indexOf(battleBro), 1)
@@ -1652,6 +1691,11 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         battleBro.turnMeter += battleBro.speed*closestAvatarDistance
     }*/
     await updateBattleBrosHtmlText()
+    // abort if battleBro is dead
+    if (battleBros[closestAvatar].isDead == true) {
+        await endTurn(battleBros[closestAvatar])
+        return
+    }
 }
 
 async function selectBattleBro(battleBroNumber) {
@@ -1730,11 +1774,6 @@ async function abilityClicked(clickedElement) {
     let battleBroNumber = eltData.battleBroNumber
     let abilityNumber = eltData.abilityNumber
     let battleBro = battleBros[battleBroNumber]
-    // abort if battleBro is dead
-    if (battleBro.isDead == true) {
-        await endTurn(battleBro)
-        return
-    }
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities
     let abilityName = characterAbilities[abilityNumber]
     let tags = infoAboutAbilities[abilityName].abilityTags
@@ -2193,13 +2232,13 @@ async function applyEffect(battleBro, target, effectName, duration = 1, isLocked
     const effect = {
         ...info,
         duration: target === battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
-        locked: isLocked === true,
+        isLocked: isLocked,
         caster: battleBro,
         apply: info.apply,
         remove: info.remove,
     };
     if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
-        await effect.apply(target) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
+        await effect.apply(target, effect.caster) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
         await eventHandle('gainedEffect', target, battleBro, effectName)
         await playStatusEffectGlow(target.avatarHtmlElement, effectName)
         console.log('effect applied')
@@ -2216,7 +2255,7 @@ async function updateEffectsAtTurnEnd(battleBro) {
         const effect = battleBro.buffs[i];
         effect.duration -= 1;
         if (effect.duration <= 0) {
-            await effect.remove(battleBro, 'expired');
+            await effect.remove(battleBro, 'expired', effect.caster);
             await eventHandle('lostEffect', battleBro, effect.caster, effect.name)
             battleBro.buffs.splice(i, 1);
         }
@@ -2234,7 +2273,8 @@ async function updateEffectIcons(battleBro) {
         if (!groupedEffects[effect.name]) {
             groupedEffects[effect.name] = {
                 instances: [],
-                effectInfo: effectInfo
+                effectInfo: effectInfo,
+                isLocked: effect.isLocked,
             };
         }
         groupedEffects[effect.name].instances.push(effect);
@@ -2263,12 +2303,13 @@ async function updateEffectIcons(battleBro) {
     let displayEffects = [];
 
     for (let effectName in groupedEffects) {
-        let { instances, effectInfo } = groupedEffects[effectName];
+        let { instances, effectInfo, isLocked } = groupedEffects[effectName];
 
         if (effectInfo.effectTags.includes("stack")) {
             // STACKABLE: Show one icon with a counter
             displayEffects.push({
                 name: effectName,
+                isLocked: isLocked,
                 image: effectInfo.image,
                 count: instances.length,
                 duration: Math.max(...instances.map(e => e.duration)), // for optional sorting or tooltip
@@ -2277,6 +2318,7 @@ async function updateEffectIcons(battleBro) {
             // NON-STACKABLE: There will only be a single instance remaining so we set that to 1
             displayEffects.push({
                 name: effectName,
+                isLocked: isLocked,
                 image: effectInfo.image,
                 count: 1, // always going to be just a single instance
                 duration: Math.max(...instances.map(e => e.duration)),
@@ -2295,20 +2337,37 @@ async function updateEffectIcons(battleBro) {
     console.log(displayEffects)*/
     container.innerHTML = ''; // Clear old icons
     displayEffects.forEach(effect => {
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        wrapper.style.display = 'inline-block';
-        wrapper.style.width = '30px';
-        wrapper.style.height = '30px';
-        wrapper.style.marginRight = '4px'; // spacing between icons (optional)
+        const wrapper = document.createElement('div')
+        wrapper.style.position = 'relative'
+        wrapper.style.display = 'inline-block'
+        wrapper.style.width = '30px'
+        wrapper.style.height = '30px'
+        wrapper.style.marginRight = '4px' // spacing between icons (optional)
 
-        const img = document.createElement('img');
-        img.src = effect.image;
-        img.style.width = '30px';
-        img.style.height = '30px';
-        img.style.display = 'block';
+        if (effect.isLocked) { // add the block white border if the effect is Locked
+            wrapper.style.border = '2px solid white'
+            wrapper.style.borderRadius = '4px'
+        }
+
+        const img = document.createElement('img')
+        img.src = effect.image
+        img.style.width = '30px'
+        img.style.height = '30px'
+        img.style.display = 'block'
 
         wrapper.appendChild(img);
+
+        if (effect.isLocked) {
+            const lockImg = document.createElement('img');
+            lockImg.src = 'images/other/lock.png'; // Ensure this is correctly pathed
+            lockImg.style.position = 'absolute';
+            lockImg.style.top = '-8px';
+            lockImg.style.right = '-10px';
+            lockImg.style.width = '18px';
+            lockImg.style.height = '18px';
+            lockImg.style.pointerEvents = 'none'; // Let clicks pass through if needed
+            wrapper.appendChild(lockImg);
+        }
 
         if (effect.count > 1) {
             const countDiv = document.createElement('div');
@@ -2329,17 +2388,15 @@ async function updateEffectIcons(battleBro) {
     });
 }
 
-async function dispel(battleBro, target, type) {
-    let dispelledEffects = target.buffs.filter(effect => effect.type === type && effect.isLocked !== true)
-    /*target.buffs = target.buffs.filter(effect => 
-        !dispelledEffects.includes(effect)
-    )*/
-    for (let i = battleBro.buffs.length - 1; i >= 0; i--) {
-        const effect = battleBro.buffs[i];
+async function dispel(battleBro, target, type = null, dispelLocked = false) {
+    if (!battleBro) dispelLocked = true // if there's no dispeller then we're dispelling ALL of these effects
+    const dispelledEffects = (type) ? target.buffs.filter(effect => effect.type === type && (effect.isLocked !== true || dispelLocked == true)) : target.buffs.filter(effect => effect.isLocked !== true || dispelLocked == true)
+    for (let i = target.buffs.length - 1; i >= 0; i--) {
+        const effect = target.buffs[i];
         if (dispelledEffects.includes(effect)) {
-            await effect.remove(battleBro, 'dispelled');
-            await eventHandle('lostEffect', target, effect.caster, effect.name, battleBro)
-            battleBro.buffs.splice(i, 1);
+            await effect.remove(target, 'dispelled', effect.caster);
+            await eventHandle('lostEffect', target, effect?.caster, effect.name, battleBro)
+            target.buffs.splice(i, 1);
         }
     }
     await updateEffectIcons(target)
@@ -2353,7 +2410,7 @@ async function removeEffect(battleBro, bufftag) {
             return (prev.duration < current.duration) ? prev : current;
         })
         let shortestDurationEffectIndex = battleBro.buffs.indexOf(shortestDurationEffect)
-        await shortestDurationEffect.remove(battleBro, 'removed')
+        await shortestDurationEffect.remove(battleBro, 'removed', shortestDurationEffect.caster)
         await eventHandle('lostEffect', battleBro, shortestDurationEffect.caster, shortestDurationEffect.name)
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
@@ -2507,7 +2564,7 @@ async function dealDmg(user, target, dmg, type, triggerEvent = true) {
 
         if (dealtdmg > 0) {
             await playSparkImpact(endX, endY, colour, secondaryColour, Math.ceil(dealtdmg / 625))
-            if (type !== 'shadow' && triggerEvent == true) await eventHandle('damaged', target, user, dealtdmg, type, crit) // passive effects upon damage that isn't shadow damage
+            if (type !== 'shadow' && triggerEvent == true) await eventHandle('damaged', target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg) // passive effects upon damage that isn't shadow damage
         }
         let prot = target.protection
         target.protection -= Math.min(dealtdmg, prot)
