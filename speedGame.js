@@ -534,7 +534,7 @@ const infoAboutAbilities = {
         },
         allyUse: async function (battleBro, ally, target) {
             let enemyHadShatterpoint = target.buffs?.find(e => e.name === 'shatterpoint')
-            await assist(ally, target, battleBro)
+            promise = await assist(ally, target, battleBro)
             await heal(battleBro, ally, ally.maxProtection * 0.3, 'protection')
             await heal(battleBro, battleBro, battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
@@ -543,6 +543,7 @@ const infoAboutAbilities = {
                 console.log(100 - ally.turnMeter)
                 await applyEffect(battleBro, battleBro, 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
+            //await promise
         }
     },
     'Lethal Swing': {
@@ -2070,13 +2071,14 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
             await useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], hasTurn, battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
         } else {
             if (attack) {
+                pendingAttackCount--
                 await checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
             } else {
+                pendingAttackCount--
                 await checkAttacks() // otherwise check normally
             }
         }
     }
-    pendingAttackCount--
     //if (hasTurn==true) await endTurn(battleBro)
 }
 
@@ -2116,9 +2118,9 @@ async function playProjectileAttackAnimation(battleBro, target, abilityName, has
     }
     projectile.style.zIndex = '10';
     if (imageName == 'redLaser') {
-        projectile.style.transition = 'transform 0.6s linear'
+        projectile.style.transition = 'transform 0.3s linear'
     } else {
-        projectile.style.transition = 'transform 0.6s ease'
+        projectile.style.transition = 'transform 0.3s ease'
     }
 
     // Get screen positions
@@ -2169,7 +2171,7 @@ async function playProjectileAttackAnimation(battleBro, target, abilityName, has
     }
 
     // Remove after animation
-    await wait(600)
+    await wait(300)
     projectile.remove();
     return 'projectile hit'
 }
@@ -2206,7 +2208,7 @@ async function playMeleeAttackAnimation(attacker, target, abilityName, hasTurn, 
 
     // Return to original position
     attackerDiv.css({
-        transition: 'transform 0.2s ease',
+        transition: 'transform 0.18s ease',
         transform: originalTransform || 'none'
     });
 }
@@ -2252,7 +2254,8 @@ async function endTurn(battleBro) {
 
 async function checkAttacks(type) {
     console.log('checkingattacks')
-    while (pendingAttackCount > 0) {
+    while (pendingAttackCount > 1) {
+        console.log(pendingAttackCount)
         await wait(50)
     }
     let enemyTeamHasAttacks
@@ -2277,9 +2280,11 @@ async function checkAttacks(type) {
 
 async function assist(battleBro, target, caller, abilityIndex = 0) {
     console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target)
+    await wait(50)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
     battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
+    promise = useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
+    return promise
 }
 
 async function addAttackToQueue(battleBro, target) {
@@ -2457,7 +2462,7 @@ async function updateEffectIcons(battleBro) {
 
     // delete all instances of non-stackable effects except the instance with the longest duration
     for (let effectName in groupedEffects) {
-        let { instances, effectInfo } = groupedEffects[effectName]; // copy instances and effectInfo from the effect
+        let { instances, effectInfo, isLocked } = groupedEffects[effectName]; // copy instances and effectInfo from the effect
 
         if (!effectInfo.effectTags.includes("stack")) {
             // Find the instance with the longest duration
