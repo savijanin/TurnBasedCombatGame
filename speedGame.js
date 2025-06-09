@@ -914,9 +914,9 @@ const infoAboutPassives = {
             if (attacker.team === owner.team) {
                 if (target.buffs.find(e => e.name = 'shatterpoint')) {
                     for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
-                        await heal(owner,ally,ally.maxProtection*0.1,'protection')
+                        await heal(owner, ally, ally.maxProtection * 0.1, 'protection')
                         if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
-                            await applyEffect (owner,ally,'foresight',1)
+                            await applyEffect(owner, ally, 'foresight', 1)
                         }
                     }
                 }
