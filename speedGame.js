@@ -3,6 +3,7 @@ var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
 //var isAnythingElseRunningHereAtTheSameTime = 0
 var engagingCounters = false
+let pendingAttackCount = 0
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
 // CONDITIONS
@@ -903,6 +904,8 @@ const infoAboutPassives = {
                     await dispel(owner, enemy, 'stealth')
                 }
                 let randomEnemy = enemyTeam[Math.floor(Math.random() * enemyTeam.length)]
+                console.log('randomEnemy')
+                console.log(randomEnemy)
                 await applyEffect(owner, randomEnemy, 'speedDown', 1)
                 await applyEffect(owner, randomEnemy, 'shatterpoint', 1, 1, false)
             }
@@ -1790,6 +1793,9 @@ $(document).ready(function () {
         });
 
         console.log('avatarTurnMeters:', battleBros.map(battleBro => battleBro.turnMeter))
+        await calculateNextTurnFromTurnMetersAndSpeeds()
+        await changeTarget(battleBros.find(guy => guy.team == 0))
+        await changeTarget(battleBros.find(guy => guy.team == 1))
     })();
 })
 
@@ -2005,6 +2011,7 @@ async function abilityClicked(clickedElement) {
 }
 
 async function useAbility(abilityName, battleBro, target, hasTurn = false, type = null) {
+    pendingAttackCount++
     let ability = infoAboutAbilities[abilityName]
     let animation = null
     if (ability.abilityTags.includes("projectile_attack")) {
@@ -2069,6 +2076,7 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
             }
         }
     }
+    pendingAttackCount--
     //if (hasTurn==true) await endTurn(battleBro)
 }
 
@@ -2244,6 +2252,9 @@ async function endTurn(battleBro) {
 
 async function checkAttacks(type) {
     console.log('checkingattacks')
+    while (pendingAttackCount > 0) {
+        await wait(50)
+    }
     let enemyTeamHasAttacks
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
