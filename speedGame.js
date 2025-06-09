@@ -2253,12 +2253,12 @@ async function endTurn(battleBro) {
 }
 
 async function checkAttacks(type) {
-    console.log('checkingattacks')
+    console.log("checkAttacks called. Type:", type, "Pending:", pendingAttackCount, "Engaged:", engagingCounters);
     while (pendingAttackCount > 1) {
         console.log(pendingAttackCount)
         await wait(50)
     }
-    let enemyTeamHasAttacks
+    let enemyTeamHasAttacks = false
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             if (battleBro.team == battleBros[selectedBattleBroNumber].team) {
@@ -2270,16 +2270,18 @@ async function checkAttacks(type) {
             }
         }
     }
-    if (enemyTeamHasAttacks == true && type !== 'counter') { // engage counters if the selected Bro's team's attacks are all spent
+    if (enemyTeamHasAttacks == true && type !== 'counter' && engagingCounters!==true) { // engage counters if the selected Bro's team's attacks are all spent
+        engagingCounters = true
         await engageCounters()
         console.log('engaging counter attacks')
     } else if (enemyTeamHasAttacks !== true) { // end the turn when no-one has any attacks anymore
         await endTurn(battleBros[selectedBattleBroNumber])
+        engagingCounters=false
     }
 }
 
 async function assist(battleBro, target, caller, abilityIndex = 0) {
-    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target)
+    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target.character)
     await wait(50)
     let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
     battleBro.queuedAttacks.unshift([target, 'assist']) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
@@ -2300,7 +2302,6 @@ async function addAttackToQueue(battleBro, target) {
 }
 
 async function engageCounters() {
-    engagingCounters = true // enemy team is now counter attacking!
     for (let battleBro of battleBros) {
         if (battleBro.queuedAttacks.length > 0) {
             let abilityName = infoAboutCharacters[battleBro.character].abilities[0]
