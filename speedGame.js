@@ -537,8 +537,9 @@ const infoAboutAbilities = {
             await heal(battleBro, ally, ally.maxProtection * 0.3, 'protection')
             await heal(battleBro, battleBro, battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
-                await TMchange(battleBro, ally, 100 - ally.turnMeter)
                 await TMchange(ally, battleBro, ally.turnMeter)
+                await TMchange(battleBro, ally, 100 - ally.turnMeter)
+                console.log(100 - ally.turnMeter)
                 await applyEffect(battleBro, battleBro, 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
         }
