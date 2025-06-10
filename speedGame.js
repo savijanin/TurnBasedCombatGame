@@ -810,11 +810,11 @@ const infoAboutAbilities = {
         }
     },
     'Rotating Blades': {
-        displayName: "Defensive Formation",
-        image: 'images/abilities/defensiveFormation.png',
+        displayName: "Rotating Blades",
+        image: 'images/abilities/shadowMenaceOriginal3.png',
         abilityType: 'special',
-        cooldown: 2,
-        abilityTags: ['target_ally', 'buffGain'],
+        cooldown: 6,
+        abilityTags: ['buffGain'],
         desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
         use: async function (battleBro, target) {
         },
@@ -826,8 +826,8 @@ const infoAboutAbilities = {
         }
     },
     'Cut it short': {
-        displayName: "Defensive Formation",
-        image: 'images/abilities/defensiveFormation.png',
+        displayName: "Cut it short",
+        image: 'images/abilities/shadowMenaceOriginal4.png',
         abilityType: 'special',
         cooldown: 2,
         abilityTags: ['target_ally', 'buffGain'],
@@ -1876,9 +1876,9 @@ async function eventHandle(type, arg1, arg2, arg3, arg4, arg5, arg6) {
                 if (fct) {
                     //console.log("Calling infoAboutPassives " + passive + " " + type)
                     let ret = await fct(battleBro, ...args)
-                    console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
+                    //console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
                 } else {
-                    console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
+                    //console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
                 }
 
             }
@@ -3369,6 +3369,7 @@ async function applyEffectsToSelf(inputs, effects) {
 
 
 async function logFunctionCall(fctName, args) {
+    return
     let stackDepth = new Error().stack.split('\n').length
     console.log("  ".repeat(stackDepth), fctName, args)
     //await wait(runningDelay)
