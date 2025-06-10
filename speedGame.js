@@ -19,7 +19,7 @@ var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'jabba',
+        character: 'Super Striker',
         x: 400,
         y: 100,
         team: 0,
@@ -89,7 +89,7 @@ var battleBros = [
     // Team 1 (right side)
     {
         id: "11",
-        character: 'jabba',
+        character: 'Red (Samurai)',
         x: 1400,
         y: 100,
         team: 1,
@@ -97,7 +97,7 @@ var battleBros = [
     },
     {
         id: "12",
-        character: 'jabba',
+        character: 'Shadow Menace (Original)',
         x: 1400,
         y: 300,
         team: 1,
@@ -266,6 +266,7 @@ const infoAboutCharacters = {
         passiveAbilities: ['inspiringThroughFear', 'noEscape'],
         charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
     },
+    // --------------------------------------------------------OLIV'S CHARACTERS
     'Super Striker': {
         image: 'images/avatars/superStriker.png',
         imageSize: 100,
@@ -274,7 +275,7 @@ const infoAboutCharacters = {
         speed: 172,
         potency: 55,
         tenacity: 22,
-        critChance: 60.23,
+        critChance: 47.23,
         physicalDamage: 2447,
         specialDamage: 3570,
         armour: 23.36,
@@ -285,6 +286,89 @@ const infoAboutCharacters = {
         passiveAbilities: ['Elimination Protocol'],
         charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
     },
+    // --------------------------------------------------------JAMES' CHARACTERS
+    'Shadow Menace (Original)': {
+        image: 'images/avatars/shadowMenaceOriginal.png',
+        imageSize: 100,
+        health: 32945,
+        protection: 39273,
+        speed: 163,
+        potency: 49,
+        tenacity: 42,
+        critChance: 57.23,
+        physicalDamage: 3290,
+        specialDamage: 3870,
+        armour: 37.36,
+        resistance: 28.34,
+        healthSteal: 8,
+        tags: ['darkSide', 'attacker', 'mandalorian', 'scoundrel', 'shadowMenace'],
+        abilities: ['Cloning Strike', 'Sabre Storm', 'Rotating Blades', 'Cut it short'],
+        passiveAbilities: ['Prime Era', 'Reign of Mandalore'],
+        charDesc: 'Powerful mandalorian adversary who attacks many times.',
+    },
+    // --------------------------------------------------------OUR CHARACTERS
+    'Goosey': {
+
+    },
+    // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
+    'Red (Samurai)': {
+        image: 'images/avatars/redSamurai.png',
+        imageSize: 100,
+        health: 60000,
+        protection: 3000,
+        speed: 132,
+        potency: 32,
+        tenacity: 56,
+        critChance: 60.23,
+        physicalDamage: 8000,
+        specialDamage: 3570,
+        armour: 33.36,
+        resistance: 32.34,
+        healthSteal: 20,
+        tags: ['neutral', 'tank', 'bird'],
+        abilities: ['Dragon Strike', 'Defensive Formation', 'Heroic Strike'],
+        passiveAbilities: [],
+        charDesc: 'Protects the party. A real hero!',
+    },
+    'Chuck (Rainbird': {
+        image: 'images/avatars/chuckRainbird.png',
+        imageSize: 100,
+        health: 27000,
+        protection: 3000,
+        speed: 171,
+        potency: 54,
+        tenacity: 15,
+        critChance: 30,
+        physicalDamage: 4250,
+        specialDamage: 4250,
+        armour: 25.36,
+        resistance: 42.34,
+        healthSteal: 10,
+        tags: ['neutral', 'healer', 'bird'],
+        abilities: ['Acid Rain', 'Healing Rain', 'Speed of Light'],
+        passiveAbilities: [],
+        charDesc: 'A powerful wizard. Deals damage to all enemies at once!',
+    },
+    'Matilda (Druid)': {
+        image: 'images/avatars/matildaDruid.png',
+        imageSize: 100,
+        health: 40000,
+        protection: 3000,
+        speed: 145,
+        potency: 49,
+        tenacity: 50,
+        critChance: 40,
+        physicalDamage: 6350,
+        specialDamage: 4250,
+        armour: 35.36,
+        resistance: 22.34,
+        healthSteal: 20,
+        tags: ['neutral', 'healer', 'bird'],
+        abilities: ['Thorny Vine', 'Regrowth', 'Matildas Medicine'],
+        passiveAbilities: [],
+        charDesc: 'A strong healer who also packs quite a punch!',
+    },
+    // --------------------------------------------------------KRAYT DRAGON RAID
     'KraytDragon': {
         image: 'images/KraytDragon.png',
         imageSize: 200,
@@ -553,7 +637,7 @@ const infoAboutAbilities = {
         },
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
-            let enemyHadShatterpoint = target.buffs?.find(e => e.name === 'shatterpoint')
+            let enemyHadShatterpoint = target.buffs?.find(e => e.name == 'shatterpoint')
             await assist(ally, target, battleBro)
             await heal(battleBro, ally, ally.maxProtection * 0.3, 'protection')
             await heal(battleBro, battleBro, battleBro.maxProtection * 0.3, 'protection')
@@ -594,7 +678,7 @@ const infoAboutAbilities = {
     },
     'Piercing Edge': {
         displayName: "Piercing Edge",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStriker2.png',
         abilityType: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'physical_damage'],
@@ -676,6 +760,134 @@ const infoAboutAbilities = {
             }
         }
     },
+    // --------------------------------------------------------JAMES' CHARACTERS
+    'Cloning Strike': {
+        displayName: "Cloning Strike",
+        image: 'images/abilities/shadowMenaceOriginal1.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage', 'healthSteal'],
+        abilityDamage: 40,
+        desc: 'Deal physical damage 5 times to target enemy and recover health equal to the damage dealt. On 3 or more critical hits inflict offense down for 3 turns.',
+        use: async function (battleBro, target) {
+            let hits = []
+            for (i = 0; i < 5; i++) {
+                hits[i] = await dealDmg(battleBro,target,this.abilityDamage,'physical', false)
+            }
+            let critCounter = 0
+            for (let hit in hits) {
+                if (hit[1]==true) {
+                    critCounter++
+                }
+            }
+            if (critCounter>=3) {
+                await applyEffect(battleBro,target,'offenceDown',3)
+            }
+        },
+    },
+    'Sabre Storm': {
+        displayName: "Sabre Storm",
+        image: 'images/abilities/shadowMenaceOriginal2.png',
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['attack', 'ultra_damage'],
+        abilityDamage: 15,
+        desc: 'Deal ultra damage 4 times to target enemy and 2 times to all other enemies and inflict 3 damage over time for 3 turns. All shadow menace allies recover 20% of the total damage dealt.',
+        use: async function (battleBro, target) {
+            let damageDealt = 0
+            for (i = 0; i < 2; i++) {
+                let hit = await dealDmg(battleBro,target,this.abilityDamage,'ultra', false)
+                damageDealt+=hit[0]
+            }
+            for (let enemy of battleBros.filter(unit => unit.team!==battleBro.team)) {
+                for (i = 0; i < 2; i++) {
+                    let hit = await dealDmg(battleBro,enemy,this.abilityDamage,'ultra', false)
+                    damageDealt+=hit[0]
+                }
+            }
+            for (let ally of battleBros.filter(unit => unit.team == battleBro.team && infoAboutCharacters[unit.character].tags.includes('shadowMenace'))) {
+                await heal(battleBro,ally,damageDealt*0.2)
+            }
+        }
+    },
+    'Rotating Blades': {
+        displayName: "Defensive Formation",
+        image: 'images/abilities/defensiveFormation.png',
+        abilityType: 'special',
+        cooldown: 2,
+        abilityTags: ['target_ally', 'buffGain'],
+        desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
+        use: async function (battleBro, target) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            await applyEffect(battleBro, ally, 'defenceUp', 2, 1, false, true)
+            for (let friend of battleBros.filter(unit => unit.team == battleBro.team && unit !== ally)) {
+                await applyEffect(battleBro, friend, 'defenceUp', 2)
+            }
+        }
+    },
+    'Cut it short': {
+        displayName: "Defensive Formation",
+        image: 'images/abilities/defensiveFormation.png',
+        abilityType: 'special',
+        cooldown: 2,
+        abilityTags: ['target_ally', 'buffGain'],
+        desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
+        use: async function (battleBro, target) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            await applyEffect(battleBro, ally, 'defenceUp', 2, 1, false, true)
+            for (let friend of battleBros.filter(unit => unit.team == battleBro.team && unit !== ally)) {
+                await applyEffect(battleBro, friend, 'defenceUp', 2)
+            }
+        }
+    },
+    // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
+    'Dragon Strike': {
+        displayName: "Dragon Strike",
+        image: 'images/abilities/dragonStrike.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage'],
+        abilityDamage: 50,
+        desc: 'Deals physical damage thrice.',
+        use: async function (battleBro, target) {
+            for (i = 0; i < 3; i++) {
+                await dealDmg(battleBro, target, this.abilityDamage, 'physical')
+            }
+        },
+    },
+    'Defensive Formation': {
+        displayName: "Defensive Formation",
+        image: 'images/abilities/defensiveFormation.png',
+        abilityType: 'special',
+        cooldown: 2,
+        abilityTags: ['target_ally', 'buffGain'],
+        desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
+        use: async function (battleBro, target) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            await applyEffect(battleBro, ally, 'defenceUp', 2, 1, false, true)
+            for (let friend of battleBros.filter(unit => unit.team == battleBro.team && unit !== ally)) {
+                await applyEffect(battleBro, friend, 'defenceUp', 2)
+            }
+        }
+    },
+    'Heroic Strike': {
+        displayName: "Heroic Strike",
+        image: 'images/abilities/ability_darthvader_basic.png',
+        abilityType: 'special',
+        cooldown: 6,
+        abilityTags: ['attack', 'physical_damage', 'initialCooldon'],
+        abilityDamage: 500,
+        desc: 'Deals physical damage to the enemy with the most health.',
+        use: async function (battleBro, target) {
+            const enemyTeam = battleBros.filter(unit => unit.team !== battleBro.team)
+            const enemyHealths = enemyTeam.map(guy => guy.health)
+            const healthiestEnemy = enemyTeam[enemyHealths.indexOf(Math.max(...enemyHealths))]
+            console.log(enemyTeam,enemyHealths,healthiestEnemy)
+            await dealDmg(battleBro, healthiestEnemy, this.abilityDamage, 'physical')
+        },
+    },
+    // --------------------------------------------------------KRAYT RAID
     'jangoUnscrupulousGunfire': {
         displayName: "Unscrupulous Gunfire",
         image: 'images/abilities/ability_jangofett_basic.png',
@@ -937,14 +1149,12 @@ const infoAboutPassives = {
         },
         startedTurn: async function (owner, selectedBro) {
             await logFunctionCall('method: startedTurn (', ...arguments,)
-            if (owner == selectedBro) {
+            if (owner === selectedBro) {
                 let enemyTeam = battleBros.filter(unit => unit.team !== owner.team)
                 for (let enemy of enemyTeam) {
                     await dispel(owner, enemy, 'stealth')
                 }
                 let randomEnemy = enemyTeam[Math.floor(Math.random() * enemyTeam.length)]
-                console.log('randomEnemy')
-                console.log(randomEnemy)
                 await applyEffect(owner, randomEnemy, 'speedDown', 1)
                 await applyEffect(owner, randomEnemy, 'shatterpoint', 1, 1, false)
             }
@@ -952,7 +1162,7 @@ const infoAboutPassives = {
         damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             await logFunctionCall('method: damaged (', ...arguments,)
             if (attacker.team === owner.team) {
-                if (target.buffs.find(e => e.name = 'shatterpoint')) {
+                if (target.buffs.find(e => e.name == 'shatterpoint')) {
                     for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
                         await heal(owner, ally, ally.maxProtection * 0.1, 'protection')
                         if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
@@ -1018,6 +1228,26 @@ const infoAboutPassives = {
                 }
             })
         }
+    },
+    'Prime Era': {
+        displayName: 'Take a Seat',
+        image: 'images/abilities/shadowMenaceOriginal5.png',
+        desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
+        abilityType: 'unique',
+        abilityTags: ['health_recovery'],
+        start: async function (owner) {
+            
+        },
+    },
+    'Reign of Mandalore': {
+        displayName: 'Take a Seat',
+        image: 'images/abilities/shadowMenaceOriginal6.png',
+        desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
+        abilityType: 'unique',
+        abilityTags: ['health_recovery'],
+        start: async function (owner) {
+            
+        },
     },
 }
 
@@ -1927,12 +2157,13 @@ $(document).ready(function () {
 })
 
 async function calculateNextTurnFromTurnMetersAndSpeeds() {
+    console.clear()
     await logFunctionCall('calculateNextTurnFromTurnMetersAndSpeeds', ...arguments)
     console.log('---------- Click detected ------------')
 
     // Bring the battleBros data into a temporary working array, for convenience
-    /*let avatarTurnMeters = battleBros.map(battleBro => battleBro.turnMeter)
-
+    let avatarTurnMeters = battleBros.map(battleBro => battleBro.turnMeter)
+    /*
     var maxTurnMeter = Math.max(...avatarTurnMeters)
     while (maxTurnMeter < 100) {
         for (var i = 0; i < battleBros.length; i++) {
@@ -1943,21 +2174,27 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         console.log('avatarTurnMeters after increase:', avatarTurnMeters)
         maxTurnMeter = Math.max(...avatarTurnMeters)
     }*/
-    let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / (battleBro.speed * battleBro.speedPercent * 0.01))
-    let closestAvatarDistance = Math.min(...avatarDistances)
-    for (let battleBro of battleBros) {
-        if (battleBro.speed) {
-            battleBro.turnMeter += battleBro.speed * battleBro.speedPercent * 0.01 * closestAvatarDistance
+    let closestAvatar
+    if (Math.max(...avatarTurnMeters) < 100) {
+        let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / (battleBro.speed * battleBro.speedPercent * 0.01))
+        let closestAvatarDistance = Math.min(...avatarDistances)
+        for (let battleBro of battleBros) {
+            if (battleBro.speed) {
+                battleBro.turnMeter += battleBro.speed * battleBro.speedPercent * 0.01 * closestAvatarDistance
+            }
         }
+        console.log('avatar distances:', avatarDistances)
+        console.log('closest distance:', closestAvatarDistance)
+        closestAvatar = avatarDistances.indexOf(closestAvatarDistance)
+        console.log('closest avatar:', closestAvatar)
+    } else {
+        closestAvatar = avatarTurnMeters.indexOf(Math.max(...avatarTurnMeters))
+        console.log(battleBros[closestAvatar], 'this thing')
     }
-    console.log('avatar distances:', avatarDistances)
-    console.log('closest distance:', closestAvatarDistance)
-    let closestAvatar = avatarDistances.indexOf(closestAvatarDistance)
-    console.log('closest avatar:', closestAvatar)
-
     console.log('Processing avatar------------------------- ', closestAvatar)
     $('#myText').html('Processing avatar------------------------- ' + closestAvatar)
     await selectBattleBro(closestAvatar)
+
 
     // Save our working array back into the main battleBros data
     /*for (var i = 0; i < battleBros.length; i++) {
@@ -2215,7 +2452,7 @@ async function endTurn(battleBro) {
     await logFunctionCall('endTurn', ...arguments)
     battleBro.turnMeter -= 100
     engagingCounters = false
-    await eventHandle('endedTurn', battleBro)
+    if (battleBro.isDead == false) await eventHandle('endedTurn', battleBro)
     await updateBattleBrosHtmlText()
     await calculateNextTurnFromTurnMetersAndSpeeds()
     await updateEffectsAtTurnEnd(battleBro)
@@ -2543,7 +2780,7 @@ async function applyEffect(battleBro, target, effectName, duration = 1, stacks =
             caster: battleBro,
             apply: info.apply,
             remove: info.remove,
-        };
+        }
         if (!(effect.effectTags.includes('stack') == false && target.buffs.find(e => e.name == effectName))) {
             await effect.apply(target, effect.caster) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
             await eventHandle('gainedEffect', target, battleBro, effectName)
@@ -2721,9 +2958,9 @@ async function dispel(battleBro, target, type = null, dispelLocked = false) {
 }
 
 async function removeEffect(battleBro, bufftag) {
-    await logFunctionCall('removeEffect', ...arguments)
     //console.log(battleBro.evasion)
-    let filteredEffects = battleBro.buffs.filter(effect => effect.effectTags.includes(bufftag) == true)
+    let filteredEffects = battleBro.buffs.filter(effect => infoAboutEffects[effect.name].effectTags.includes(bufftag) == true)
+    console.log('removeEffect', battleBro, bufftag, filteredEffects)
     if (filteredEffects.length > 0) {
         let shortestDurationEffect = filteredEffects.reduce((prev, current) => {
             return (prev.duration < current.duration) ? prev : current;
@@ -2732,14 +2969,7 @@ async function removeEffect(battleBro, bufftag) {
         battleBro.buffs.splice(shortestDurationEffectIndex, 1)
         await shortestDurationEffect.remove(battleBro, 'removed', shortestDurationEffect.caster)
         await eventHandle('lostEffect', battleBro, shortestDurationEffect.caster, shortestDurationEffect.name)
-        /*console.log("filteredEffects - shortestDurationEffect - shortestDurationEffectIndex- evasion")
-        console.log(filteredEffects)
-        console.log(shortestDurationEffect)
-        console.log(shortestDurationEffectIndex)
-        console.log(battleBro.evasion)*/
         await updateEffectIcons(battleBro)
-    } else {
-        //console.log(bufftag + 'effect not found')
     }
 }
 
@@ -3141,5 +3371,5 @@ async function applyEffectsToSelf(inputs, effects) {
 async function logFunctionCall(fctName, args) {
     let stackDepth = new Error().stack.split('\n').length
     console.log("  ".repeat(stackDepth), fctName, args)
-    await wait(runningDelay)
+    //await wait(runningDelay)
 }
