@@ -6,7 +6,8 @@ var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
 //var isAnythingElseRunningHereAtTheSameTime = 0
 var engagingCounters = false
-let pendingAttackCount = 0
+var promises = []
+var checkingPromises = null
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
 // CONDITIONS
@@ -2006,10 +2007,9 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            let promise1 = pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
-            //pendingAbility.ability.use?.(pendingAbility.user,pendingAbility.target)
-            let promise2 = useAbility(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
-            await Promise.all([promise1, promise2])
+            await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
+            // the ally Use part of the ability is called before the actual part of the ability is called
+            await useAbilityMain(pendingAbility.abilityName, pendingAbility.user, pendingAbility.target, true)
             pendingAbility = null
             return
         } else {
@@ -2065,6 +2065,9 @@ async function changingTarget(target) {
     $(htmlElementName).css({ 'left': target.x + 'px', 'top': target.y + 'px' })
 }
 
+//--------------------------------------------------------ABILITY CLICKED
+
+
 async function abilityClicked(clickedElement) {
     await logFunctionCall('abilityClicked', ...arguments)
     console.log('abilityClicked')
@@ -2118,35 +2121,31 @@ async function abilityClicked(clickedElement) {
     } else {
         console.log('where tags')
     }
-    /*let target - old for loop finding
-    for (let enemy of battleBros) {
-        if (enemy.isTarget == true && enemy.team != battleBro.team) {
-            target = enemy
-            break
-        }
-    }*/
-    if (!pendingAbility) await useAbility(abilityName, battleBro, target, true)
-    /* old physical damage command that operated with tags
-    if (tags) {
-        for (let tag of tags) {
-            if (tag == 'physical_damage') {
-                console.log('Physical damage: ' + battleBro.character + ' uses ' + infoAboutAbilities[abilityName].displayName + ' on ' + target.character)
-                await physicalDmg(battleBro,target,infoAboutAbilities[abilityName].abilityDamage)
-            }
-        }
-    } else {
-        console.log('tags haven\'t been defined!')
-    }
-    */
-
-    // let a = clickedElement.attr("data-test1")
-    // let b = clickedElement.attr("data-abilityNumber")
-    // a = 0
+    if (!pendingAbility) await useAbilityMain(abilityName, battleBro, target, true)
 }
 
-async function useAbility(abilityName, battleBro, target, hasTurn = false, type = null) {
+async function useAbilityMain(abilityName, battleBro, target, hasTurn = false, type = 'main') {
+    await useAbility(abilityName, battleBro, target, hasTurn, type)
+
+    await Promise.all(promises) // waiting for main and assist attacks to finish
+    promises = []
+    const enemyTeam = battleBros.filter(unit => unit.team !== battleBros[selectedBattleBroNumber].team)
+    let enemyTeamHasAttacks = false
+    for (let enemy of enemyTeam) {
+        if (enemy.queuedAttacks.length > 0) {
+            enemyTeamHasAttacks = true
+            console.log(enemy, '^has a counter attack')
+            console.log(enemy.queuedAttacks[0])
+        }
+    }
+    checkingPromises = null
+    await engageCounters()
+    await Promise.all(promises) // waiting for counter attacks to finish
+    await endTurn(battleBros[selectedBattleBroNumber])
+    promises = []
+}
+async function useAbility(abilityName, battleBro, target, hasTurn = false, type = 'main') {
     await logFunctionCall('useAbility', ...arguments)
-    pendingAttackCount++
     let ability = infoAboutAbilities[abilityName]
     let animation = null
     if (ability.abilityTags.includes("projectile_attack")) {
@@ -2161,14 +2160,6 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
             ability.projectile || null,
             "#00FFFF"
         )
-        /*abilityFunction = await playProjectileAttackAnimation(
-            battleBro,
-            target,
-            ability,
-            hasTurn,
-            type,
-            "#00FFFF" // note-to-self-vary-colour
-        );*/
 
     } else if (ability.abilityTags.includes("attack")) {
         animation = 'melee'
@@ -2195,26 +2186,108 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
     }
     battleBro.cooldowns[abilityName] = ability.cooldown || 0
     await updateAbilityCooldownUI(battleBro, abilityName)
-    if (type !== 'chained') {
+    if (type !== 'chained') { // if this ability is used from another ability, we don't do this ending turn stuff so it doesn't execute multiple times
         let attack
-        if (type) {
+        if (type !== 'main') {
             attack = (battleBro.queuedAttacks.length > 0) ? battleBro.queuedAttacks.shift() : null // if this attack is a counter, assist, or bonus then remove it from the list of queued attacks
-        }
-        if (battleBro.queuedAttacks.length > 0) {
-            let abilityName = infoAboutCharacters[battleBro.character].abilities[battleBro.queuedAttacks[0][2]] // chosen ability index (usually the basic)
-            await useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], hasTurn, battleBro.queuedAttacks[0][1]) // after the attack is done, use the next attack in the list of queued attacks
         } else {
-            if (attack) {
-                pendingAttackCount--
-                await checkAttacks(attack[1]) // check attacks with the type if it's an assist,counter, or bonus attack
-            } else {
-                pendingAttackCount--
-                await checkAttacks() // otherwise check normally
+            // MAIN ATTACK DONE - We can use assists now, remember to use promises array
+            for (let ally of battleBros.filter(unit => unit.team === battleBro.team && unit !== battleBro)) {
+                if (ally.queuedAttacks.length > 0) { // if they have a queued attack
+                    let firstQueuedAttack = ally.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
+                    let assistAbilityName = infoAboutCharacters[ally.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
+                    let promise = useAbility(assistAbilityName, ally, firstQueuedAttack[0], false, firstQueuedAttack[1])
+                    promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
+                }
             }
+        }
+        if (battleBro.queuedAttacks.length > 0) { // start bonus/counters if this character has some queued
+            let firstQueuedAttack = battleBro.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
+            let nextAbilityName = infoAboutCharacters[battleBro.character].abilities[firstQueuedAttack[3]] // chosen ability index (usually the basic)
+            let promise = useAbility(nextAbilityName, battleBro, firstQueuedAttack[0], hasTurn, firstQueuedAttack[1]) // after the attack is done, use the next attack in the list of queued attacks
+            promises.push(promise)
         }
     }
     //if (hasTurn==true) await endTurn(battleBro)
 }
+
+async function endTurn(battleBro) {
+    await logFunctionCall('endTurn', ...arguments)
+    battleBro.turnMeter -= 100
+    engagingCounters = false
+    await eventHandle('endedTurn', battleBro)
+    await updateBattleBrosHtmlText()
+    await calculateNextTurnFromTurnMetersAndSpeeds()
+    await updateEffectsAtTurnEnd(battleBro)
+}
+
+async function assist(battleBro, target, caller, dmgMultipler = 1, abilityIndex = 0) {
+    await logFunctionCall('assist', ...arguments)
+    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target.character)
+    //let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex]   // USUSED - we're using Ability Index to store the ability rather than the ability itself
+
+    battleBro.queuedAttacks.unshift([target, 'assist', dmgMultipler, abilityIndex]) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
+
+    //await useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
+}
+
+async function addAttackToQueue(battleBro, target, dmgMultipler = 1, abilityIndex = 0) {
+    await logFunctionCall('addAttackToQueue', ...arguments)
+    if (battleBros[selectedBattleBroNumber].team !== battleBro.team) {
+        console.log('counter attack logged')
+        let currentTarget = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team)
+        currentTarget = (currentTarget.taunting == true) ? currentTarget : target
+        battleBro.queuedAttacks.push([currentTarget, 'counter', dmgMultipler, abilityIndex])
+    } else if (engagingCounters == false) {
+        console.log('bonus attack logged')
+        battleBro.queuedAttacks.push([target, 'bonus', dmgMultipler, abilityIndex])
+    }
+}
+
+async function engageCounters() {
+    await logFunctionCall('engageCounters', ...arguments)
+    engagingCounters = true // enemy team is now counter attacking!
+    const enemyTeam = battleBros.filter(unit => unit.team !== battleBros[selectedBattleBroNumber].team)
+    for (let enemy of enemyTeam) {
+        if (enemy.queuedAttacks.length > 0) { // if they have a queued attack
+            let firstQueuedAttack = enemy.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
+            let counterAbilityName = infoAboutCharacters[enemy.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
+            let promise = useAbility(counterAbilityName, enemy, firstQueuedAttack[0], false, firstQueuedAttack[1])
+            promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
+        }
+    }
+    /*let promises = []
+    for (let battleBro of battleBros) {
+        if (battleBro.queuedAttacks.length > 0) {
+            let abilityName = infoAboutCharacters[battleBro.character].abilities[battleBro.queuedAttacks[0][3]]
+            let promise = useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
+            promises.push(promise)
+        }
+    }
+    await Promise.all(promises)*/
+}
+
+/*async function engageQueuedAttacks() { await logFunctionCall('engageQueuedAttacks', ...arguments)
+    for (const [type,attacker,target] of queuedAttacks) {
+        let abilityName = infoAboutCharacters[attacker.character].abilities[0]
+        if (await useAbility(abilityName,attacker,target,false,type)) {
+            setTimeout(() => {},601)
+        }
+        console.log(attacker.character+' '+type+'s on '+target.character+' using '+abilityName)
+    }
+    console.log(queuedAttacks)
+    queuedAttacks = [] // all attacks have been iterated over so we don't need them anymore
+      -----------------------------------AI Generated helpful code that provides an alternate method of removing attacks from queuedAttacks
+    while (queuedEffects.length > 0) {
+        const [type, applier, target] = queuedEffects.shift();
+
+        if (thing === true) {
+            queuedEffects.push([newType, newApplier, newTarget]);
+        }
+
+        // No need to remove the current one — it's already removed by shift()
+    }
+}*/
 
 async function playProjectileAttackAnimation(battleBro, target, abilityName, hasTurn, type, imageName, colour = '#00FFFF') {
     await logFunctionCall('playProjectileAttackAnimation', ...arguments)
@@ -2380,101 +2453,8 @@ async function playSparkImpact(x, y, primaryColour = 'yellow', secondaryColour =
 }
 
 
-async function endTurn(battleBro) {
-    await logFunctionCall('endTurn', ...arguments)
-    battleBro.turnMeter -= 100
-    engagingCounters = false
-    await eventHandle('endedTurn', battleBro)
-    await updateBattleBrosHtmlText()
-    await calculateNextTurnFromTurnMetersAndSpeeds()
-    await updateEffectsAtTurnEnd(battleBro)
-}
 
-async function checkAttacks(type) {
-    await logFunctionCall('checkAttacks', ...arguments)
-    console.log("checkAttacks called. Type:", type, "Pending:", pendingAttackCount, "Engaged:", engagingCounters);
-    while (pendingAttackCount > 1) {
-        console.log(pendingAttackCount)
-        await wait(50)
-    }
-    let enemyTeamHasAttacks = false
-    for (let battleBro of battleBros) {
-        if (battleBro.queuedAttacks.length > 0) {
-            if (battleBro.team == battleBros[selectedBattleBroNumber].team) {
-                console.log('selected guys team still has some attacks to run through')
-                return
-            } else {
-                enemyTeamHasAttacks = true
-                console.log('enemyTeamHasAttacks')
-            }
-        }
-    }
-    if (enemyTeamHasAttacks == true && type !== 'counter' && engagingCounters!==true) { // engage counters if the selected Bro's team's attacks are all spent
-        engagingCounters = true
-        await engageCounters()
-        console.log('engaging counter attacks')
-    } else if (enemyTeamHasAttacks !== true) { // end the turn when no-one has any attacks anymore
-        await endTurn(battleBros[selectedBattleBroNumber])
-        engagingCounters=false
-    }
-}
 
-async function assist(battleBro, target, caller, abilityIndex = 0) {
-    await logFunctionCall('assist', ...arguments)
-    console.log(caller.character + ' calls ' + battleBro.character + ' to assist on ' + target.character)
-    let abilityName = infoAboutCharacters[battleBro.character].abilities[abilityIndex] // use abilityIndex incase we assist with a non-basic
-    battleBro.queuedAttacks.unshift([target, 'assist', abilityIndex]) // add the current assist to the start of queued attacks so that the turn doesn't end before the assist is finished
-    //await useAbility(abilityName, battleBro, target, false, 'assist') // add AWAIT in the case of bug
-}
-
-async function addAttackToQueue(battleBro, target, abilityIndex=0) {
-    await logFunctionCall('addAttackToQueue', ...arguments)
-    if (battleBros[selectedBattleBroNumber].team !== battleBro.team) {
-        console.log('counter attack logged')
-        let currentTarget = battleBros.find(enemy => enemy.isTarget && enemy.team !== battleBro.team)
-        currentTarget = (currentTarget.taunting == true) ? currentTarget : target
-        battleBro.queuedAttacks.push([currentTarget, 'counter', abilityIndex])
-    } else if (engagingCounters == false) {
-        console.log('bonus attack logged')
-        battleBro.queuedAttacks.push([target, 'bonus', abilityIndex])
-    }
-}
-
-async function engageCounters() {
-    await logFunctionCall('engageCounters', ...arguments)
-    engagingCounters = true // enemy team is now counter attacking!
-    let promises = []
-    for (let battleBro of battleBros) {
-        if (battleBro.queuedAttacks.length > 0) {
-            let abilityName = infoAboutCharacters[battleBro.character].abilities[battleBro.queuedAttacks[0][2]]
-            let promise = useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
-            promises.push(promise)
-        }
-    }
-    await Promise.all(promises)
-}
-
-/*async function engageQueuedAttacks() { await logFunctionCall('engageQueuedAttacks', ...arguments)
-    for (const [type,attacker,target] of queuedAttacks) {
-        let abilityName = infoAboutCharacters[attacker.character].abilities[0]
-        if (await useAbility(abilityName,attacker,target,false,type)) {
-            setTimeout(() => {},601)
-        }
-        console.log(attacker.character+' '+type+'s on '+target.character+' using '+abilityName)
-    }
-    console.log(queuedAttacks)
-    queuedAttacks = [] // all attacks have been iterated over so we don't need them anymore
-      -----------------------------------AI Generated helpful code that provides an alternate method of removing attacks from queuedAttacks
-    while (queuedEffects.length > 0) {
-        const [type, applier, target] = queuedEffects.shift();
-
-        if (thing === true) {
-            queuedEffects.push([newType, newApplier, newTarget]);
-        }
-
-        // No need to remove the current one — it's already removed by shift()
-    }
-}*/
 
 async function addFloatingText(targetElement, value, colour) {
     await logFunctionCall('addFloatingText', ...arguments)
