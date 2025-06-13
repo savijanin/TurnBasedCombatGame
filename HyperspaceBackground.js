@@ -6,7 +6,7 @@
     Credits: https://www.csscodelab.com/javascript-space-travel-canvas-animation/
 */
 
-$(document).readyx(function () {
+$(document).ready(function () {
 
     var canvas = document.getElementById('backgroundCanvas');
     var flr = Math.floor;
