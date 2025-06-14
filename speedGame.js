@@ -450,8 +450,8 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (attackInfo) {
             //await logFunctionCall('method: use (', ...arguments,)
-            await dealDmg(attackInfo,this.abilityDamage,'physical')
-            await applyEffect(attackInfo.battleBro,attackInfo.battleBro,'offenceUp',2)
+            await dealDmg(attackInfo, this.abilityDamage, 'physical')
+            await applyEffect(attackInfo.battleBro, attackInfo.battleBro, 'offenceUp', 2)
         }
     },
     'test2': {
