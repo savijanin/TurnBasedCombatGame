@@ -1,3 +1,4 @@
+
 class ActionInfo {
     /*
     constructor(battleBro, target, abilityName = undefined) {
@@ -47,3 +48,6 @@ class ActionInfo {
         return newObj;
     }
 }
+
+
+ActionInfo; // to remove unused variable warning

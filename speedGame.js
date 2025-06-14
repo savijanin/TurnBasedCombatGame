@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
-/* global $ */
-
+/* global $, ActionInfo */
 
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
@@ -1513,8 +1512,10 @@ const infoAboutEffects = {
         image: 'images/effects/rotating.png',
         type: 'buff',
         effectTags: ['deflection'],
-        attacked: async function (unit, effect, target, attacker) {
-
+        attacked: async function (unit, effect, target, attacker, actionInfo) {
+            /*if (infoAboutAbilities[actionInfo.abilityName].abilityTags.includes('projectile_attack')) {
+                unit.flatDamageReceived=0
+            }*/
         },
         endOfDamage: async function (unit, effect, target, attacker) {
 
@@ -1586,7 +1587,7 @@ const infoAboutEffects = {
         name: 'abilityBlock',
         image: 'images/effects/abilityBlock.png',
         type: 'debuff',
-        effectTags: [],
+        effectTags: ['stifle'],
         apply: async function (unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             /*console.log(infoAboutCharacters[unit.character].abilities)
@@ -1929,7 +1930,7 @@ const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
     damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points minus dealtdmg
     endOfDamage: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points remaining
-    attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], //target,attacker
+    attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], //target,attacker,actionInfoPLACEHOLDER
     gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], // target, effect
     lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, effect, removalType, dispeller
     startedTurn: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1], // guy who started their turn
@@ -3231,7 +3232,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
     let user = actionInfo.battleBro
     let target = actionInfo.target
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
-    if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('attacked', target, user) // activate passive conditions upon being attacked unless the damage is shadow damage
+    if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('attacked', target, user, actionInfo) // activate passive conditions upon being attacked unless the damage is shadow damage
     if (Math.random() > (target.evasion - user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
@@ -3559,8 +3560,11 @@ async function applyEffectsToSelf(inputs, effects) {
 
 
 async function logFunctionCall(fctName, args) {
-    return
-    let stackDepth = new Error().stack.split('\n').length
-    console.log("  ".repeat(stackDepth), fctName, args)
-    //await wait(runningDelay)
+    if (runningDelay > 0) {
+        let stackDepth = new Error().stack.split('\n').length
+        console.log("  ".repeat(stackDepth), fctName, args)
+        if (runningDelay > 1) {
+            await wait(runningDelay)
+        }
+    }
 }
