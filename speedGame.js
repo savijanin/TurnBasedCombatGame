@@ -159,7 +159,7 @@ const infoAboutCharacters = {
         image: 'images/Jabba.png',
         health: 50000,
         protection: 15000,
-        speed: 111,
+        speed: 200,
         potency: 100,
         tenacity: 100,
         critChance: 50,
@@ -450,8 +450,8 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (battleBro, target) {
             //await logFunctionCall('method: use (', ...arguments,)
-            await dealDmg(battleBro, target, this.abilityDamage, 'physical')
-            await applyEffect(battleBro, battleBro, 'offenceUp', 2);
+            await dealDmg(battleBro,target,this.abilityDamage,'physical')
+            await applyEffect(battleBro,battleBro,'offenceUp',2)
         }
     },
     'test2': {
@@ -2468,7 +2468,7 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
     let abilityUsed
     if (ability.use)
         battleBro.flatDamageDealt *= dmgPercent * 0.01
-    abilityUsed = await executeAbility(abilityName, battleBro, target)
+    abilityUsed = await ability.use(battleBro,target)//executeAbility(abilityName, battleBro, target)
     battleBro.flatDamageDealt /= dmgPercent * 0.01
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
@@ -2503,25 +2503,44 @@ async function useAbility(abilityName, battleBro, target, hasTurn = false, type 
     }
     //if (hasTurn==true) await endTurn(battleBro)
 }
-
+/*
 async function executeAbility(abilityName, battleBro, target) {
     const ability = infoAboutAbilities[abilityName]
     // Provide context helpers automatically
-    const ctx = {
-        self: battleBro,
+    const obj = {
+        battleBro: battleBro,
         target: target,
         abilityName: abilityName,
-        async dealDmg(type = 'physical', dmg = ability.abilityDamage, triggerEventHandlers = true, ignoreProtection = false, sourceName = abilityName, effectDmg = false, user = battleBro, target = this.target) {
+        dealDmg: async function (
+            type = 'physical',
+            target = this.target,
+            dmg = ability.abilityDamage,
+            triggerEventHandlers = true,
+            ignoreProtection = false,
+            sourceName = abilityName,
+            effectDmg = false,
+            user = battleBro
+        ) {
             await dealDmg(user, target, dmg, type, triggerEventHandlers, effectDmg, ignoreProtection, sourceName)
         },
-        async applyEffect(effectName, duration = 1, stacks = 1, resistable = true, isLocked = false, user = battleBro, target = this.target) {
+        applyEffect: async function (
+            effectName,
+            target = this.target,
+            duration = 1,
+            stacks = 1,
+            resistable = true,
+            isLocked = false,
+            user = battleBro
+        ) {
             await applyEffect(user, target, effectName, duration, stacks, resistable, isLocked)
         },
         // Add any other shortcut helpers here as needed...
     }
-
-    await ability.use.call(ctx)
-}
+    if (ability.use) {
+        //return await ability.use.call(obj, battleBro, target)
+        return await ability.use(battleBro, target, obj)
+    }
+}*/
 
 async function endTurn(battleBro) {
     await logFunctionCall('endTurn', ...arguments)
