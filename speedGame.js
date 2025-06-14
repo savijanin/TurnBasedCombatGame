@@ -675,7 +675,7 @@ const infoAboutAbilities = {
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
             let enemyHadShatterpoint = target.buffs?.find(e => e.name == 'shatterpoint')
-            await assist(ally, target, battleBro)
+            await assist({ battleBro: ally, target: target }, battleBro)
             await heal({ battleBro: battleBro, target: ally }, ally.maxProtection * 0.3, 'protection')
             await heal({ battleBro: battleBro, target: battleBro }, battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
