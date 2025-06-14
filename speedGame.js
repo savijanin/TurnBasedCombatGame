@@ -450,7 +450,7 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (attackInfo) {
             //await logFunctionCall('method: use (', ...arguments,)
-            await dealDmg(attackInfo.battleBro,attackInfo.target,this.abilityDamage,'physical')
+            await dealDmg(attackInfo,this.abilityDamage,'physical')
             await applyEffect(attackInfo.battleBro,attackInfo.battleBro,'offenceUp',2)
         }
     },
@@ -557,7 +557,9 @@ const infoAboutAbilities = {
                 .filter((_, i) => i !== attackInfo.battleBro.team) // removes this character's team from the array
                 .flat() // flattens nested arrays into just one
             for (let enemy of enemies) {
-                await dealDmg(attackInfo.battleBro, enemy, this.abilityDamage, 'special')
+                let attackInfo_targetEnemy = Object.assign({}, attackInfo)
+                attackInfo_targetEnemy.target = enemy
+                await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'special')
                 let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
                 for (let buff of copiedEffects) {
                     await applyEffect(attackInfo.battleBro, attackInfo.battleBro, buff.name, 3)
@@ -850,7 +852,9 @@ const infoAboutAbilities = {
             const enemies = aliveBattleBros.filter((_, i) => i !== attackInfo.battleBro.team).flat()
             for (let enemy of enemies) {
                 for (i = 0; i < 2; i++) {
-                    let hit = await dealDmg(attackInfo.battleBro, enemy, this.abilityDamage, 'ultra', false)
+                    let attackInfo_targetEnemy = Object.assign({}, attackInfo)
+                    attackInfo_targetEnemy.target = enemy
+                    let hit = await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'ultra', false)
                     damageDealt += hit[0]
                 }
                 await applyEffect(attackInfo.battleBro, enemy, 'damageOverTime', 3, 3)
@@ -929,7 +933,9 @@ const infoAboutAbilities = {
             const enemies = aliveBattleBros.filter((_, i) => i !== attackInfo.battleBro.team).flat()
             const enemyHealths = enemies.map(guy => guy.health)
             const healthiestEnemy = enemies[enemyHealths.indexOf(Math.max(...enemyHealths))]
-            await dealDmg(attackInfo.battleBro, healthiestEnemy, this.abilityDamage, 'physical')
+            let attackInfo_healthiestEnemy = Object.assign({}, attackInfo)
+            attackInfo_healthiestEnemy.target = healthiestEnemy
+            await dealDmg(attackInfo_healthiestEnemy, this.abilityDamage, 'physical')
         },
     },
     // --------------------------------------------------------KRAYT RAID
@@ -1606,7 +1612,11 @@ const infoAboutEffects = {
         },
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                await dealDmg(effect.caster, unit, 5, 'percentage', false, true, true, this.name)
+                let attackInfo = {
+                    battleBro: effect.caster,
+                    target: unit
+                }
+                await dealDmg(attackInfo, 5, 'percentage', false, true, true, this.name)
                 unit.maxHealth *= 0.95
             }
         }
@@ -1652,7 +1662,11 @@ const infoAboutEffects = {
         effectTags: ['stack', 'damageOverTime'],
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                await dealDmg(effect.caster, unit, 5, 'percentage', false, true, false, this.name)
+                let attackInfo = {
+                    battleBro: effect.caster,
+                    target: unit
+                }
+                await dealDmg(attackInfo, 5, 'percentage', false, true, false, this.name)
             }
         }
     },
@@ -2448,8 +2462,7 @@ async function useAbility(abilityName, attackInfo, hasTurn = false, type = 'main
         animation = 'projectile'
         let taskDone = false
         await playProjectileAttackAnimation(
-            attackInfo.battleBro,
-            attackInfo.target,
+            attackInfo,
             abilityName,
             hasTurn,
             type,
@@ -2472,7 +2485,7 @@ async function useAbility(abilityName, attackInfo, hasTurn = false, type = 'main
     let abilityUsed
     if (ability.use)
         attackInfo.battleBro.flatDamageDealt *= dmgPercent * 0.01
-    abilityUsed = await ability.use(attackInfo.battleBro,attackInfo.target)//executeAbility(abilityName, attackInfo)
+    abilityUsed = await ability.use(attackInfo)//executeAbility(abilityName, attackInfo)
     attackInfo.battleBro.flatDamageDealt /= dmgPercent * 0.01
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
@@ -3172,8 +3185,10 @@ async function dodge(user, target) {
     await removeEffect(target, 'loseOnDodge')
 }
 
-async function dealDmg(user, target, dmg, type, triggerEventHandlers = true, effectDmg = false, ignoreProtection = false, sourceName = null) {
+async function dealDmg(attackInfo, dmg, type, triggerEventHandlers = true, effectDmg = false, ignoreProtection = false, sourceName = null) {
     await logFunctionCall('dealDmg', ...arguments)
+    let user = attackInfo.battleBro
+    let target = attackInfo.target
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
     if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('attacked', target, user) // activate passive conditions upon being attacked unless the damage is shadow damage
     if (Math.random() > (target.evasion - user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
