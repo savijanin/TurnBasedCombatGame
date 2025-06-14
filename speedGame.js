@@ -933,7 +933,7 @@ const infoAboutAbilities = {
         image: 'images/abilities/ability_darthvader_basic.png',
         abilityType: 'special',
         cooldown: 6,
-        abilityTags: ['attack', 'physical_damage', 'initialCooldon'],
+        abilityTags: ['attack', 'physical_damage', 'initialCooldown'],
         abilityDamage: 500,
         desc: 'Deals physical damage to the enemy with the most health.',
         use: async function (actionInfo) {
@@ -2054,6 +2054,7 @@ async function createBattleBroVars() {
         battleBro.queuedAttacks = []
         battleBro.taunting = false
         battleBro.buffs = []
+        battleBro.effects = []
         battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
         battleBro.passives = battleBro.passives.filter(passive => {
             return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
@@ -3057,8 +3058,8 @@ async function updateEffectIcons(battleBro) {
             countDiv.style.position = 'absolute';
             countDiv.style.top = '0';
             countDiv.style.right = '0';
-            countDiv.style.backgroundColour = 'rgba(24, 1, 1, 0.06)';
-            countDiv.style.colour = 'white';
+            countDiv.style.backgroundColor = 'rgba(24, 1, 1, 0.06)';
+            countDiv.style.color = 'white';
             countDiv.style.fontSize = '12px';
             countDiv.style.padding = '1px 3px';
             countDiv.style.borderRadius = '8px';
@@ -3472,7 +3473,7 @@ async function runOnAuto(runForever = true) {
                 let targetedEnemy
                 if (skill.needsEnemyTarget === undefined || skill.needsEnemyTarget == 1) {
                     let aliveEnemies = battleBros.filter(bb => bb.team != battleBro.team && bb.health > 0)
-                    let targetableEnemies = aliveEnemies.filter(bb => !bb.effects.includes('Eaten'))
+                    let targetableEnemies = aliveEnemies.filter(bb => !bb.effects?.includes('Eaten'))
                     if (!targetableEnemies.length) throw new Error('No live enemies')
                     let randomEnemyNum = Math.floor(Math.random() * targetableEnemies.length)
                     targetedEnemy = targetableEnemies[randomEnemyNum]
