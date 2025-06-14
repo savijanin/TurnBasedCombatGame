@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* global $ */
 
+
 var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
@@ -2435,10 +2436,14 @@ async function abilityClicked(clickedElement) {
     } else {
         console.log('where tags')
     }
+    /*
     let attackInfo = {
         battleBro: battleBro,
         target: target
     }
+    */
+    let attackInfo = new AttackInfo(battleBro, target, undefined);
+
     if (!pendingAbility) await useAbilityMain(abilityName, attackInfo, true)
 }
 
