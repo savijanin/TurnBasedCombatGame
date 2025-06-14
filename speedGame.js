@@ -1222,7 +1222,7 @@ const infoAboutPassives = {
             if (attacker.team === owner.team) {
                 if (target.buffs.find(e => e.name == 'shatterpoint')) {
                     for (let ally of aliveBattleBros[owner.team]) {
-                        await heal({ battleBro:owner, target: ally }, ally.maxProtection * 0.1, 'protection')
+                        await heal({ battleBro: owner, target: ally }, ally.maxProtection * 0.1, 'protection')
                         if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
                             await applyEffect({ battleBro: owner, target: ally }, 'foresight', 1)
                         }
@@ -1420,7 +1420,7 @@ const infoAboutEffects = {
         apply: async function (unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.maxHealth *= 1.15;
-            await heal({ battleBro: unit, target:unit }, unit.maxHealth * 0.13)
+            await heal({ battleBro: unit, target: unit }, unit.maxHealth * 0.13)
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -1464,7 +1464,7 @@ const infoAboutEffects = {
         apply: async function (unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.maxProtection *= 1.15;
-            await heal({ battleBro: unit, target: unit}, unit.maxProtection * 0.13, 'protection')
+            await heal({ battleBro: unit, target: unit }, unit.maxProtection * 0.13, 'protection')
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -3281,12 +3281,12 @@ async function dealDmg(attackInfo, dmg, type, triggerEventHandlers = true, effec
                 target.health -= dealtdmg - prot
             }
             if (user.healthSteal > 0 && prot < dealtdmg && effectDmg == false) {
-                await heal({ battleBro: user, target:user }, (dealtdmg - prot) * user.healthSteal * 0.01, 'health', true)
+                await heal({ battleBro: user, target: user }, (dealtdmg - prot) * user.healthSteal * 0.01, 'health', true)
             }
         } else {
             target.health -= dealtdmg
             if (user.healthSteal > 0 && effectDmg == false) {
-                await heal({ battleBro: user, target:user }, dealtdmg * user.healthSteal * 0.01, 'health', true)
+                await heal({ battleBro: user, target: user }, dealtdmg * user.healthSteal * 0.01, 'health', true)
             }
         }
 
