@@ -1,9 +1,9 @@
 class ActionInfo {
     /*
-    constructor(battleBro, target, damage = undefined) {
+    constructor(battleBro, target, abilityName = undefined) {
         this.battleBro = battleBro;
         this.target = target;
-        this.damage = damage;
+        this.abilityName = abilityName;
     }
     */
     constructor(obj) {
@@ -11,12 +11,12 @@ class ActionInfo {
         this.battleBro = obj.battleBro ? obj.battleBro : obj.target;
         this.target = obj.target ? obj.target : obj.battleBro;
 
-        this.damage = obj.damage;
+        this.abilityName = obj.abilityName;
     }
 
     // --- COPY ---
     copy() {
-        return new ActionInfo({ battleBro: this.battleBro, target: this.target, damage: this.damage });
+        return new ActionInfo({ battleBro: this.battleBro, target: this.target, abilityName: this.abilityName });
     }
 
     // --- METHOD-STYLE SETTERS (for chaining) ---
@@ -30,20 +30,20 @@ class ActionInfo {
         return this;
     }
 
-    setDamage(value) {
-        this.damage = value;
+    setabilityName(value) {
+        this.abilityName = value;
         return this;
     }
 
     // Special ones that clone at the same time, to avoid issues during parallel execution
     withTarget(value) {
-        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.target, damage: this.damage });
+        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.target, abilityName: this.abilityName });
         newObj.target = value;
         return newObj;
     }
 
     withSelfAsTarget() {
-        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.battleBro, damage: this.damage });
+        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.battleBro, abilityName: this.abilityName });
         return newObj;
     }
 }

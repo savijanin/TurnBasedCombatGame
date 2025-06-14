@@ -2464,6 +2464,7 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
 }
 async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main', dmgPercent = 100) {
     await logFunctionCall('useAbility', ...arguments)
+    actionInfo.abilityName = abilityName
     let ability = infoAboutAbilities[abilityName]
     let animation = null
     if (ability.abilityTags.includes("projectile_attack")) {
@@ -2491,9 +2492,8 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
         )
     }
     let abilityUsed
-    if (ability.use)
-        actionInfo.battleBro.flatDamageDealt *= dmgPercent * 0.01
-    abilityUsed = await ability.use(actionInfo)//executeAbility(abilityName, actionInfo)
+    actionInfo.battleBro.flatDamageDealt *= dmgPercent * 0.01
+    abilityUsed = await ability?.use(actionInfo)//executeAbility(abilityName, actionInfo)
     actionInfo.battleBro.flatDamageDealt /= dmgPercent * 0.01
     if (!abilityName || !infoAboutAbilities[abilityName]) {
         console.warn("Ability not found:", abilityName);
@@ -2580,6 +2580,12 @@ async function endTurn(battleBro) {
 }
 
 async function assist(actionInfo, caller, dmgPercent = 100, abilityIndex = 0) {
+    actionInfo.actionDetails = {
+        category: 'assist',
+        caller: caller,
+        dmgPercent: dmgPercent,
+        abilityIndex: abilityIndex,
+    }
     if (actionInfo.battleBro.buffs.find(effect => effect.effectTags.includes('stopAssist'))) return
     actionInfo.battleBro.queuedAttacks.unshift([actionInfo.target, 'assist', dmgPercent, abilityIndex])
 }
@@ -2885,6 +2891,14 @@ async function playStatusEffectGlow(characterDiv, effectName) {
 }
 
 async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, resistable = true, isLocked = false) {
+    actionInfo.actionDetails = {
+        category: 'applyEffect',
+        effectName: effectName,
+        duration: duration,
+        stacks: stacks,
+        resistable: resistable,
+        isLocked: isLocked,
+    }
     if (actionInfo.target.isDead == true || actionInfo.target.buffs.find(effect => effect.effectTags.includes('buffImmunity'))) return // don't apply the effect if the target is dead
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
@@ -3057,6 +3071,13 @@ async function updateEffectIcons(battleBro) {
 
 async function dispel(actionInfo, type = null, tag = null, name = null, dispelLocked = false) {
     await logFunctionCall('dispel', ...arguments)
+    actionInfo.actionDetails = {
+        category: 'dispel',
+        type: type,
+        tag: tag,
+        name: name,
+        dispelLocked: dispelLocked,
+    }
     let dispelledEffects = actionInfo.target.buffs
     if (type) { // dispel if there's a type selected
         dispelledEffects = dispelledEffects.filter(effect => effect.type === type && (effect.isLocked !== true || dispelLocked == true))
@@ -3198,6 +3219,15 @@ async function dodge(user, target) {
 
 async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effectDmg = false, ignoreProtection = false, sourceName = null) {
     await logFunctionCall('dealDmg', ...arguments)
+    actionInfo.actionDetails = {
+        category: 'dealDmg',
+        type: type,
+        dmg: dmg,
+        triggerEventHandlers: triggerEventHandlers,
+        effectDmg: effectDmg,
+        ignoreProtection: ignoreProtection,
+        sourceName: sourceName
+    }
     let user = actionInfo.battleBro
     let target = actionInfo.target
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
@@ -3292,10 +3322,16 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
     }
 }
 
-async function heal(healInfo, healing, type = 'health', isHealthSteal = false) {
+async function heal(actionInfo, healing, type = 'health', isHealthSteal = false) {
     await logFunctionCall('heal', ...arguments)
-    let user = healInfo.battleBro
-    let target = healInfo.target
+    actionInfo.actionDetails = {
+        category: 'heal',
+        type: type,
+        healing: healing,
+        isHealthSteal: isHealthSteal,
+    }
+    let user = actionInfo.battleBro
+    let target = actionInfo.target
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     if (isHealthSteal == false && target.buffs.find(e => e.effectTags.includes('loseOnHeal'))) await removeEffect(target, 'loseOnHeal')
     if (type == 'health') {
