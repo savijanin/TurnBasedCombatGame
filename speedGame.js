@@ -537,9 +537,11 @@ const infoAboutAbilities = {
             }
             if (attackInfo.target.health >= attackInfo.target.maxHealth * 0.5) {
                 await TMchange(attackInfo.battleBro, attackInfo.battleBro, 40)
-                await applyEffect({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, 'foresight', 2);
+                //await applyEffect({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, 'foresight', 2);
                 //await applyEffect(attackInfo.copyAndChangeTargetTo(attackInfo.battleBro), 'foresight', 2);
                 //await applyEffect(attackInfo.copy().setTarget(attackInfo.battleBro), 'foresight', 2);
+                let selfAttackInfo = attackInfo.withTarget(attackInfo.battleBro)
+                await applyEffect(selfAttackInfo, 'foresight', 2);
             } else {
                 await applyEffect({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, 'offenceUp', 2);
                 await applyEffect({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, 'defencePenetrationUp', 2);
@@ -560,10 +562,8 @@ const infoAboutAbilities = {
                 .filter((_, i) => i !== attackInfo.battleBro.team) // removes this character's team from the array
                 .flat() // flattens nested arrays into just one
             for (let enemy of enemies) {
-                let attackInfo_targetEnemy = {
-                    battleBro: attackInfo.battleBro,
-                    target: enemy
-                }
+
+                let attackInfo_targetEnemy = attackInfo.copy().setTarget(enemy)
                 await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'special')
                 let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
                 for (let buff of copiedEffects) {
@@ -857,8 +857,7 @@ const infoAboutAbilities = {
             const enemies = aliveBattleBros.filter((_, i) => i !== attackInfo.battleBro.team).flat()
             for (let enemy of enemies) {
                 for (let i = 0; i < 2; i++) {
-                    let attackInfo_targetEnemy = Object.assign({}, attackInfo)
-                    attackInfo_targetEnemy.target = enemy
+                    let attackInfo_targetEnemy = attackInfo.withTarget(enemy)
                     let hit = await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'ultra', false)
                     damageDealt += hit[0]
                 }
@@ -938,8 +937,7 @@ const infoAboutAbilities = {
             const enemies = aliveBattleBros.filter((_, i) => i !== attackInfo.battleBro.team).flat()
             const enemyHealths = enemies.map(guy => guy.health)
             const healthiestEnemy = enemies[enemyHealths.indexOf(Math.max(...enemyHealths))]
-            let attackInfo_healthiestEnemy = Object.assign({}, attackInfo)
-            attackInfo_healthiestEnemy.target = healthiestEnemy
+            let attackInfo_healthiestEnemy = attackInfo.withTarget(healthiestEnemy)
             await dealDmg(attackInfo_healthiestEnemy, this.abilityDamage, 'physical')
         },
     },
@@ -1617,10 +1615,7 @@ const infoAboutEffects = {
         },
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                let attackInfo = {
-                    battleBro: effect.caster,
-                    target: unit
-                }
+                let attackInfo = new AttackInfo(effect.caster, unit)
                 await dealDmg(attackInfo, 5, 'percentage', false, true, true, this.name)
                 unit.maxHealth *= 0.95
             }
@@ -1667,10 +1662,7 @@ const infoAboutEffects = {
         effectTags: ['stack', 'damageOverTime'],
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                let attackInfo = {
-                    battleBro: effect.caster,
-                    target: unit
-                }
+                let attackInfo = new AttackInfo(effect.caster, unit)
                 await dealDmg(attackInfo, 5, 'percentage', false, true, false, this.name)
             }
         }
@@ -2319,10 +2311,7 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            let attackInfo = {
-                battleBro: pendingAbility.user,
-                target: pendingAbility.target
-            }
+            let attackInfo = new AttackInfo(pendingAbility.user, pendingAbility.target)
             await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
             // the ally Use part of the ability is called before the actual part of the ability is called
             await useAbilityMain(pendingAbility.abilityName, attackInfo, true)
@@ -2442,7 +2431,7 @@ async function abilityClicked(clickedElement) {
         target: target
     }
     */
-    let attackInfo = new AttackInfo(battleBro, target, undefined);
+    let attackInfo = new AttackInfo(battleBro, target);
 
     if (!pendingAbility) await useAbilityMain(abilityName, attackInfo, true)
 }
@@ -2519,11 +2508,8 @@ async function useAbility(abilityName, attackInfo, hasTurn = false, type = 'main
                 if (ally.queuedAttacks.length > 0) { // if they have a queued attack
                     let firstQueuedAttack = ally.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
                     let assistAbilityName = infoAboutCharacters[ally.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
-                    let attackInfo_firstQueuedAttack = { // attack info of this assist
-                        battleBro: ally,
-                        target: firstQueuedAttack[0]
-                    }
-                    let promise = useAbility(assistAbilityName, attackInfo_firstQueuedAttack, false, firstQueuedAttack[1], firstQueuedAttack[2])
+                    let attackInfo_assist = new AttackInfo(ally, firstQueuedAttack[0])
+                    let promise = useAbility(assistAbilityName, attackInfo_assist, false, firstQueuedAttack[1], firstQueuedAttack[2])
                     promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
                 }
             }
@@ -2531,11 +2517,8 @@ async function useAbility(abilityName, attackInfo, hasTurn = false, type = 'main
         if (attackInfo.battleBro.queuedAttacks.length > 0) { // start bonus/counters if this character has some queued
             let firstQueuedAttack = attackInfo.battleBro.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
             let nextAbilityName = infoAboutCharacters[attackInfo.battleBro.character].abilities[firstQueuedAttack[3]] // chosen ability index (usually the basic)
-            let attackInfo_firstQueuedAttack = {
-                battleBro: attackInfo.battleBro,
-                target: firstQueuedAttack[0]
-            }
-            let promise = useAbility(nextAbilityName, attackInfo_firstQueuedAttack, hasTurn, firstQueuedAttack[1], firstQueuedAttack[2]) // after the attack is done, use the next attack in the list of queued attacks
+            let attackInfo_extra = attackInfo.withTarget(firstQueuedAttack[0])
+            let promise = useAbility(nextAbilityName, attackInfo_extra, hasTurn, firstQueuedAttack[1], firstQueuedAttack[2]) // after the attack is done, use the next attack in the list of queued attacks
             promises.push(promise)
         }
     }
@@ -2618,10 +2601,7 @@ async function engageCounters() {
         if (enemy.queuedAttacks.length > 0) { // if they have a queued attack
             let firstQueuedAttack = enemy.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
             let counterAbilityName = infoAboutCharacters[enemy.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
-            let attackInfo = {
-                battleBro: enemy,
-                target: firstQueuedAttack[0]
-            }
+            let attackInfo = new AttackInfo(enemy, firstQueuedAttack[0])
             let promise = useAbility(counterAbilityName, attackInfo, false, firstQueuedAttack[1], firstQueuedAttack[2])
             promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
         }

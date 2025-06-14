@@ -1,5 +1,5 @@
 class AttackInfo {
-    constructor(battleBro, target, damage) {
+    constructor(battleBro, target, damage = undefined) {
         this.battleBro = battleBro;
         this.target = target;
         this.damage = damage;
@@ -24,5 +24,12 @@ class AttackInfo {
     setDamage(value) {
         this.damage = value;
         return this;
+    }
+
+    // Special ones that clone at the same time, to avoid issues during parallel execution
+    withTarget(value) {
+        let newObj = new AttackInfo(this.battleBro, this.target, this.damage);
+        newObj.target = value;
+        return newObj;
     }
 }
