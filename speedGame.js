@@ -821,7 +821,7 @@ const infoAboutAbilities = {
         desc: 'Deal physical damage 5 times to target enemy and recover health equal to the damage dealt. On 3 or more critical hits inflict offense down for 3 turns.',
         use: async function (attackInfo) {
             let hits = []
-            for (i = 0; i < 5; i++) {
+            for (let i = 0; i < 5; i++) {
                 hits[i] = await dealDmg(attackInfo, this.abilityDamage, 'physical', false)
             }
             let critCounter = 0
@@ -845,13 +845,13 @@ const infoAboutAbilities = {
         desc: 'Deal ultra damage 4 times to target enemy and 2 times to all other enemies and inflict 3 damage over time for 3 turns. All shadow menace allies recover 20% of the total damage dealt.',
         use: async function (attackInfo) {
             let damageDealt = 0
-            for (i = 0; i < 2; i++) {
+            for (let i = 0; i < 2; i++) {
                 let hit = await dealDmg(attackInfo, this.abilityDamage, 'ultra', false)
                 damageDealt += hit[0]
             }
             const enemies = aliveBattleBros.filter((_, i) => i !== attackInfo.battleBro.team).flat()
             for (let enemy of enemies) {
-                for (i = 0; i < 2; i++) {
+                for (let i = 0; i < 2; i++) {
                     let attackInfo_targetEnemy = Object.assign({}, attackInfo)
                     attackInfo_targetEnemy.target = enemy
                     let hit = await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'ultra', false)
@@ -900,7 +900,7 @@ const infoAboutAbilities = {
         abilityDamage: 50,
         desc: 'Deals physical damage thrice.',
         use: async function (attackInfo) {
-            for (i = 0; i < 3; i++) {
+            for (let i = 0; i < 3; i++) {
                 await dealDmg(attackInfo, this.abilityDamage, 'physical')
             }
         },
@@ -2022,7 +2022,7 @@ async function createBattleBroVars() {
         battleBro.turnMeter = 0
         // battleBro.health = infoAboutCharacter.health
         for (let info in infoAboutCharacter) {
-            if (infoAboutCharacter.hasOwnProperty(info)) {
+            if (Object.prototype.hasOwnProperty.call(infoAboutCharacter, info)) { // fix for: if (infoAboutCharacter.hasOwnProperty(info)) {
                 battleBro[info] = infoAboutCharacter[info];
             }
         }
