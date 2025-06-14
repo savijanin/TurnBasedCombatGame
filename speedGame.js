@@ -541,7 +541,7 @@ const infoAboutAbilities = {
                 //await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2);
                 //await applyEffect(actionInfo.copyAndChangeTargetTo(actionInfo.battleBro), 'foresight', 2);
                 //await applyEffect(actionInfo.copy().setTarget(actionInfo.battleBro), 'foresight', 2);
-                let selfActionInfo = actionInfo.withTarget(actionInfo.battleBro)
+                let selfActionInfo = actionInfo.withSelfAsTarget()
                 await applyEffect(selfActionInfo, 'foresight', 2);
             } else {
                 await applyEffect(actionInfo.withSelfAsTarget(), 'offenceUp', 2);
