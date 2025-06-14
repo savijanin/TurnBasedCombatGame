@@ -1,13 +1,22 @@
 class AttackInfo {
+    /*
     constructor(battleBro, target, damage = undefined) {
         this.battleBro = battleBro;
         this.target = target;
         this.damage = damage;
     }
+    */
+    constructor(obj) {
+        // If only one of battleBro or target is specified, use this value for both
+        this.battleBro = obj.battleBro ? obj.battleBro : obj.target;
+        this.target = obj.target ? obj.target : obj.battleBro;
+        
+        this.damage = obj.damage;
+    }
 
     // --- COPY ---
     copy() {
-        return new AttackInfo(this.battleBro, this.target, this.damage);
+        return new AttackInfo({ battleBro: this.battleBro, target: this.target, damage: this.damage });
     }
 
     // --- METHOD-STYLE SETTERS (for chaining) ---
@@ -28,8 +37,13 @@ class AttackInfo {
 
     // Special ones that clone at the same time, to avoid issues during parallel execution
     withTarget(value) {
-        let newObj = new AttackInfo(this.battleBro, this.target, this.damage);
+        let newObj = new AttackInfo({ battleBro: this.battleBro, target: this.target, damage: this.damage });
         newObj.target = value;
+        return newObj;
+    }
+
+    withSelfAsTarget() {
+        let newObj = new AttackInfo({ battleBro: this.battleBro, target: this.battleBro, damage: this.damage });
         return newObj;
     }
 }
@@ -66,10 +80,4 @@ class EffectInfo {
         return this;
     }
 
-    // Special ones that clone at the same time, to avoid issues during parallel execution
-    withTarget(value) {
-        let newObj = new AttackInfo(this.battleBro, this.target, this.effectName);
-        newObj.target = value;
-        return newObj;
-    }
 }

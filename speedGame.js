@@ -452,7 +452,7 @@ const infoAboutAbilities = {
         use: async function (attackInfo) {
             //await logFunctionCall('method: use (', ...arguments,)
             await dealDmg(attackInfo, this.abilityDamage, 'physical')
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'offenceUp', 2)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'offenceUp', 2)
         }
     },
     'test2': {
@@ -471,7 +471,8 @@ const infoAboutAbilities = {
         },
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
-            await heal({ battleBro: battleBro, target: ally }, battleBro.physicalDamage, 'protection')
+            let healInfo = new AttackInfo({ battleBro: battleBro, target: ally })
+            await heal(healInfo, battleBro.physicalDamage, 'protection')
         }
     },
     'bowcaster': {
@@ -500,8 +501,8 @@ const infoAboutAbilities = {
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         use: async function (attackInfo) {
             await logFunctionCall('method: use (', ...arguments,)
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'taunt', 2, 1, false, true);
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'healthUp', 2, 2);
+            await applyEffect(attackInfo.withSelfAsTarget(), 'taunt', 2, 1, false, true);
+            await applyEffect(attackInfo.withSelfAsTarget(), 'healthUp', 2, 2);
         }
     },
     'defiantRoar': {
@@ -514,9 +515,9 @@ const infoAboutAbilities = {
         zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
         use: async function (attackInfo) {
             await logFunctionCall('method: use (', ...arguments,)
-            await dispel({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, 'debuff')
-            await heal({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, attackInfo.battleBro.maxHealth * 0.5)
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'defenceUp', 3);
+            await dispel(attackInfo.withSelfAsTarget(), 'debuff')
+            await heal(attackInfo.withSelfAsTarget(), attackInfo.battleBro.maxHealth * 0.5)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'defenceUp', 3);
             if (Math.random() < 0.5) {
                 await TMchange(attackInfo.battleBro, attackInfo.battleBro, 25)
             }
@@ -537,14 +538,14 @@ const infoAboutAbilities = {
             }
             if (attackInfo.target.health >= attackInfo.target.maxHealth * 0.5) {
                 await TMchange(attackInfo.battleBro, attackInfo.battleBro, 40)
-                //await applyEffect(new EffectInfo(attackInfo.battleBro), 'foresight', 2);
+                //await applyEffect(attackInfo.withSelfAsTarget(), 'foresight', 2);
                 //await applyEffect(attackInfo.copyAndChangeTargetTo(attackInfo.battleBro), 'foresight', 2);
                 //await applyEffect(attackInfo.copy().setTarget(attackInfo.battleBro), 'foresight', 2);
                 let selfAttackInfo = attackInfo.withTarget(attackInfo.battleBro)
                 await applyEffect(selfAttackInfo, 'foresight', 2);
             } else {
-                await applyEffect(new EffectInfo(attackInfo.battleBro), 'offenceUp', 2);
-                await applyEffect(new EffectInfo(attackInfo.battleBro), 'defencePenetrationUp', 2);
+                await applyEffect(attackInfo.withSelfAsTarget(), 'offenceUp', 2);
+                await applyEffect(attackInfo.withSelfAsTarget(), 'defencePenetrationUp', 2);
             }
         }
     },
@@ -567,7 +568,7 @@ const infoAboutAbilities = {
                 await dealDmg(attackInfo_targetEnemy, this.abilityDamage, 'special')
                 let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
                 for (let buff of copiedEffects) {
-                    await applyEffect(new EffectInfo(attackInfo.battleBro), buff.name, 3)
+                    await applyEffect(attackInfo.withSelfAsTarget(), buff.name, 3)
                 }
             }
             for (let ally of aliveBattleBros[attackInfo.battleBro.team].filter(ally => ally !== attackInfo.battleBro)) {
@@ -604,9 +605,9 @@ const infoAboutAbilities = {
         desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
         use: async function (attackInfo) {
             await logFunctionCall('method: use (', ...arguments,)
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'tenacityUp', 2)
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'protectionUp', 2, 2)
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'foresight', 2)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'tenacityUp', 2)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'protectionUp', 2, 2)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'foresight', 2)
             const copiedEffects = attackInfo.battleBro.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
             let bonusTurnMeter = 0
             for (let ally of aliveBattleBros[attackInfo.battleBro.team].filter(ally => ally !== attackInfo.battleBro)) {
@@ -637,7 +638,7 @@ const infoAboutAbilities = {
             if (attackInfo.battleBro.health > attackInfo.battleBro.maxHealth * 0.5) {
                 await TMchange(attackInfo.battleBro, attackInfo.battleBro, 15)
             } else {
-                await heal({ battleBro: attackInfo.battleBro, target: attackInfo.battleBro }, hit[0] + hit2[0])
+                await heal(attackInfo.withSelfAsTarget(), hit[0] + hit2[0])
             }
         }
     },
@@ -676,14 +677,15 @@ const infoAboutAbilities = {
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
             let enemyHadShatterpoint = target.buffs?.find(e => e.name == 'shatterpoint')
-            await assist({ battleBro: ally, target: target }, battleBro)
-            await heal({ battleBro: battleBro, target: ally }, ally.maxProtection * 0.3, 'protection')
-            await heal({ battleBro: battleBro, target: battleBro }, battleBro.maxProtection * 0.3, 'protection')
+            let attackInfo = new AttackInfo({ battleBro: ally, target: target })
+            await assist(attackInfo, battleBro)
+            await heal(attackInfo, ally.maxProtection * 0.3, 'protection')
+            await heal(attackInfo.withSelfAsTarget(), battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
                 await TMchange(ally, battleBro, ally.turnMeter)
                 await TMchange(battleBro, ally, 100 - ally.turnMeter)
                 console.log(100 - ally.turnMeter)
-                await applyEffect(new EffectInfo(battleBro), 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
+                await applyEffect(attackInfo.withSelfAsTarget(), 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
         }
     },
@@ -702,7 +704,7 @@ const infoAboutAbilities = {
                 hit = await dealDmg(attackInfo, this.abilityDamage, 'physical')
             }
             for (let ally of aliveBattleBros[attackInfo.battleBro.team]) {
-                heal({ battleBro: attackInfo.battleBro, target: ally }, hit)
+                heal(attackInfo.withTarget(ally), hit)
             }
         }
     },
@@ -864,7 +866,7 @@ const infoAboutAbilities = {
                 await applyEffect(new EffectInfo(attackInfo.battleBro, enemy), 'damageOverTime', 3, 3)
             }
             for (let ally of aliveBattleBros[attackInfo.battleBro.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('shadowMenace'))) {
-                await heal({ battleBro: attackInfo.battleBro, target: ally }, damageDealt * 0.2)
+                await heal(attackInfo.withTarget(ally), damageDealt * 0.2)
             }
         }
     },
@@ -876,7 +878,7 @@ const infoAboutAbilities = {
         abilityTags: ['buffGain'],
         desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
         use: async function (attackInfo) {
-            await applyEffect(new EffectInfo(attackInfo.battleBro), 'rotating', 2)
+            await applyEffect(attackInfo.withSelfAsTarget(), 'rotating', 2)
         }
     },
     'Cut it short': {
@@ -1079,7 +1081,8 @@ const infoAboutPassives = {
             if (Math.random() < 1 && owner == target) {
                 //let abilityName=infoAboutCharacters[owner.character].abilities[0]
                 //await useAbility(abilityName,owner,attacker)
-                await addAttackToQueue({ battleBro: owner, target: attacker })
+                let attackInfo = new AttackInfo({ battleBro: owner, target: attacker })
+                await addAttackToQueue(attackInfo)
             }
             return "ok"
         }
@@ -1132,7 +1135,8 @@ const infoAboutPassives = {
         damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             await logFunctionCall('method: damaged (', ...arguments,)
             if (owner.team == attacker.team && crit == true) {
-                await heal({ battleBro: attacker, target: attacker }, target.maxHealth * 0.1)
+                let healInfo = new AttackInfo({ target: attacker })
+                await heal(healInfo, target.maxHealth * 0.1)
             }
         }
     },
@@ -1210,11 +1214,13 @@ const infoAboutPassives = {
             if (owner === selectedBro) {
                 const enemies = aliveBattleBros.filter((_, i) => i !== owner.team).flat()
                 for (let enemy of enemies) {
-                    await dispel({ battleBro: owner, target: enemy }, null, null, 'stealth')
+                    let dispelInfo = new AttackInfo({ battleBro: owner, target: enemy })
+                    await dispel(dispelInfo, null, null, 'stealth')
                 }
                 let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)]
-                await applyEffect(new EffectInfo(owner, randomEnemy), 'speedDown', 1)
-                await applyEffect(new EffectInfo(owner, randomEnemy), 'shatterpoint', 1, 1, false)
+                let effectInfo = new EffectInfo(owner, randomEnemy)
+                await applyEffect(effectInfo, 'speedDown', 1)
+                await applyEffect(effectInfo, 'shatterpoint', 1, 1, false)
             }
         },
         damaged: async function (owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
@@ -1419,7 +1425,8 @@ const infoAboutEffects = {
         apply: async function (unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.maxHealth *= 1.15;
-            await heal({ battleBro: unit, target: unit }, unit.maxHealth * 0.13)
+            let healInfo = new AttackInfo({ target: unit })
+            await heal(healInfo, unit.maxHealth * 0.13)
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -1463,7 +1470,8 @@ const infoAboutEffects = {
         apply: async function (unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.maxProtection *= 1.15;
-            await heal({ battleBro: unit, target: unit }, unit.maxProtection * 0.13, 'protection')
+            let healInfo = new AttackInfo({ target: unit })
+            await heal(healInfo, unit.maxProtection * 0.13, 'protection')
         },
         remove: async function (unit) {
             await logFunctionCall('method: remove (', ...arguments,)
@@ -1615,7 +1623,7 @@ const infoAboutEffects = {
         },
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                let attackInfo = new AttackInfo(effect.caster, unit)
+                let attackInfo = new AttackInfo({ battleBro: effect.caster, target: unit })
                 await dealDmg(attackInfo, 5, 'percentage', false, true, true, this.name)
                 unit.maxHealth *= 0.95
             }
@@ -1662,7 +1670,7 @@ const infoAboutEffects = {
         effectTags: ['stack', 'damageOverTime'],
         startedTurn: async function (unit, effect, selectedBro) {
             if (unit == selectedBro) {
-                let attackInfo = new AttackInfo(effect.caster, unit)
+                let attackInfo = new AttackInfo({ battleBro: effect.caster, target: unit })
                 await dealDmg(attackInfo, 5, 'percentage', false, true, false, this.name)
             }
         }
@@ -2311,7 +2319,7 @@ async function avatarClicked(clickedElement) {
         let isAlly = foundBattleBro.team === pendingAbility.user.team
         if (isAlly) {
             console.log('Executing ally-targeted ability on:', foundBattleBro.character)
-            let attackInfo = new AttackInfo(pendingAbility.user, pendingAbility.target)
+            let attackInfo = new AttackInfo({ battleBro: pendingAbility.user, target: pendingAbility.target })
             await pendingAbility.ability.allyUse?.(pendingAbility.user, foundBattleBro, pendingAbility.target)
             // the ally Use part of the ability is called before the actual part of the ability is called
             await useAbilityMain(pendingAbility.abilityName, attackInfo, true)
@@ -2425,14 +2433,7 @@ async function abilityClicked(clickedElement) {
     } else {
         console.log('where tags')
     }
-    /*
-    let attackInfo = {
-        battleBro: battleBro,
-        target: target
-    }
-    */
-    let attackInfo = new AttackInfo(battleBro, target);
-
+    let attackInfo = new AttackInfo({ battleBro: battleBro, target: target });
     if (!pendingAbility) await useAbilityMain(abilityName, attackInfo, true)
 }
 
@@ -2508,7 +2509,7 @@ async function useAbility(abilityName, attackInfo, hasTurn = false, type = 'main
                 if (ally.queuedAttacks.length > 0) { // if they have a queued attack
                     let firstQueuedAttack = ally.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
                     let assistAbilityName = infoAboutCharacters[ally.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
-                    let attackInfo_assist = new AttackInfo(ally, firstQueuedAttack[0])
+                    let attackInfo_assist = new AttackInfo({ battleBro: ally, target: firstQueuedAttack[0] })
                     let promise = useAbility(assistAbilityName, attackInfo_assist, false, firstQueuedAttack[1], firstQueuedAttack[2])
                     promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
                 }
@@ -2601,7 +2602,7 @@ async function engageCounters() {
         if (enemy.queuedAttacks.length > 0) { // if they have a queued attack
             let firstQueuedAttack = enemy.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
             let counterAbilityName = infoAboutCharacters[enemy.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
-            let attackInfo = new AttackInfo(enemy, firstQueuedAttack[0])
+            let attackInfo = new AttackInfo({ battleBro: enemy, target: firstQueuedAttack[0] })
             let promise = useAbility(counterAbilityName, attackInfo, false, firstQueuedAttack[1], firstQueuedAttack[2])
             promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
         }
