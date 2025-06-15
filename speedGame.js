@@ -1079,6 +1079,19 @@ const infoAboutPassives = {
         abilityTags: [],
         attacked: async function (actionInfo, owner, target, attacker) {
             await logFunctionCall('method: attacked (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            if (target !== actionInfo.parentActionInfo.target)
+                throw('target is not the target in attacked passive')
+            if (attacker !== actionInfo.parentActionInfo.battleBro)
+                throw('attacker is not the attacker in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+            var target = actionInfo.parentActionInfo.target
+            var attacker = actionInfo.parentActionInfo.battleBro
+
             if (Math.random() < 1 && owner == target) {
                 //let abilityName=infoAboutCharacters[owner.character].abilities[0]
                 //await useAbility(abilityName,owner,attacker)
@@ -1097,6 +1110,13 @@ const infoAboutPassives = {
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+
             for (let ally of aliveBattleBros[owner.team]) {
                 ally.armour += 10
                 ally.resistance += 10
@@ -1105,6 +1125,19 @@ const infoAboutPassives = {
         },
         damaged: async function (actionInfo, owner, target, attacker) {
             await logFunctionCall('method: damaged (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            if (target !== actionInfo.parentActionInfo.target)
+                throw('target is not the target in attacked passive')
+            if (attacker !== actionInfo.parentActionInfo.battleBro)
+                throw('attacker is not the attacker in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+            var target = actionInfo.parentActionInfo.target
+            var attacker = actionInfo.parentActionInfo.battleBro
+
             if (Math.random() < 0.5 && owner.team == target.team) {
                 let actionInfo = new ActionInfo({ battleBro: owner, target: target })
                 await applyEffect(actionInfo, 'defenceUp', 3)
@@ -1128,6 +1161,13 @@ const infoAboutPassives = {
         abilityTags: ['health_recovery'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+
             for (let ally of battleBros.filter(unit => unit.team == owner.team)) {
                 ally.maxHealth *= 1.2
                 ally.health *= 1.2
@@ -1136,6 +1176,19 @@ const infoAboutPassives = {
         },
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             await logFunctionCall('method: damaged (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            if (target !== actionInfo.parentActionInfo.target)
+                throw('target is not the target in attacked passive')
+            if (attacker !== actionInfo.parentActionInfo.battleBro)
+                throw('attacker is not the attacker in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+            var target = actionInfo.parentActionInfo.target
+            var attacker = actionInfo.parentActionInfo.battleBro
+
             if (owner.team == attacker.team && crit == true) {
                 let healInfo = new ActionInfo({ target: attacker })
                 await heal(healInfo, target.maxHealth * 0.1)
@@ -1162,6 +1215,19 @@ const infoAboutPassives = {
         },
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             await logFunctionCall('method: damaged (', ...arguments,)
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            if (target !== actionInfo.parentActionInfo.target)
+                throw('target is not the target in attacked passive')
+            if (attacker !== actionInfo.parentActionInfo.battleBro)
+                throw('attacker is not the attacker in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+            var target = actionInfo.parentActionInfo.target
+            var attacker = actionInfo.parentActionInfo.battleBro
+
             // Only care if the target is an ally of the owner
             if (target.team === owner.team && target !== owner && target.protection > 0) {
                 if (!owner.customData) owner.customData = {}
@@ -1197,6 +1263,16 @@ const infoAboutPassives = {
             }
         },
         gainedEffect: async function (actionInfo, owner, target, effect) {
+
+            // Checking new actionInfo values
+            if (owner !== actionInfo.battleBro)
+                throw('owner is not the battleBro in attacked passive')
+            if (target !== actionInfo.parentActionInfo.target)
+                throw('target is not the target in attacked passive')
+            // We can start using those definitions:
+            var owner = actionInfo.battleBro
+            var target = actionInfo.parentActionInfo.target
+
             if (effect.name === 'taunt' && target == owner) {
                 await removeEffect(actionInfo, owner, null, 'taunt')
                 await applyEffect(new ActionInfo({ target: owner }), 'resilientDefence', 999, 2)
@@ -1943,12 +2019,22 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
     if (argsMap[type]) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
+            // Prepare actionInfo for this battleBro
+            var childActionInfo = new ActionInfo({ battleBro: battleBro })  
+            childActionInfo.abilityName = actionInfo?.abilityName // Copying this manually for the moment, because it is not in the ActionInfo constructor
+            childActionInfo.parentActionInfo = actionInfo
+
             for (let passive of battleBro.passives) { // iterate through all passives to see if they do something when this happens
                 let fct = infoAboutPassives[passive]?.[type]
 
                 if (fct) {
                     //console.log("Calling infoAboutPassives " + passive + " " + type)
-                    let ret = await fct(actionInfo, battleBro, ...args)
+                    childActionInfo.actionDetails = {
+                        category: 'passive',
+                        passiveName: passive,
+                        type: type,
+                    }
+                    let ret = await fct(childActionInfo, battleBro, ...args)
                     //console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
                 } else {
                     //console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
@@ -1957,7 +2043,12 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
             for (let effect of battleBro.buffs) {
                 let fct = infoAboutEffects[effect.name]?.[type]
                 if (fct) {
-                    let ret = await fct(actionInfo, battleBro, effect, ...args)
+                    childActionInfo.actionDetails = {
+                        category: 'buff/effect',
+                        effectName: effect.name,
+                        type: type,
+                    }
+                    let ret = await fct(childActionInfo, battleBro, effect, ...args)
                 }
             }
         }
