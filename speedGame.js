@@ -3014,7 +3014,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         actionInfo.target.buffs.push(effect)
         if (!(effect.effectTags.includes('stack') == false && actionInfo.target.buffs.filter(e => e.name == effectName).length > 1)) {
             if (effect?.apply) await effect.apply(actionInfo, actionInfo.target, effect) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
-            await eventHandle('gainedEffect', actionInfo, actionInfo.target, actionInfo.battleBro, effectName)
+            await eventHandle('gainedEffect', actionInfo, actionInfo.target, effect)
             await playStatusEffectGlow(actionInfo.target.avatarHtmlElement, effectName)
             console.log('effect applied')
         } else {
