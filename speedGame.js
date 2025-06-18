@@ -2459,6 +2459,22 @@ async function createBattleBroImages() {
     }
 }
 
+function createUltimateUIForTeam(teamNumber) {
+    const container = document.getElementById('ultimateUIContainer');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ultimate-ui';
+    wrapper.id = `ultimateUI-${teamNumber}`;
+
+    wrapper.innerHTML = `
+        <img class="ultimate-bg" src="images/other/ultimateCircle.png" />
+        <div class="ultimate-fill fill-1"></div>
+        <div class="ultimate-fill fill-2"></div>
+        <img class="ultimate-icon" />
+    `
+    container.appendChild(wrapper);
+}
+
 async function createBattleBroVars() {
     await logFunctionCall('createBattleBroVars', ...arguments)
     for (let battleBro of battleBros) {
@@ -2494,7 +2510,8 @@ async function createBattleBroVars() {
             return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
         }) // remove leader passives of characters that aren't leaders
         battleBro.abilityImageDivs = []
-        const abilities = infoAboutCharacters[battleBro.character].abilities || [];
+        //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
+        const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.abilityType !== 'ultimate')
         for (let i = 0; i < abilities.length; i++) {
             let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
             console.log('' + battleBro.team)
@@ -2526,7 +2543,7 @@ async function createBattleBroVars() {
         }
         if (!aliveBattleBros[battleBro.team]) aliveBattleBros[battleBro.team] = [] // if the aliveBattleBros array doesn't have a row for their team, create it
         aliveBattleBros[battleBro.team].push(battleBro) // add to aliveGuys
-        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = 0 // if the ultimateCharge array doesn't have a row for their team, create it
+        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = 8000 // if the ultimateCharge array doesn't have a row for their team, create it
     }
 }
 
@@ -2585,18 +2602,21 @@ async function updateCurrentBattleBroSkillImages() {
 
     // loop over battlebro abilities and display them
     let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
+    /*const nonUltimateAbilities = battleBro.skillsData.filter(
+        ab => ab.skill.abilityType !== 'ultimate'
+    )*/
+   let uiIndex = 0
     if (battleBro.skillsData) {
         for (let i = 0; i < battleBro.skillsData.length; i++) {
             let processedAbility = battleBro.skillsData[i]
+            if (processedAbility.skill.abilityType === 'ultimate') {
+                continue // ultimate goes in its own ring, not here
+            }
             let imagePngPath = processedAbility.skill.image
 
-            // set the image png and set display=block
-            //let abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
-            //let indexReversedForTeam2 = battleBro.team == 0 ? i : (characterAbilities.length - i - 1)
-            //let abilityImageDiv = abilityImagesDivsForCurrentTeam[indexReversedForTeam2]
             let index = battleBro.team === 1
-                ? (battleBro.abilityImageDivs.length - i - 1)
-                : i;
+                ? (battleBro.abilityImageDivs.length - uiIndex - 1)
+                : uiIndex;
             let abilityImageDiv = battleBro.abilityImageDivs[index];
             let abilityImage = abilityImageDiv.find(".image_ability_cropped")
             let abilityCooldown = abilityImageDiv.find(".cooldown")[0]
@@ -2610,8 +2630,10 @@ async function updateCurrentBattleBroSkillImages() {
                 abilityNumber: i,
             }))
             abilityCooldown.innerText = processedAbility.cooldown ? processedAbility.cooldown : ''
+            uiIndex++
         }
     }
+    await updateUltimateIconForCurrentCharacter(battleBro)
     await changeCooldowns(battleBro, -1)
     let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
     if (characterPassives) {
@@ -2649,6 +2671,9 @@ $(document).ready(function () {
         await createBattleBroVars()
         await createBattleBroImages()
         await updateBattleBrosHtmlText()
+        for (let team = 0; team < ultimateCharge.length; team++) {
+            await createUltimateUIForTeam(team)
+        }
         await eventHandle('start') // initiate abilities that have effects upon battle start
 
         // Buttons and keyboard shortcuts
@@ -2953,6 +2978,9 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
     }
     if (animation == 'melee') {
         await wait(200)
+    }
+    for (let team = 0; team < ultimateCharge.length; team++) {
+        await updateUltimateUI(team)
     }
     actionInfo.battleBro.cooldowns[abilityName] = ability.cooldown || 0
     await updateAbilityCooldownUI(actionInfo.battleBro, abilityName)
@@ -3631,7 +3659,8 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
 
-    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].abilityType !== 'basic') || (infoAboutAbilities[abilityName].abilityType === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)) {
+    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
+        //|| (infoAboutAbilities[abilityName].abilityType === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
         cooldownSpan.style.display = 'block';
@@ -3815,6 +3844,79 @@ async function gainUltCharge(battleBro, chargeAmount = 1) {
     let team = battleBro.team
     ultimateCharge[team] = Math.min(ultimateCharge[team] + chargeAmount, 10000)
     //console.log(`Ultimate charge for team ${team} increased by ${chargeAmount}. Current charge: ${ultimateCharge[team]}`);
+}
+
+async function updateUltimateUI(team) {
+    const ui = document.getElementById(`ultimateUI-${team}`)
+    const charge = ultimateCharge[team]
+    const fill1 = ui.querySelector('.fill-1')
+    const fill2 = ui.querySelector('.fill-2')
+
+    const percent = charge / 10000;
+    if (percent >= 1) {
+        fill1.style.clipPath = 'inset(0 0 0 0)'
+        fill2.style.clipPath = 'inset(0 0 0 0)'
+    } else if (percent >= 0.5) {
+        fill1.style.clipPath = 'inset(0 0 0 0)';
+        fill2.style.clipPath = `inset(${(1 - (percent - 0.5) * 2) * 100}% 0 0 0)`
+    } else {
+        fill1.style.clipPath = `inset(${(1 - percent * 2) * 100}% 0 0 0)`
+        fill2.style.clipPath = 'inset(100% 0 0 0)'
+    }
+    /*
+    fill1.style.display = charge >= 5000 ? 'block' : 'none';
+    fill2.style.display = charge >= 10000 ? 'block' : 'none';*/
+}
+
+function updateUltimateIconForCurrentCharacter(battleBro) {
+    const ultimate = infoAboutCharacters[battleBro.character].abilities.find(a => infoAboutAbilities[a]?.abilityType === 'ultimate')
+    for (let teamFound = 0; teamFound < ultimateCharge.length; teamFound++) {
+        let teamIcon = document.getElementById(`ultimateUI-${teamFound}`).querySelector('.ultimate-icon')
+        if (teamIcon) teamIcon.remove()
+    }
+    const team = battleBro.team
+    const ui = document.getElementById(`ultimateUI-${team}`)
+    if (!ultimate) {
+        console.log('No ultimate ability found for', battleBro.character, 'in', team, ui);
+        return
+    }
+
+
+    const img = document.createElement('img');
+    img.src = infoAboutAbilities[ultimate].image
+    img.classList.add('ultimate-icon');
+    img.style.position = 'absolute';
+    img.style.width = '50%';
+    img.style.height = '50%';
+    img.style.top = '25%';
+    img.style.left = '25%';
+    img.style.borderRadius = '50%';
+    img.style.cursor = 'pointer';
+    img.dataset.battleBroNumber = battleBros.indexOf(battleBro)
+    img.dataset.abilityIndex = infoAboutCharacters[battleBro.character].abilities.indexOf(ultimate)
+
+    const charge = ultimateCharge[team] || 0;
+    const enoughCharge = charge >= infoAboutAbilities[ultimate].ultimateCost;
+
+    if (!enoughCharge) {
+        img.style.filter = 'grayscale(100%) brightness(50%)';
+        img.style.pointerEvents = 'none';
+    } else {
+        img.style.filter = '';
+        img.style.pointerEvents = 'auto';
+    }
+
+    // Attach click
+    let imagePngPath = infoAboutAbilities[ultimate].image
+    img.setAttribute('onclick', `abilityClicked(this)`)
+    img.dataset.mydata = JSON.stringify({
+        battleBroNumber: battleBros.indexOf(battleBro),
+        abilityNumber: infoAboutCharacters[battleBro.character].abilities.indexOf(ultimate)
+    })
+
+    ui.appendChild(img);
+
+    img.style.display = 'block'
 }
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
 
