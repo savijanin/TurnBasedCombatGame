@@ -5,6 +5,8 @@ var selectedBattleBroNumber = -1
 var team2abilitiesAlwaysVisible = false
 var pendingAbility = null
 var aliveBattleBros = []
+var ultimateCharge = []
+var ultimateBeingUsed = false
 //var isAnythingElseRunningHereAtTheSameTime = 0
 var engagingCounters = false
 var promises = []
@@ -853,9 +855,9 @@ const infoAboutAbilities = {
     'Super Strike': {
         displayName: "Super Strike",
         image: 'images/abilities/superStrike.png',
-        abilityType: 'special',
-        cooldown: 5,
-        abilityTags: ['attack', 'physical_damage', 'initialCooldown'],
+        abilityType: 'ultimate',
+        ultimateCost: 2600,
+        abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 10000,
         desc: 'Deal true damage to target enemy, inflict Doomed, Fear and Bleed for 3 turns to target enemy. If this ability scores a critical hit, use this ability again. If this ability defeats an enemy, inflict Fear to all enemies for 1 turn.',
         use: async function (actionInfo) {
@@ -949,8 +951,8 @@ const infoAboutAbilities = {
     'Cut it short': {
         displayName: "Cut it short",
         image: 'images/abilities/shadowMenaceOriginal4.png',
-        abilityType: 'special',
-        cooldown: 10,
+        abilityType: 'ultimate',
+        ultimateCost: 2100,
         abilityTags: ['buffGain'],
         desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each fallen ally. Shadow menace gains 1 stack of fallen ally for each fallen ally. Fallen ally When attacking an enemy revive a random fallen ally with 1 health who assists dealing 10% damage for each stack. Then defeat these allies.',
         use: async function (actionInfo) {
@@ -996,9 +998,9 @@ const infoAboutAbilities = {
     'Heroic Strike': {
         displayName: "Heroic Strike",
         image: 'images/abilities/ability_darthvader_basic.png',
-        abilityType: 'special',
-        cooldown: 6,
-        abilityTags: ['attack', 'physical_damage', 'initialCooldown'],
+        abilityType: 'ultimate',
+        ultimateCost: 2300,
+        abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 500,
         desc: 'Deals physical damage to the enemy with the most health.',
         use: async function (actionInfo) {
@@ -2524,6 +2526,7 @@ async function createBattleBroVars() {
         }
         if (!aliveBattleBros[battleBro.team]) aliveBattleBros[battleBro.team] = [] // if the aliveBattleBros array doesn't have a row for their team, create it
         aliveBattleBros[battleBro.team].push(battleBro) // add to aliveGuys
+        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = 0 // if the ultimateCharge array doesn't have a row for their team, create it
     }
 }
 
@@ -2879,6 +2882,10 @@ async function abilityClicked(clickedElement) {
 }
 
 async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = 'main') {
+    if (infoAboutAbilities[abilityName].abilityType === 'ultimate') {
+        ultimateBeingUsed = true
+        ultimateCharge[actionInfo.battleBro.team] -= infoAboutAbilities[abilityName].ultimateCost || 0
+    }
     await useAbility(abilityName, actionInfo, hasTurn, type)
 
     await Promise.all(promises) // waiting for main, bonus and assist attacks to finish
@@ -2895,12 +2902,14 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
     checkingPromises = null
     await engageCounters()
     await Promise.all(promises) // waiting for counter attacks to finish
+    if (infoAboutAbilities[abilityName].abilityType === 'ultimate') ultimateBeingUsed = false
     await endTurn(actionInfo, battleBros[selectedBattleBroNumber])
     promises = []
 }
 async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main', dmgPercent = 100) {
     await logFunctionCall('useAbility', ...arguments)
     actionInfo.abilityName = abilityName
+    if (!actionInfo.actionDetails) actionInfo.actionDetails = {}
     actionInfo.actionDetails.category = 'ability'
     let ability = infoAboutAbilities[abilityName]
     let animation = null
@@ -3365,6 +3374,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
             await eventHandle('gainedEffect', actionInfo, actionInfo.target, effect)
             await playStatusEffectGlow(actionInfo.target.avatarHtmlElement, effectName)
             console.log('effect applied')
+            await gainUltCharge(actionInfo.battleBro, 2.5)
         } else {
             console.log('second instance of non-stackable effect detected: apply async function not called')
         }
@@ -3541,6 +3551,7 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
             actionInfo.target.buffs.splice(i, 1)
             if (effect?.remove) await effect.remove(actionInfo, actionInfo.target, effect, 'dispelled')
             await eventHandle('lostEffect', actionInfo, actionInfo.target, effect, 'dispelled', actionInfo.battleBro)
+            await gainUltCharge(actionInfo.battleBro, 8)
         }
     }
     await updateEffectIcons(actionInfo.target)
@@ -3602,12 +3613,6 @@ async function changeCooldowns(battleBro, amount = -1) {
             //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
         }
     }
-    /*if (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock')) {
-        for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
-            console.log(abilityName)
-            await updateAbilityCooldownUI(battleBro, abilityName)
-        }
-    }*/
 }
 
 async function updateAbilityCooldownUI(battleBro, abilityName) {
@@ -3619,9 +3624,6 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
 
-    /*const abilityImagesDivsForCurrentTeam = abilityImagesDivsPerTeam[battleBro.team]
-    const index = battleBro.team === 0 ? abilityIndex : (characterAbilities.length - abilityIndex - 1);
-    const abilityImageDiv = abilityImagesDivsForCurrentTeam[index]*/
     const abilityImageDiv = battleBro.abilityImageDivs[abilityIndex]
     if (!abilityImageDiv) console.log("no ability Image Div found")
     if (!abilityImageDiv) return;
@@ -3629,9 +3631,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
 
-    //console.log(!!battleBro.buffs.find(effect => effect.name === 'abilityBlock'))
-    //console.log(infoAboutAbilities[abilityName].abilityType !== 'basic')
-    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.name === 'abilityBlock') == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
+    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].abilityType !== 'basic') || (infoAboutAbilities[abilityName].abilityType === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)) {
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
         cooldownSpan.style.display = 'block';
@@ -3645,6 +3645,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
 
 async function dodge(actionInfo, user, target) {
     await logFunctionCall('dodge', ...arguments)
+    await gainUltCharge(user, 10)
     await eventHandle('dodged', actionInfo, user, target) // activate passive conditions upon dodging
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     if (target.protection > 0) {
@@ -3763,6 +3764,8 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
         await addFloatingText(logElement, `-${Math.ceil(dealtdmg)}`, colour)
         if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('endOfDamage', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
+        await gainUltCharge(user, dealtdmg * 0.003)
+        await gainUltCharge(target, dealtdmg * 0.002)
         await updateBattleBrosHtmlText()
         return [dealtdmg, crit]
     } else {
@@ -3787,9 +3790,11 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false)
     if (type == 'health') {
         await addFloatingText(logElement, `+${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
         target.health = Math.min(target.health + healing, target.maxHealth)
+        await gainUltCharge(user, Math.min(target.maxHealth - target.health, healing) * 0.004)
     } else { // healing protection
         await addFloatingText(logElement, `+${Math.ceil(Math.min(target.maxProtection - target.protection, healing))}`, 'turquoise');
         target.protection = Math.min(target.protection + healing, target.maxProtection)
+        await gainUltCharge(user, Math.min(target.maxProtection - target.protection, healing) * 0.004)
     }
 }
 
@@ -3805,6 +3810,12 @@ async function TMchange(actionInfo, change, resistable = true) {
     target.turnMeter = (target.turnMeter < 0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
 }
 
+async function gainUltCharge(battleBro, chargeAmount = 1) {
+    if (ultimateBeingUsed === true) return
+    let team = battleBro.team
+    ultimateCharge[team] = Math.min(ultimateCharge[team] + chargeAmount, 10000)
+    //console.log(`Ultimate charge for team ${team} increased by ${chargeAmount}. Current charge: ${ultimateCharge[team]}`);
+}
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
 
 async function startKraytRaid() {
