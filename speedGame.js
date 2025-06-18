@@ -11,8 +11,9 @@ var promises = []
 var checkingPromises = null
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
-// CONDITIONS
-var headbutt = true
+// FUNNY CONDITIONS
+var headbutt = true   // characters will headbutt enmies with melee attacks
+var oldSchool = false // characters will use old school abilities (incredibly overpowered)
 
 var runningDelay = 0;
 
@@ -20,11 +21,11 @@ var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'Red (Samurai)',
+        character: 'Talia',
         x: 400,
         y: 100,
         team: 0,
-        isLeader: false,
+        isLeader: true,
         // Defined elsewhere
         // - avatarHtmlElement
         // - isTargeted
@@ -328,7 +329,23 @@ const infoAboutCharacters = {
     },
     // --------------------------------------------------------OUR CHARACTERS
     'Goosey': {
-
+        image: 'images/avatars/goosey.png',
+        imageSize: 80,
+        health: 42340,
+        protection: 20,
+        speed: 129,
+        potency: 62,
+        tenacity: 73,
+        critChance: 54,
+        physicalDamage: 2190,
+        specialDamage: 2503,
+        armour: 68,
+        resistance: 58,
+        healthSteal: 12,
+        tags: ['neutral', 'attacker', 'leader', 'earthling', 'bird'],
+        abilities: ['Gooseballs', 'Honk of Approval', 'Belly Bounce', 'Gooseball Barrage'],
+        passiveAbilities: ['Quick Balls', 'Gooseys Protection'],
+        charDesc: 'Fearless attacker who assists his allies through defence and offence simultaneously!',
     },
     // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
     'Red (Samurai)': {
@@ -345,7 +362,7 @@ const infoAboutCharacters = {
         armour: 33.36,
         resistance: 32.34,
         healthSteal: 20,
-        tags: ['neutral', 'tank', 'bird'],
+        tags: ['neutral', 'tank', 'bird', 'earthling'],
         abilities: ['Dragon Strike', 'Defensive Formation', 'Heroic Strike'],
         passiveAbilities: [],
         charDesc: 'Protects the party. A real hero!',
@@ -487,7 +504,7 @@ const infoAboutAbilities = {
             let hits = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             let hit = hits[0]
             if (hit > 0 && Math.random() < 0.55) {
-                await TMchange(actionInfo.battleBro, actionInfo.target, -50)
+                await TMchange(actionInfo, -50)
             }
         }
     },
@@ -518,7 +535,7 @@ const infoAboutAbilities = {
             await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxHealth * 0.5)
             await applyEffect(actionInfo.withSelfAsTarget(), 'defenceUp', 3);
             if (Math.random() < 0.5) {
-                await TMchange(actionInfo.battleBro, actionInfo.battleBro, 25)
+                await TMchange(actionInfo.withSelfAsTarget(), 25)
             }
         }
     },
@@ -536,7 +553,7 @@ const infoAboutAbilities = {
                 await applyEffect(actionInfo, 'potencyDown', 1);
             }
             if (actionInfo.target.health >= actionInfo.target.maxHealth * 0.5) {
-                await TMchange(actionInfo.battleBro, actionInfo.battleBro, 40)
+                await TMchange(actionInfo.withSelfAsTarget(), 40)
                 //await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2);
                 //await applyEffect(actionInfo.copyAndChangeTargetTo(actionInfo.battleBro), 'foresight', 2);
                 //await applyEffect(actionInfo.copy().setTarget(actionInfo.battleBro), 'foresight', 2);
@@ -561,14 +578,19 @@ const infoAboutAbilities = {
             const enemies = aliveBattleBros // multi-enemy-team functionality
                 .filter((_, i) => i !== actionInfo.battleBro.team) // removes this character's team from the array
                 .flat() // flattens nested arrays into just one
+            let copiedEffects = []
             for (let enemy of enemies) {
-
                 let actionInfo_targetEnemy = actionInfo.setTarget(enemy)
                 await dealDmg(actionInfo_targetEnemy, this.abilityDamage, 'special')
-                let copiedEffects = enemy.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
-                for (let buff of copiedEffects) {
-                    await applyEffect(actionInfo.withSelfAsTarget(), buff.name, 3)
+                for (let effect of enemy.buffs) {
+                    if (effect.type === 'buff' && effect.isLocked !== true && effect.name !== 'stealth' && effect.name !== 'taunt' && (!copiedEffects.some(e => e.name === effect.name && oldSchool === false))) {
+                        // Exclude Stealth, taunt, and already copied effects (if oldSchool is false)
+                        copiedEffects.push(effect)
+                    }
                 }
+            }
+            for (let buff of copiedEffects) {
+                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, 3)
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
                 if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
@@ -590,7 +612,7 @@ const infoAboutAbilities = {
             await logFunctionCall('method: use (', ...arguments,)
             let hit = await dealDmg(actionInfo, this.abilityDamage, 'special')
             if (hit[0] > 0) {
-                await TMchange(actionInfo.battleBro, actionInfo.target, -70)
+                await TMchange(actionInfo, -70)
                 if (actionInfo.target.health < actionInfo.target.maxHealth) await applyEffect(actionInfo, 'stun', 1)
             }
         }
@@ -617,7 +639,7 @@ const infoAboutAbilities = {
                     bonusTurnMeter += 10
                 }
             }
-            await TMchange(actionInfo.battleBro, actionInfo.battleBro, 35 + bonusTurnMeter)
+            await TMchange(actionInfo.withSelfAsTarget(), 35 + bonusTurnMeter)
         }
     },
     'invincibleAssault': {
@@ -635,7 +657,7 @@ const infoAboutAbilities = {
                 await applyEffect(actionInfo, 'abilityBlock', 1)
             }
             if (actionInfo.battleBro.health > actionInfo.battleBro.maxHealth * 0.5) {
-                await TMchange(actionInfo.battleBro, actionInfo.battleBro, 15)
+                await TMchange(actionInfo.withSelfAsTarget(), 15)
             } else {
                 await heal(actionInfo.withSelfAsTarget(), hit[0] + hit2[0])
             }
@@ -656,8 +678,8 @@ const infoAboutAbilities = {
             let hit = await dealDmg(actionInfo, this.abilityDamage, 'special')
             if (enemyHadShatterpoint) {
                 await applyEffect(actionInfo, 'stun', 1)
-                await TMchange(actionInfo.battleBro, actionInfo.target, -50)
-                await TMchange(actionInfo.battleBro, actionInfo.battleBro, 50)
+                await TMchange(actionInfo, -50)
+                await TMchange(actionInfo.withSelfAsTarget(), 50)
             }
         }
     },
@@ -676,14 +698,14 @@ const infoAboutAbilities = {
         allyUse: async function (battleBro, ally, target) {
             await logFunctionCall('method: allyUse (', ...arguments,)
             let enemyHadShatterpoint = target.buffs?.find(e => e.name == 'shatterpoint')
-            let actionInfo = new ActionInfo({ battleBro: ally, target: target })
-            await assist(actionInfo, battleBro)
+            let assistActionInfo = new ActionInfo({ battleBro: ally, target: target })
+            let actionInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            await assist(assistActionInfo, battleBro)
             await heal(actionInfo, ally.maxProtection * 0.3, 'protection')
             await heal(actionInfo.withSelfAsTarget(), battleBro.maxProtection * 0.3, 'protection')
             if (enemyHadShatterpoint) {
-                await TMchange(ally, battleBro, ally.turnMeter)
-                await TMchange(battleBro, ally, 100 - ally.turnMeter)
-                console.log(100 - ally.turnMeter)
+                await TMchange(assistActionInfo.withTarget(battleBro), ally.turnMeter)
+                await TMchange(actionInfo, 100 - ally.turnMeter)
                 await applyEffect(actionInfo.withSelfAsTarget(), 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
             }
         }
@@ -703,7 +725,49 @@ const infoAboutAbilities = {
                 hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
-                heal(actionInfo.withTarget(ally), hit)
+                await heal(actionInfo.withTarget(ally), hit[0])
+            }
+        }
+    },
+    'Water of Life': {
+        displayName: 'Water of Life',
+        image: 'images/abilities/ability_talia_special01.png',
+        abilityType: 'special',
+        cooldown: 5,
+        abilityTags: ['dispel', 'heal', 'turnmeter_recovery'],
+        desc: "Dispel all debuffs on allies. Talia consumes 20% of her Max Health and gains 15% Turn Meter for each active ally. Allies recover 50% Health and gain 30% Turn Meter.",
+        use: async function (actionInfo) {
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await dispel(actionInfo.withTarget(ally), 'debuff')
+                if (ally !== actionInfo.battleBro) {
+                    await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.5)
+                    await TMchange(actionInfo.withTarget(ally), 30)
+                }
+            }
+            await dealDmg(actionInfo.withSelfAsTarget(), 20, 'percentage', false, false, true)
+            await TMchange(actionInfo.withSelfAsTarget(), 15 * aliveBattleBros[actionInfo.battleBro.team].length)
+        }
+    },
+    'Harrowing Assault': {
+        displayName: 'Harrowing Assault',
+        image: 'images/abilities/ability_talia_special02.png',
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['attack', 'special_damage', 'damageOverTime', 'stagger'],
+        abilityDamage: 165.3,
+        desc: "Deal Special damage to target enemy and inflict Damage Over Time and Stagger for 2 turns. If Talia has full Health, consume 10% of her Max Health to deal double damage, otherwise she immediately uses Draining Strike.",
+        use: async function (actionInfo) {
+            let isAtFullHealth = 1 + +(actionInfo.battleBro.health >= actionInfo.battleBro.maxHealth)
+            let hit = await dealDmg(actionInfo, this.abilityDamage * isAtFullHealth, 'special')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'damageOverTime', 2)
+                await applyEffect(actionInfo, 'stagger', 2)
+            }
+            if (actionInfo.battleBro.health >= actionInfo.battleBro.maxHealth) {
+                await dealDmg(actionInfo.withSelfAsTarget(), 10, 'percentage', false, false, true)
+            } else {
+                await wait(300)
+                await useAbility('Draining Strike', actionInfo, false, 'chained')
             }
         }
     },
@@ -890,7 +954,7 @@ const infoAboutAbilities = {
         abilityTags: ['buffGain'],
         desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each fallen ally. Shadow menace gains 1 stack of fallen ally for each fallen ally. Fallen ally When attacking an enemy revive a random fallen ally with 1 health who assists dealing 10% damage for each stack. Then defeat these allies.',
         use: async function (actionInfo) {
-            await TMchange(actionInfo.battleBro, actionInfo.battleBro, 100) // bonus turn
+            actionInfo.battleBro.turnMeter += 100 // bonus turn
             let fallenAllies = battleBros.filter(bro => bro.team === actionInfo.battleBro.team && bro.isDead === true)
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
                 await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.2 * fallenAllies.length)
@@ -1116,7 +1180,7 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             // We can start using those definitions:
 
             for (let ally of aliveBattleBros[owner.team]) {
@@ -1132,11 +1196,11 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             if (target !== actionInfo.parentActionInfo.target)
-                throw('target is not the target in attacked passive')
+                throw ('target is not the target in attacked passive')
             if (attacker !== actionInfo.parentActionInfo.battleBro)
-                throw('attacker is not the attacker in attacked passive')
+                throw ('attacker is not the attacker in attacked passive')
 
             if (Math.random() < 0.5 && owner.team == target.team) {
                 let actionInfo = new ActionInfo({ battleBro: owner, target: target })
@@ -1164,7 +1228,7 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             // We can start using those definitions:
             var owner = actionInfo.battleBro
 
@@ -1179,11 +1243,11 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             if (target !== actionInfo.parentActionInfo.target)
-                throw('target is not the target in attacked passive')
+                throw ('target is not the target in attacked passive')
             if (attacker !== actionInfo.parentActionInfo.battleBro)
-                throw('attacker is not the attacker in attacked passive')
+                throw ('attacker is not the attacker in attacked passive')
             // We can start using those definitions:
             var owner = actionInfo.battleBro
             var target = actionInfo.parentActionInfo.target
@@ -1218,11 +1282,11 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             if (target !== actionInfo.parentActionInfo.target)
-                throw('target is not the target in attacked passive')
+                throw ('target is not the target in attacked passive')
             if (attacker !== actionInfo.parentActionInfo.battleBro)
-                throw('attacker is not the attacker in attacked passive')
+                throw ('attacker is not the attacker in attacked passive')
             // We can start using those definitions:
             var owner = actionInfo.battleBro
             var target = actionInfo.parentActionInfo.target
@@ -1266,9 +1330,9 @@ const infoAboutPassives = {
 
             // Checking new actionInfo values
             if (owner !== actionInfo.battleBro)
-                throw('owner is not the battleBro in attacked passive')
+                throw ('owner is not the battleBro in attacked passive')
             if (target !== actionInfo.parentActionInfo.target)
-                throw('target is not the target in attacked passive')
+                throw ('target is not the target in attacked passive')
             // We can start using those definitions:
             var owner = actionInfo.battleBro
             var target = actionInfo.parentActionInfo.target
@@ -1316,6 +1380,31 @@ const infoAboutPassives = {
             }
         }
     },
+    'Nightsister Nimbleness': {
+        displayName: 'Nightsister Nimbleness',
+        image: 'images/abilities/abilityui_passive_dodge.png',
+        desc: 'Allies gain 16% Evasion. When an ally evades they recover 15% of their Max Health.',
+        abilityType: 'leader',
+        abilityTags: ['health_recovery', 'evasion'],
+        start: async function (actionInfo, ownerOld) {
+
+            // Checking new actionInfo values
+            if (ownerOld !== actionInfo.battleBro)
+                throw ('owner is not the battleBro in attacked passive')
+            // We can start using those definitions:
+            let owner = actionInfo.battleBro
+
+            for (let ally of aliveBattleBros[owner.team]) {
+                ally.evasion += 16
+            }
+        },
+        dodged: async function (actionInfo, owner, attacker, target) {
+            if (owner.team == target.team) {
+                await heal(actionInfo.withTarget(target), target.maxHealth * 0.15)
+            }
+        }
+    },
+
     'Elimination Protocol': {
         displayName: 'Elimination Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
@@ -1374,12 +1463,24 @@ const infoAboutPassives = {
         displayName: 'Prime Era',
         image: 'images/abilities/shadowMenaceOriginal5.png',
         desc: 'Shadow menace grants a random ally heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time, and half that much whenever an ally gains heal over time. Heal over times last for 3 turns.',
+        oldSchoolDesc: 'Shadow menace grants his allies heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time. Whenever an ally with heal over time hits an enemy, they gain another stack of it. These heal over times recover 5% health each turn for 3 turns.',
         abilityType: 'unique',
         abilityTags: ['health_recovery'],
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
-            if (owner === attacker && crit === true) {
-                let randomAlly = aliveBattleBros[owner.team][Math.floor(Math.random() * aliveBattleBros[owner.team].length)]
-                await applyEffect(actionInfo.withTarget(randomAlly), 'healOverTime', 3)
+            if (oldSchool == true) { // Old school version
+                if (owner === attacker && crit === true) {
+                    for (let ally of aliveBattleBros[owner.team]) {
+                        await applyEffect(actionInfo.withTarget(ally), 'healOverTime', 3)
+                    }
+                }
+                if (owner.team == attacker.team && attacker.buffs.find(e => e.name == 'healOverTime') && target.team !== owner.team) {
+                    await applyEffect(actionInfo.withTarget(attacker), 'healOverTime', 3)
+                }
+            } else {
+                if (owner === attacker && crit === true) {
+                    let randomAlly = aliveBattleBros[owner.team][Math.floor(Math.random() * aliveBattleBros[owner.team].length)]
+                    await applyEffect(actionInfo.withTarget(randomAlly), 'healOverTime', 3)
+                }
             }
         },
         gainedEffect: async function (actionInfo, owner, target, effect) {
@@ -1391,34 +1492,12 @@ const infoAboutPassives = {
             }
         }
     },
-    'Prime Era Old': {
-        displayName: 'Prime Era',
-        image: 'images/abilities/shadowMenaceOriginal5.png',
-        desc: 'Shadow menace grants his allies heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time. Whenever an ally with heal over time hits an enemy, they gain another stack of it. These heal over times recover 5% health each turn for 3 turns.',
-        abilityType: 'unique',
-        abilityTags: ['health_recovery'],
-        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
-            if (owner === attacker && crit === true) {
-                for (let ally of aliveBattleBros[owner.team]) {
-                    await applyEffect(actionInfo.withTarget(ally), 'healOverTime', 3)
-                }
-            }
-            if (owner.team == attacker.team && attacker.buffs.find(e => e.name == 'healOverTime') && target.team !== owner.team) {
-                await applyEffect(actionInfo.withTarget(attacker), 'healOverTime', 3)
-            }
-        },
-        gainedEffect: async function (actionInfo, owner, target, effect) {
-            if (owner === target && effect.name === 'healOverTime') {
-                owner.maxHealth += owner.maxHealth * 0.005 // increase max health by 0.5%
-            }
-        }
-    },
     'Reign of Mandalore': {
         displayName: 'Reign of Mandalore',
         image: 'images/abilities/shadowMenaceOriginal6.png',
         desc: 'All mandalorian allies have the Power of Mandalore buff at the start of the battle for 1 turn. Power of Mandalore: When an ability is used then gain all up buffs for 3 turns. If these buffs are dispelled, gain 5% turn metre for each buff dispelled.',
         abilityType: 'unique',
-        abilityTags: ['buffGain','mandalorian'],
+        abilityTags: ['buffGain', 'mandalorian'],
         start: async function (actionInfo, owner) {
             for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('mandalorian'))) {
                 await applyEffect(actionInfo.withTarget(ally), 'powerOfMandalore', 4)
@@ -1538,11 +1617,11 @@ const infoAboutEffects = {
                 let assistActionInfo = actionInfo.withTarget(target)
                 assistActionInfo.battleBro = randomFallenAlly
                 assistActionInfo.abilityName = infoAboutCharacters[randomFallenAlly.character].abilities[0] // use the basic ability of the fallen ally
-                await assist(assistActionInfo, unit, stackCount*10) // assist with the fallen ally
+                await assist(assistActionInfo, unit, stackCount * 10) // assist with the fallen ally
             }
         },
         endedAbility: async function (actionInfo, unit, effect, abilityName, user, target, type, dmgPercent, savedActionInfo) {
-            if(unit?.customData?.fallenAlly?.alliesAlreadySummoned) unit.customData.fallenAlly.alliesAlreadySummoned = [] // clear the memory space at the end of the attack
+            if (unit?.customData?.fallenAlly?.alliesAlreadySummoned) unit.customData.fallenAlly.alliesAlreadySummoned = [] // clear the memory space at the end of the attack
         },
     },
     'foresight': {
@@ -1762,15 +1841,15 @@ const infoAboutEffects = {
             if (infoAboutAbilities[actionInfo.abilityName].abilityTags.includes('projectile_attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
-                unit.flatDamageReceived=0 // deflects all projectile attacks
+                unit.flatDamageReceived = 0 // deflects all projectile attacks
             } else if (infoAboutAbilities[actionInfo.abilityName].abilityTags.includes('attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
-                unit.flatDamageReceived/=2 // reduces other attacks by 50%
+                unit.flatDamageReceived /= 2 // reduces other attacks by 50%
             }
         },
         endOfDamage: async function (actionInfo, unit, effect, target, attacker) {
-            if( unit.customData?.rotating?.wasTriggered) {
+            if (unit.customData?.rotating?.wasTriggered) {
                 unit.flatDamageReceived = unit.customData.rotating.savedFlatDamageReceived // restore the flat damage received
                 unit.customData.rotating.wasTriggered = false // reset the flag
             }
@@ -2171,6 +2250,18 @@ const infoAboutEffects = {
             unit.speedPercent += 25
         }
     },
+    'stagger': {
+        name: 'stagger',
+        image: 'images/effects/stagger.png',
+        type: 'debuff',
+        effectTags: ['turnMeterRemoval', 'loseOnHit'],
+        opposite: 'frenzy',
+        remove: async function (actionInfo, unit, effect, removalType, dispeller) {
+            if (removalType == 'removed') {
+                unit.turnMeter = 0 // remove all turn meter
+            }
+        }
+    },
     'stun': {
         name: 'stun',
         image: 'images/effects/stun.png',
@@ -2260,6 +2351,7 @@ const argsMap = {
     endedTurn: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1], // guy who ended their turn
     usedAbility: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // abilityName, battleBro, target, type(assist or counter etc), dmgPercent (like when reduced from assists)
     endedAbility: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // abilityName, battleBro, target, type(assist or counter etc), dmgPercent (like when reduced from assists), savedActionInfo
+    dodged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], // attacker, target
 }
 async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6) {
     //await logFunctionCall('eventHandle', ...arguments)
@@ -2269,7 +2361,7 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
             // Prepare actionInfo for this battleBro
-            var childActionInfo = new ActionInfo({ battleBro: battleBro })  
+            var childActionInfo = new ActionInfo({ battleBro: battleBro })
             childActionInfo.abilityName = actionInfo?.abilityName // Copying this manually for the moment, because it is not in the ActionInfo constructor
             childActionInfo.parentActionInfo = actionInfo
 
@@ -2809,6 +2901,7 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
 async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main', dmgPercent = 100) {
     await logFunctionCall('useAbility', ...arguments)
     actionInfo.abilityName = abilityName
+    actionInfo.actionDetails.category = 'ability'
     let ability = infoAboutAbilities[abilityName]
     let animation = null
     if (ability.abilityTags.includes("projectile_attack")) {
@@ -3136,7 +3229,7 @@ async function playMeleeAttackAnimation(attacker, target, abilityName, hasTurn, 
 
 async function playSparkImpact(x, y, primaryColour = 'yellow', secondaryColour = 'orange', numberOfSparks = 8) {
     await logFunctionCall('playSparkImpact', ...arguments)
-    for (let i = 0; i < Math.min(numberOfSparks,250); i++) {
+    for (let i = 0; i < Math.min(numberOfSparks, 250); i++) {
         const spark = document.createElement('div');
         spark.className = 'spark';
 
@@ -3552,6 +3645,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
 
 async function dodge(actionInfo, user, target) {
     await logFunctionCall('dodge', ...arguments)
+    await eventHandle('dodged', actionInfo, user, target) // activate passive conditions upon dodging
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
     if (target.protection > 0) {
         if (Math.random() > 0.5) {
@@ -3699,7 +3793,9 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false)
     }
 }
 
-async function TMchange(user, target, change, resistable = true) {
+async function TMchange(actionInfo, change, resistable = true) {
+    let user = actionInfo.battleBro // get the user from the actionInfo
+    let target = actionInfo.target // get the target from the actionInfo
     if (target.buffs.find(effect => effect.effectTags.includes('stopTMgain') && change > 0)) return
     if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
         await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
