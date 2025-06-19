@@ -16,6 +16,7 @@ const floatingTextQueues = new Map()
 // FUNNY CONDITIONS
 var headbutt = true   // characters will headbutt enmies with melee attacks
 var oldSchool = false // characters will use old school abilities (incredibly overpowered)
+var startingUltCharge = 8000
 
 var runningDelay = 0;
 
@@ -51,7 +52,7 @@ var battleBros = [
     },
     {
         id: "04",
-        character: 'Yoda',
+        character: 'Ninja',
         x: 400,
         y: 700,
         team: 0,
@@ -125,7 +126,7 @@ var battleBros = [
     },
     {
         id: "15",
-        character: 'jabba',
+        character: 'Talia',
         x: 1550,
         y: 200,
         team: 1,
@@ -329,10 +330,30 @@ const infoAboutCharacters = {
         passiveAbilities: ['Prime Era', 'Reign of Mandalore'],
         charDesc: 'Powerful mandalorian adversary who attacks many times.',
     },
+    // --------------------------------------------------------ERIK'S CHARACTERS
+    'Ninja': {
+        image: 'images/avatars/ninja.png',
+        imageSize: 100,
+        health: 19945,
+        protection: 27234,
+        speed: 182,
+        potency: 76,
+        tenacity: 54,
+        critChance: 49,
+        physicalDamage: 4000,
+        specialDamage: 4500,
+        armour: 26,
+        resistance: 32,
+        healthSteal: 25,
+        tags: ['darkSide', 'attacker', 'sith', 'ninja'],
+        abilities: ['Sword Slash', 'Sneak Attack', 'Dread Slash'],
+        passiveAbilities: ['Trust is Key to Victory', 'A Ninja Way is Stealth'],
+        charDesc: 'Powerful sith foe who hits for powerful damage while remaining in stealth, away from danger.',
+    },
     // --------------------------------------------------------OUR CHARACTERS
     'Goosey': {
         image: 'images/avatars/goosey.png',
-        imageSize: 80,
+        imageSize: 90,
         health: 42340,
         protection: 20,
         speed: 129,
@@ -892,13 +913,10 @@ const infoAboutAbilities = {
         abilityDamage: 45,
         desc: 'Deal physical damage 5 times to target enemy and recover health equal to the damage dealt. On 3 or more critical hits inflict offense down for 3 turns.',
         use: async function (actionInfo) {
-            let hits = []
-            for (let i = 0; i < 5; i++) {
-                hits[i] = await dealDmg(actionInfo, this.abilityDamage, 'physical')
-            }
             let critCounter = 0
-            for (let hit in hits) {
-                if (hit[1] == true) {
+            for (let i = 0; i < 5; i++) {
+                let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+                if (hit[1] === true) { // crit condition
                     critCounter++
                 }
             }
@@ -962,6 +980,52 @@ const infoAboutAbilities = {
                 await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.2 * fallenAllies.length)
             }
             await applyEffect(actionInfo.withSelfAsTarget(), 'fallenAlly', 999, fallenAllies.length, false, true) // infinite duration effects = 999 duration
+        },
+    },
+    // --------------------------------------------------------ERIK'S CHARACTERS
+    'Sword Slash': {
+        displayName: "Sword Slash",
+        image: 'images/abilities/ninja1.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage'],
+        abilityDamage: 200,
+        desc: 'Deals physical damage and inflicts healing immunity for 3 turns.',
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'healingImmunity', 3)
+            }
+        },
+    },
+    'Sneak Attack': {
+        displayName: "Sneak Attack",
+        image: 'images/abilities/ninja2.png',
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['attack', 'special_damage'],
+        abilityDamage: 260,
+        desc: 'Deals special damage and stealths for 2 turns.',
+        use: async function (actionInfo) {
+            await dealDmg(actionInfo, this.abilityDamage, 'special')
+            await applyEffect(actionInfo.withSelfAsTarget(), 'stealth', 2)
+        },
+    },
+    'Dread Slash': {
+        displayName: "Dread Slash",
+        image: 'images/abilities/ninja3.png',
+        abilityType: 'ultimate',
+        ultimateCost: 1900,
+        abilityTags: ['attack', 'shadow_damage'],
+        abilityDamage: 18000,
+        desc: 'Deals shadow damage. Buffs ninja with offence up and stealth for 3 turns this can\'t be dispelled while the opponents will gain blind and defence down for 2 turns can\'t be dispelled.',
+        use: async function (actionInfo) {
+            await applyEffect(actionInfo.withSelfAsTarget(), 'stealth', 3, 1, false, true)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'offenceUp', 3, 1, false, true)
+            await dealDmg(actionInfo, this.abilityDamage, 'shadow')
+            for (let enemy of aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()) {
+                await applyEffect(actionInfo.withTarget(enemy), 'blind', 2, 1, false, true)
+                await applyEffect(actionInfo.withTarget(enemy), 'defenceDown', 2, 1, false, true)
+            }
         },
     },
     // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
@@ -1406,7 +1470,7 @@ const infoAboutPassives = {
             }
         }
     },
-
+    // --------------------------------------------------------OLIV'S CHARACTERS
     'Elimination Protocol': {
         displayName: 'Elimination Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
@@ -1461,6 +1525,7 @@ const infoAboutPassives = {
             })
         }
     },
+    // --------------------------------------------------------JAMES' CHARACTERS
     'Prime Era': {
         displayName: 'Prime Era',
         image: 'images/abilities/shadowMenaceOriginal5.png',
@@ -1505,6 +1570,40 @@ const infoAboutPassives = {
                 await applyEffect(actionInfo.withTarget(ally), 'powerOfMandalore', 4)
             }
         },
+    },
+    // --------------------------------------------------------ERIK'S CHARACTERS
+    'Trust is Key to Victory': {
+        displayName: 'Trust is Key to Victory',
+        image: 'images/abilities/ninja4.png',
+        desc: 'If the character is a sith ninja will give the buffs to them.',
+        abilityType: 'unique',
+        abilityTags: ['buffGain', 'sith'],
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner === target && effect.type == 'buff' && effect.name !== 'stealth') {
+                for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('sith'))) {
+                    if (ally !== owner && !ally.buffs.find(e => e.name === effect.name)) {
+                        await applyEffect(actionInfo.withTarget(ally), effect.name, effect.duration, effect.stacks || 1, false, effect.isLocked || false)
+                    }
+                }
+            }
+        }
+    },
+    'A Ninja Way is Stealth': {
+        displayName: 'A Ninja Way is Stealth',
+        image: 'images/abilities/abilityui_passive_stealth.png',
+        desc: 'While in stealth he gains critical damage up when stealth wears off gain one more turn of stealth.',
+        abilityType: 'unique',
+        abilityTags: ['buffGain', 'sith'],
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner === target && effect.effectTags.includes('stealth')) {
+                await applyEffect(actionInfo.withTarget(owner), 'criticalDamageUp', effect.duration, 1)
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
+            if (owner === target && effect.effectTags.includes('stealth') && removalType == 'expired') {
+                await applyEffect(actionInfo.withTarget(owner), 'stealth', 1) // gain one more turn of stealth
+            }
+        }
     },
 }
 
@@ -1978,6 +2077,26 @@ const infoAboutEffects = {
             }
         }
     },
+    'blind': {
+        name: 'blind',
+        image: 'images/effects/blind.png',
+        type: 'debuff',
+        effectTags: ['stack', 'singleUse', 'accuracy', 'blind'],
+        opposite: 'foresight',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.accuracy -= 100
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.accuracy += 100
+        },
+        dodged: async function (actionInfo, unit, effect, attacker, target) {
+            if (attacker == unit) {
+                await removeEffect(actionInfo, unit, null, 'blind')
+            }
+        }
+    },
     'buffImmunity': {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
@@ -2098,6 +2217,13 @@ const infoAboutEffects = {
                 await changeCooldowns(unit, 1)
             }
         }
+    },
+    'healingImmunity': {
+        name: 'healingImmunity',
+        image: 'images/effects/healingImmunity.png',
+        type: 'debuff',
+        effectTags: ['healingImmunity'],
+        opposite: 'lifeMark',
     },
     'healthDown': {
         name: 'healthDown',
@@ -2543,7 +2669,7 @@ async function createBattleBroVars() {
         }
         if (!aliveBattleBros[battleBro.team]) aliveBattleBros[battleBro.team] = [] // if the aliveBattleBros array doesn't have a row for their team, create it
         aliveBattleBros[battleBro.team].push(battleBro) // add to aliveGuys
-        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = 8000 // if the ultimateCharge array doesn't have a row for their team, create it
+        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = startingUltCharge // if the ultimateCharge array doesn't have a row for their team, create it
     }
 }
 
@@ -2605,7 +2731,7 @@ async function updateCurrentBattleBroSkillImages() {
     /*const nonUltimateAbilities = battleBro.skillsData.filter(
         ab => ab.skill.abilityType !== 'ultimate'
     )*/
-   let uiIndex = 0
+    let uiIndex = 0
     if (battleBro.skillsData) {
         for (let i = 0; i < battleBro.skillsData.length; i++) {
             let processedAbility = battleBro.skillsData[i]
@@ -3652,13 +3778,13 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
 
-    const abilityImageDiv = battleBro.abilityImageDivs[abilityIndex]
+    const abilityImageDiv = (battleBro.team == 1 && characterAbilities.find(ability => infoAboutAbilities[ability].abilityType == 'ultimate')) ? battleBro.abilityImageDivs[abilityIndex - 1] : battleBro.abilityImageDivs[abilityIndex]
     if (!abilityImageDiv) console.log("no ability Image Div found")
     if (!abilityImageDiv) return;
 
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
-
+    console.log(abilityName, 'cooldown:', cooldown, 'abilityIndex:', abilityIndex, 'img:', img, 'cooldownSpan:', cooldownSpan)
     if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
         //|| (infoAboutAbilities[abilityName].abilityType === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
@@ -3758,7 +3884,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
             secondaryColour = 'platinum'
             crit = true // always crits
         } else if (type == 'shadow') {
-            dealtdmg = Math.max((dmg - Math.floor(Math.random() * 501)) * Math.min(user.flatDamageDealt, 100) * Math.max(target.flatDamageReceived, 100) * 0.0001, 0)
+            dealtdmg = Math.max((dmg - Math.floor(Math.random() * 501)) * Math.min(user.flatDamageDealt, 100) * Math.max(target.flatDamageReceived, 100) * Math.min(user.offence, 100) * 0.000001, 0)
             colour = 'midnightblue'
             secondaryColour = 'black'
         } else if (type == 'massive') {
@@ -3804,8 +3930,9 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
     }
 }
 
-async function heal(actionInfo, healing, type = 'health', isHealthSteal = false) {
+async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false) {
     await logFunctionCall('heal', ...arguments)
+    if (ignoreHealImmunity == false && actionInfo.target.buffs.find(effect => effect.effectTags.includes('healingImmunity'))) return
     actionInfo.actionDetails = {
         category: 'heal',
         type: type,
