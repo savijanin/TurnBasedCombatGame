@@ -16,7 +16,8 @@ const floatingTextQueues = new Map()
 // FUNNY CONDITIONS
 var headbutt = true   // characters will headbutt enmies with melee attacks
 var oldSchool = false // characters will use old school abilities (incredibly overpowered)
-var startingUltCharge = 8000
+var sharePassives = false // doesn't work
+var startingUltCharge = 0
 
 var runningDelay = 0;
 
@@ -24,11 +25,11 @@ var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'Talia',
+        character: 'Jedi Bob',
         x: 400,
         y: 100,
         team: 0,
-        isLeader: true,
+        isLeader: false,
         // Defined elsewhere
         // - avatarHtmlElement
         // - isTargeted
@@ -68,7 +69,7 @@ var battleBros = [
     },
     {
         id: "06",
-        character: 'Clone Wars Chewbacca',
+        character: 'Hera Syndulla',
         x: 250,
         y: 400,
         team: 0,
@@ -110,7 +111,7 @@ var battleBros = [
     },
     {
         id: "13",
-        character: 'Yoda',
+        character: 'Ninja',
         x: 1400,
         y: 500,
         team: 1,
@@ -232,6 +233,24 @@ const infoAboutCharacters = {
         abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
         passiveAbilities: ['inspiringThroughFear', 'noEscape'],
         charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
+    },
+    'Hera Syndulla': {
+        image: 'images/avatars/heraSyndulla.png',
+        health: 33930 + 34153,
+        protection: 0,
+        speed: 152,
+        potency: 25,
+        tenacity: 58,
+        critChance: 28.04,
+        physicalDamage: 3025,
+        specialDamage: 3851,
+        armour: 38.5,
+        resistance: 43.5,
+        healthSteal: 20,
+        tags: ['lightSide', 'support', 'leader', 'phoenix', 'rebel'],
+        abilities: ['Outwit', 'Play to Strengths', 'Backup Plan'],
+        passiveAbilities: [],//'Rise Together'],
+        charDesc: 'Cunning Phoenix Support that allows allies to share their Unique abilities with each other',
     },
     'Mace Windu': {
         image: 'images/avatars/MaceWindu.png',
@@ -369,6 +388,25 @@ const infoAboutCharacters = {
         abilities: ['Gooseballs', 'Honk of Approval', 'Belly Bounce', 'Gooseball Barrage'],
         passiveAbilities: ['Quick Balls', 'Gooseys Protection'],
         charDesc: 'Fearless attacker who assists his allies through defence and offence simultaneously!',
+    },
+    'Jedi Bob': {
+        image: 'images/avatars/jediBob.png',
+        imageSize: 100,
+        health: 30000,
+        protection: 30000,
+        speed: 166,
+        potency: 78,
+        tenacity: 23,
+        critChance: 28,
+        physicalDamage: 1900,
+        specialDamage: 2700,
+        armour: 46,
+        resistance: 32,
+        healthSteal: 5,
+        tags: ['neutral', 'lightSide', 'darkSide', 'attacker', 'tank', 'support', 'healer', 'jedi', 'unalignedForceUser'],
+        abilities: ['Bob Bash', 'Bob Force', 'Bob Blast'],
+        passiveAbilities: [],
+        charDesc: 'Mysterious, all powerful, and wise. He is the one who will save us all.',
     },
     // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
     'Red (Samurai)': {
@@ -663,6 +701,54 @@ const infoAboutAbilities = {
                 }
             }
             await TMchange(actionInfo.withSelfAsTarget(), 35 + bonusTurnMeter)
+        }
+    },
+    'Outwit': {
+        displayName: 'Outwit',
+        image: 'images/abilities/ability_hera_s3_basic.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'debuff_gain'],
+        abilityDamage: 238.9,
+        desc: 'Deal Physical damage to target enemy. If that enemy was the healthiest enemy, also Expose them for 1 turn.',
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            const enemies = aliveBattleBros[actionInfo.target.team]
+            const enemyHealths = enemies.map(guy => guy.health)
+            const healthiestEnemy = enemies[enemyHealths.indexOf(Math.max(...enemyHealths))]
+            if (hit[0] > 0 && actionInfo.target === healthiestEnemy) {
+                await applyEffect(actionInfo, 'expose', 1)
+            }
+        }
+    },
+    'Play to Strengths': {
+        displayName: 'Play to Strengths',
+        image: 'images/abilities/ability_hera_s3_special01.png',
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['target_ally', 'assist', 'buff_gain'],
+        desc: 'Call another target ally to assist. That ally\'s attack has +50% Potency and deals 35% more damage. Dispel all debuffs on them, reduce their cooldowns by 1, and grant them 50% Turn Meter.',
+        use: async function (actionInfo) { },
+        allyUse: async function (battleBro, ally, target) {
+            let effectActionInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            let assistActionInfo = new ActionInfo({ battleBro: ally, target: target })
+            await applyEffect(effectActionInfo, 'potencyUp', 1)
+            await assist(assistActionInfo, battleBro, 135)
+            await dispel(effectActionInfo, 'debuff')
+            await changeCooldowns(ally, -1)
+            await TMchange(effectActionInfo, 50)
+        }
+    },
+    'Backup Plan': {
+        displayName: 'Backup Plan',
+        image: 'images/abilities/ability_hera_s3_special02.png',
+        abilityType: 'special',
+        cooldown: 5,
+        abilityTags: ['target_ally', 'buff_gain'],
+        desc: 'Target other ally gains locked Backup Plan for 3 turns. Backup Plan: Recover 10% Health per turn, revive with 80% Health and 30% Turn Meter when defeated',
+        use: async function (actionInfo) { },
+        allyUse: async function (battleBro, ally, target) {
+            let effectActionInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            await applyEffect(effectActionInfo, 'backupPlan', 3, 1, false, true)
         }
     },
     'invincibleAssault': {
@@ -1014,7 +1100,7 @@ const infoAboutAbilities = {
         displayName: "Dread Slash",
         image: 'images/abilities/ninja3.png',
         abilityType: 'ultimate',
-        ultimateCost: 1900,
+        ultimateCost: 2700,
         abilityTags: ['attack', 'shadow_damage'],
         abilityDamage: 18000,
         desc: 'Deals shadow damage. Buffs ninja with offence up and stealth for 3 turns this can\'t be dispelled while the opponents will gain blind and defence down for 2 turns can\'t be dispelled.',
@@ -1025,6 +1111,69 @@ const infoAboutAbilities = {
             for (let enemy of aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()) {
                 await applyEffect(actionInfo.withTarget(enemy), 'blind', 2, 1, false, true)
                 await applyEffect(actionInfo.withTarget(enemy), 'defenceDown', 2, 1, false, true)
+            }
+        },
+    },
+    // --------------------------------------------------------OUR CHARACTERS
+    'Bob Bash': {
+        displayName: "Bob Bash",
+        image: 'images/abilities/ability_grandmasteryoda_basic.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage'],
+        abilityDamage: 200,
+        desc: 'Deals physical damage and inflicts a random locked debuff for 4 turns.',
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                const debuffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'debuff')
+                let randomDebuffIndex = Math.floor(Math.random() * debuffs.length)
+                await applyEffect(actionInfo, debuffs[randomDebuffIndex][1].name, 4, 1, false, true)
+            }
+        },
+    },
+    'Bob Force': {
+        displayName: 'Bob Force',
+        image: 'images/abilities/ability_jediconsular_special01.png',
+        abilityType: 'special',
+        cooldown: 3,
+        abilityTags: ['target_ally', 'health_recovery'],
+        desc: 'Heal target ally, with extra healing passing into protection, and give them a random locked buff for 4 turns.',
+        use: async function (actionInfo) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            let healInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            if (ally.health + battleBro.specialDamage <= ally.maxHealth) {
+                await heal(healInfo, battleBro.specialDamage)
+            } else {
+                await heal(healInfo, ally.maxHealth - ally.health)
+                await heal(healInfo, battleBro.specialDamage - (ally.maxHealth - ally.health), 'protection')
+            }
+            const buffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'buff')
+            let randomBuffIndex = Math.floor(Math.random() * buffs.length)
+            await applyEffect(healInfo, buffs[randomBuffIndex][1].name, 4, 1, false, true)
+        }
+    },
+    'Bob Blast': {
+        displayName: "Bob Blast",
+        image: 'images/abilities/ability_jediconsular_special02.png',
+        abilityType: 'ultimate',
+        ultimateCost: 3000,
+        abilityTags: ['buff_gain', 'debuff'],
+        desc: 'Inflicts 5 locked debuffs on all enemies for the rest of the battle, and gives all allies 5 locked buffs for 4 turns.',
+        use: async function (actionInfo) {
+            const debuffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'debuff')
+            const buffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'buff')
+            for (let enemy of aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()) {
+                for (let i = 0; i < 5; i++) {
+                    let randomDebuffIndex = Math.floor(Math.random() * debuffs.length)
+                    await applyEffect(actionInfo.withTarget(enemy), debuffs[randomDebuffIndex][1].name, 999, 1, false, true)
+                }
+            }
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                for (let i = 0; i < 5; i++) {
+                    let randomBuffIndex = Math.floor(Math.random() * buffs.length)
+                    await applyEffect(actionInfo.withTarget(ally), buffs[randomBuffIndex][1].name, 999, 1, false, true)
+                }
             }
         },
     },
@@ -1621,6 +1770,25 @@ const infoAboutEffects = {
             unit.accuracy -= 100
         }
     },
+    'backupPlan': {
+        name: 'backupPlan',
+        image: 'images/effects/backupPlan.png',
+        type: 'buff',
+        effectTags: ['stack', 'revive'],
+        opposite: 'inevitableFailure',
+        apply: async function (actionInfo, unit) {
+
+        },
+        remove: async function (actionInfo, unit) {
+
+        },
+        startedTurn: async function (actionInfo, unit, effect, selectedBro) {
+            if (unit == selectedBro) {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await heal(actionInfo, 10 * unit.maxHealth) // heal 10% of max health
+            }
+        }
+    },
     'criticalChanceUp': {
         name: 'criticalChanceUp',
         image: 'images/effects/criticalChanceUp.png',
@@ -1698,7 +1866,7 @@ const infoAboutEffects = {
         apply: async function (actionInfo, unit) {
             // create memory space
             if (!unit.customData) unit.customData = {}
-            if (!unit.customData.fallenAlly) unit.customData.fallenAlly = unit.customData.fallenAlly || {
+            if (!unit.customData.fallenAlly) unit.customData.fallenAlly = {
                 alliesAlreadySummoned: [],
             }
         },
@@ -1939,11 +2107,11 @@ const infoAboutEffects = {
             unit.customData.rotating = null // clear the memory space
         },
         attacked: async function (actionInfo, unit, effect, target, attacker) {
-            if (infoAboutAbilities[actionInfo.abilityName].abilityTags.includes('projectile_attack')) {
+            if (infoAboutAbilities[actionInfo?.abilityName]?.abilityTags?.includes('projectile_attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
                 unit.flatDamageReceived = 0 // deflects all projectile attacks
-            } else if (infoAboutAbilities[actionInfo.abilityName].abilityTags.includes('attack')) {
+            } else if (infoAboutAbilities[actionInfo?.abilityName]?.abilityTags?.includes('attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
                 unit.flatDamageReceived /= 2 // reduces other attacks by 50%
@@ -2059,21 +2227,27 @@ const infoAboutEffects = {
         type: 'debuff',
         effectTags: ['stack', 'speed', 'tenacity', 'maxHealth', 'loseOnHeal'],
         opposite: 'healOverTime',
-        apply: async function (actionInfo, unit) {
+        apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.tenacity -= 5
             unit.speedPercent -= 5
+            effect.maxHealthRemoveTriggers = 0
         },
-        remove: async function (actionInfo, unit) {
+        remove: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: remove (', ...arguments,)
             unit.tenacity += 5
             unit.speedPercent += 5
+            for (let i = 0; i < effect?.maxHealthRemoveTriggers; i++) {
+                unit.maxHealth /= 0.95 // restore max health by 5% for each trigger
+            }
         },
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
             if (unit == selectedBro) {
                 let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
                 await dealDmg(actionInfo, 5, 'percentage', false, true, true, this.name)
                 unit.maxHealth *= 0.95
+                if (!effect.maxHealthRemoveTriggers) effect.maxHealthRemoveTriggers = 0
+                effect.maxHealthRemoveTriggers += 1
             }
         }
     },
@@ -2199,6 +2373,20 @@ const infoAboutEffects = {
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
             unit.evasion += 100
+        }
+    },
+    'expose': {
+        name: 'expose',
+        image: 'images/effects/expose.png',
+        type: 'debuff',
+        effectTags: ['stack', 'singleUse', 'loseOnHit', 'percentageDamage'],
+        apply: async function (actionInfo, unit) {
+        },
+        remove: async function (actionInfo, unit, effect, removalType) {
+            if (removalType == 'removed') {
+                let newActionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await dealDmg(newActionInfo, 20, 'percentage', true, true, false, this.name)
+            }
         }
     },
     'fear': {
@@ -2356,6 +2544,7 @@ const infoAboutEffects = {
         apply: async function (actionInfo, unit) { },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
+            await switchTarget(unit)
             unit.armour *= 0.9
             unit.resistance *= 0.9
             unit.maxHealth /= 1.1
@@ -2472,6 +2661,7 @@ const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
     damaged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points minus dealtdmg
     endOfDamage: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points remaining
+    defeated: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // target,attacker,dealtdmg,'damagetype',crit true/false, total hit points remaining
     attacked: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], //target,attacker,actionInfoPLACEHOLDER
     gainedEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], // target, effect
     lostEffect: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, effect, removalType, dispeller
@@ -3506,7 +3696,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         resistable: resistable,
         isLocked: isLocked,
     }
-    if (actionInfo.target.isDead == true || actionInfo.target.buffs.find(effect => effect.effectTags.includes('buffImmunity'))) return // don't apply the effect if the target is dead
+    if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.effectTags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
     for (let i = 0; i < stacks; i++) {
@@ -3921,6 +4111,11 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         if (type !== 'shadow' && triggerEventHandlers == true) await eventHandle('endOfDamage', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
         await gainUltCharge(user, dealtdmg * 0.003)
         await gainUltCharge(target, dealtdmg * 0.002)
+        const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
+        if (target.health + protUsed - dealtdmg <= 0 && target.isDead == false) {
+            await gainUltCharge(target, 500)
+            await eventHandle('defeated', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
+        }
         await updateBattleBrosHtmlText()
         return [dealtdmg, crit]
     } else {
