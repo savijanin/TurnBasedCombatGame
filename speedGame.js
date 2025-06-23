@@ -14,6 +14,7 @@ var checkingPromises = null
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
 // FUNNY CONDITIONS
+var omicron = true // activates omicron bonuses on some abilities
 var headbutt = true   // characters will headbutt enmies with melee attacks
 var oldSchool = false // characters will use old school abilities (incredibly overpowered)
 var sharePassives = false // doesn't work
@@ -25,7 +26,7 @@ var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'Jedi Bob',
+        character: 'jabba',
         x: 400,
         y: 100,
         team: 0,
@@ -37,7 +38,7 @@ var battleBros = [
     },
     {
         id: "02",
-        character: 'Shadow Menace (Original)',
+        character: 'Clone Wars Chewbacca',
         x: 400,
         y: 300,
         team: 0,
@@ -45,7 +46,7 @@ var battleBros = [
     },
     {
         id: "03",
-        character: 'Super Striker',
+        character: 'Hera Syndulla',
         x: 400,
         y: 500,
         team: 0,
@@ -53,7 +54,7 @@ var battleBros = [
     },
     {
         id: "04",
-        character: 'Ninja',
+        character: 'Mace Windu',
         x: 400,
         y: 700,
         team: 0,
@@ -61,7 +62,7 @@ var battleBros = [
     },
     {
         id: "05",
-        character: 'jabba',
+        character: 'Talia',
         x: 250,
         y: 200,
         team: 0,
@@ -69,7 +70,7 @@ var battleBros = [
     },
     {
         id: "06",
-        character: 'Hera Syndulla',
+        character: 'Yoda',
         x: 250,
         y: 400,
         team: 0,
@@ -77,7 +78,7 @@ var battleBros = [
     },
     {
         id: "07",
-        character: 'Mace Windu',
+        character: 'Super Striker',
         x: 250,
         y: 600,
         team: 0,
@@ -95,7 +96,7 @@ var battleBros = [
     // Team 1 (right side)
     {
         id: "11",
-        character: 'Super Striker',
+        character: 'Shadow Menace (Original)',
         x: 1400,
         y: 100,
         team: 1,
@@ -103,7 +104,7 @@ var battleBros = [
     },
     {
         id: "12",
-        character: 'Clone Wars Chewbacca',
+        character: 'Ninja',
         x: 1400,
         y: 300,
         team: 1,
@@ -111,7 +112,7 @@ var battleBros = [
     },
     {
         id: "13",
-        character: 'Ninja',
+        character: 'Jedi Bob',
         x: 1400,
         y: 500,
         team: 1,
@@ -119,7 +120,7 @@ var battleBros = [
     },
     {
         id: "14",
-        character: 'Mace Windu',
+        character: 'Red (Samurai)',
         x: 1400,
         y: 700,
         team: 1,
@@ -127,7 +128,7 @@ var battleBros = [
     },
     {
         id: "15",
-        character: 'Talia',
+        character: 'Chuck (Rainbird)',
         x: 1550,
         y: 200,
         team: 1,
@@ -135,7 +136,7 @@ var battleBros = [
     },
     {
         id: "16",
-        character: 'Red (Samurai)',
+        character: 'Matilda (Druid)',
         x: 1550,
         y: 400,
         team: 1,
@@ -143,7 +144,7 @@ var battleBros = [
     },
     {
         id: "17",
-        character: 'Shadow Menace (Original)',
+        character: 'SM-33',
         x: 1550,
         y: 600,
         team: 1,
@@ -270,6 +271,25 @@ const infoAboutCharacters = {
         abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
         passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
         charDesc: 'Aggressive Jedi tank with devastating damage if left unchecked',
+    },
+    'SM-33': {
+        image: 'images/avatars/sm33.png',
+        imageSize: 100,
+        health: 38173 + 37235,
+        protection: 0,
+        speed: 145,
+        potency: 36,
+        tenacity: 57,
+        critChance: 35.5,
+        physicalDamage: 1944,
+        specialDamage: 1646,
+        armour: 46.7,
+        resistance: 29.7,
+        healthSteal: 25,
+        tags: ['darkSide', 'tank', 'attacker', 'droid', 'pirate', 'scoundrel', 'skeletonCrew'],
+        abilities: ['Rattling Uppercut', 'Limb From Limb', 'Forearm Bucklers'],
+        passiveAbilities: ['First Mate of the Onyx Cinder'],
+        charDesc: 'Powerful pirate attacker/tank hybrid who slowly burns away to continuously bombard any challengers with damage.',
     },
     'Talia': {
         image: 'images/avatars/Talia.png',
@@ -428,7 +448,7 @@ const infoAboutCharacters = {
         passiveAbilities: [],
         charDesc: 'Protects the party. A real hero!',
     },
-    'Chuck (Rainbird': {
+    'Chuck (Rainbird)': {
         image: 'images/avatars/chuckRainbird.png',
         imageSize: 100,
         health: 27000,
@@ -707,7 +727,7 @@ const infoAboutAbilities = {
         displayName: 'Outwit',
         image: 'images/abilities/ability_hera_s3_basic.png',
         abilityType: 'basic',
-        abilityTags: ['attack', 'debuff_gain'],
+        abilityTags: ['attack', 'projectile_attack', 'debuff_gain'],
         abilityDamage: 238.9,
         desc: 'Deal Physical damage to target enemy. If that enemy was the healthiest enemy, also Expose them for 1 turn.',
         use: async function (actionInfo) {
@@ -816,6 +836,83 @@ const infoAboutAbilities = {
                 await TMchange(assistActionInfo.withTarget(battleBro), ally.turnMeter)
                 await TMchange(actionInfo, 100 - ally.turnMeter)
                 await applyEffect(actionInfo.withSelfAsTarget(), 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
+            }
+        }
+    },
+    'Rattling Uppercut': {
+        displayName: 'Rattling Uppercut',
+        image: 'images/abilities/ability_sm33_basic.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 380,
+        desc: "Deal physical damage to target enemy and stagger them for 2 turns. If the target is a challenger, remove 100% turn meter and inflict ability block and daze for 1 turn.",
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'stagger', 2)
+                if (actionInfo.target.buffs.find(effect => effect.effectTags.includes('challenger'))) {
+                    await TMchange(actionInfo, -100)
+                    await applyEffect(actionInfo, 'abilityBlock', 1)
+                    await applyEffect(actionInfo, 'daze', 1)
+                }
+            }
+        }
+    },
+    'Limb From Limb': {
+        displayName: 'Limb From Limb',
+        image: 'images/abilities/ability_sm33_special01.png',
+        abilityType: 'special',
+        cooldown: 4,
+        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 210,
+        desc: "Deal Physical damage 6 times to target enemy. This attack has +1000% Health Steal and deals 20% more damage for each 20% Health SM-33 is missing. If the target is a challenger, SM-33 deals 50% more damage. Omicron: If this attack defeats an enemy, they can't be revived. For each instance of damage done from this ability while SM-33 has 100% Health, he gains 20% bonus Protection for 2 turns. If the target is a challenger, reduce their max protection by 50%.",
+        use: async function (actionInfo) {
+            let battleBro = actionInfo.battleBro
+            let target = actionInfo.target
+            const chunkNum = Math.floor((battleBro.maxHealth - battleBro.health) / (battleBro.maxHealth * 0.2)) // missing health divided by chunk size (20%)
+            let dmgPercent = 100 + (20 * chunkNum)
+            let isChallenger = target.buffs.find(effect => effect.effectTags.includes('challenger'))
+            if (isChallenger) dmgPercent += 50
+            battleBro.healthSteal += 1000
+            for (let i = 0; i < 6; i++) {
+                await dealDmg(actionInfo, this.abilityDamage * dmgPercent * 0.01, 'physical')
+                // add bonus prot
+            }
+            if (omicron == true) {
+                if (target.isDead == true) {
+                    target.cantRevive = true
+                } else if (isChallenger) {
+                    target.maxProtection *= 0.5
+                }
+            }
+        }
+    },
+    'Forearm Bucklers': {
+        displayName: 'Forearm Bucklers',
+        image: 'images/abilities/ability_sm33_special02.png',
+        abilityType: 'special',
+        cooldown: 4,
+        abilityTags: ['dispel', 'buff_gain', 'debuff_gain'],
+        desc: "Dispel all buffs on target enemy then inflict buff immunity and burning for 2 turns. SM-33 gains defence up for 2 turns. If SM-33 was burning, recover 50% health and protection and inflict 5 stacks of damage over time. Omicron: SM-33 dispels all debuffs on himself and gains locked retribution for 1 turn. All Pirate allies gain 25% bonus Protection for 2 turns. If the target is a challenger, SM-33 gains burning for the rest of the battle.",
+        use: async function (actionInfo) {
+            let battleBro = actionInfo.battleBro
+            let target = actionInfo.target
+            await dispel(actionInfo, 'buff')
+            await applyEffect(actionInfo, 'buffImmunity', 2)
+            await applyEffect(actionInfo, 'burning', 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'defenceUp', 2)
+            if (battleBro.buffs.find(effect => effect.effectTags.includes('burning'))) {
+                await heal(actionInfo.withSelfAsTarget(), battleBro.maxHealth * 0.5)
+                await heal(actionInfo.withSelfAsTarget(), battleBro.maxProtection * 0.5, 'protection')
+                await applyEffect(actionInfo, 'damageOverTime', 2, 5)
+            }
+            if (omicron == true) {
+                await dispel(actionInfo.withSelfAsTarget(), 'debuff')
+                await applyEffect(actionInfo.withSelfAsTarget(), 'retribution', 1, 1, false, true)
+                // add bonus prot
+                if (target.buffs.find(effect => effect.effectTags.includes('challenger'))) {
+                    await applyEffect(actionInfo.withSelfAsTarget(), 'burning', 999)
+                }
             }
         }
     },
@@ -939,7 +1036,7 @@ const infoAboutAbilities = {
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             let locked = false
-            if (actionInfo.target.buffs.find(effect => effect.name === 'targetLock')) {
+            if (actionInfo.target.buffs.find(effect => effect.effectTags.includes('targetLock'))) {
                 actionInfo.battleBro.flatDamageDealt += 50
                 locked = true
             }
@@ -1195,7 +1292,7 @@ const infoAboutAbilities = {
         displayName: "Defensive Formation",
         image: 'images/abilities/defensiveFormation.png',
         abilityType: 'special',
-        cooldown: 2,
+        cooldown: 1,
         abilityTags: ['target_ally', 'buffGain'],
         desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
         use: async function (actionInfo) {
@@ -1210,7 +1307,7 @@ const infoAboutAbilities = {
     },
     'Heroic Strike': {
         displayName: "Heroic Strike",
-        image: 'images/abilities/ability_darthvader_basic.png',
+        image: 'images/abilities/rageChili.png',
         abilityType: 'ultimate',
         ultimateCost: 2300,
         abilityTags: ['attack', 'physical_damage'],
@@ -1222,6 +1319,100 @@ const infoAboutAbilities = {
             const healthiestEnemy = enemies[enemyHealths.indexOf(Math.max(...enemyHealths))]
             let actionInfo_healthiestEnemy = actionInfo.setTarget(healthiestEnemy)
             await dealDmg(actionInfo_healthiestEnemy, this.abilityDamage, 'physical')
+        },
+    },
+    'Acid Rain': {
+        displayName: "Acid Rain",
+        image: 'images/abilities/acidRain.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        abilityDamage: 20,
+        desc: 'Deals physical damage to all enemies and inflict damage over time for 3 turns.',
+        use: async function (actionInfo) {
+            const enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
+            for (let enemy of enemies) {
+                let hit = await dealDmg(actionInfo.setTarget(enemy), this.abilityDamage, 'physical')
+                if (hit[0] > 0) {
+                    await applyEffect(actionInfo.setTarget(enemy), 'damageOverTime', 3)
+                }
+            }
+        },
+    },
+    'Healing Rain': {
+        displayName: "Healing Rain",
+        image: 'images/abilities/healingRain.png',
+        abilityType: 'special',
+        cooldown: 1,
+        abilityTags: ['target_ally', 'heal', 'dispel'],
+        desc: 'Dispels all debuffs from target ally and heals all allies for 20% of Chuck\'s max health',
+        use: async function (actionInfo) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            let actionInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            await dispel(actionInfo, 'debuff')
+            for (let friend of aliveBattleBros[battleBro.team]) {
+                await heal(actionInfo.withTarget(friend), battleBro.maxHealth * 0.2)
+            }
+        }
+    },
+    'Speed of Light': {
+        displayName: "Speed of Light",
+        image: 'images/abilities/rageChili.png',
+        abilityType: 'ultimate',
+        ultimateCost: 1800,
+        abilityTags: ['assist'],
+        desc: 'Unleash five attacks from allies.',
+        use: async function (actionInfo) {
+            for (let i = 0; i < 5; i++) {
+                let randomAllyIndex = Math.floor(Math.random() * aliveBattleBros[actionInfo.battleBro.team].length)
+                await assist(new ActionInfo({ battleBro: aliveBattleBros[actionInfo.battleBro.team][randomAllyIndex], target: actionInfo.target }), actionInfo.battleBro)
+            }
+        },
+    },
+    'Thorny Vine': {
+        displayName: "Thorny Vine",
+        image: 'images/abilities/thornyVine.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'physical_damage'],
+        abilityDamage: 35,
+        desc: 'Deals physical damage to target enemy and inflicts 3 stacks of damage over time for 3 turns.',
+        use: async function (actionInfo) {
+            await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            await applyEffect(actionInfo, 'damageOverTime', 3, 3)
+        },
+    },
+    'Regrowth': {
+        displayName: "Regrowth",
+        image: 'images/abilities/regrowth.png',
+        abilityType: 'special',
+        cooldown: 1,
+        abilityTags: ['target_ally', 'heal'],
+        desc: 'Heals target ally for 22% of their max health and all other allies by 10%.',
+        use: async function (actionInfo) {
+        },
+        allyUse: async function (battleBro, ally, target) {
+            let actionInfo = new ActionInfo({ battleBro: battleBro, target: ally })
+            for (let friend of aliveBattleBros[battleBro.team]) {
+                if (friend == ally) {
+                    await heal(actionInfo.withTarget(friend), friend.maxHealth * 0.22)
+                } else {
+                    await heal(actionInfo.withTarget(friend), friend.maxHealth * 0.1)
+                }
+            }
+        }
+    },
+    'Matildas Medicine': {
+        displayName: "Matildas Medicine",
+        image: 'images/abilities/rageChili.png',
+        abilityType: 'ultimate',
+        ultimateCost: 2000,
+        abilityTags: ['heal', 'dispel'],
+        desc: 'Dispels all debuffs from all allies and heals them for 35% of their max health, which ignores any heal-blocking effects.',
+        use: async function (actionInfo) {
+            for (let friend of aliveBattleBros[actionInfo.battleBro.team]) {
+                await dispel(actionInfo.withTarget(friend), 'debuff')
+                await heal(actionInfo.withTarget(friend), friend.maxHealth * 0.35, 'health', false, true)
+            }
         },
     },
     // --------------------------------------------------------KRAYT RAID
@@ -1379,7 +1570,6 @@ const infoAboutPassives = {
                 let actionInfo = new ActionInfo({ battleBro: owner, target: attacker })
                 await addAttackToQueue(actionInfo)
             }
-            return "ok"
         }
     },
     'wookieResolve': {
@@ -1594,6 +1784,47 @@ const infoAboutPassives = {
                 }
             }
         }
+    },
+    'First Mate of the Onyx Cinder': {
+        displayName: 'First Mate of the Onyx Cinder',
+        image: 'images/abilities/abilityui_passive_firstmateoftheonyxcinder.png',
+        desc: 'At the start of the battle, SM-33 gains locked Defence Up for 2 turns. If no enemies are challengers, whenever an enemy damages the leader, they gain challenger. Whenever an enemy damages the leader, SM-33 gains 15% Turn Meter and 10% Critical Damage (stacking) for 1 turn. Whenever SM-33 is damaged, he gains burning for 2 turns. Attacked enemies take all the damage SM-33 would sustain from burning. While in Territory Wars: Allied leaders gain 10% Max Health and Offense, and 10 Speed, doubled if they\'re also a Pirate. The first active enemy that damaged the Pirate in the Leader slot (excluding SM-33) deals 30% less damage and has -50% Potency to all allies aside from SM-33, and SM-33 and the allied Pirate in the Leader slot can ignore Taunt effects to target them. Whenever the allied Pirate in the Leader slot attacks, SM-33 is called to assist. Challenger: Can\'t call allies to assist and can\'t be called to assist. Can ignore taunt to target the enemy leader.',
+        abilityType: 'unique',
+        abilityTags: ['buff_gain', 'damage_effect'],
+        start: async function (actionInfo, owner) {
+            let battleBro = owner
+            await applyEffect(actionInfo.withSelfAsTarget(), 'defenceUp', 2, 1, false, true)
+            owner.customData.firstmateoftheonyxcinder = {
+                critDamageStacks: 0
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            let newActionInfo = new ActionInfo({ battleBro: owner, target: attacker })
+            if (attacker.team !== owner.team && aliveBattleBros[owner.team].filter(guy => guy.isLeader == true).includes(target)) {
+                const enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
+                if (enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('challenger'))).length <= 0) {
+                    await applyEffect(newActionInfo, 'challenger', 999)
+                }
+                await TMchange(newActionInfo.withSelfAsTarget(), 15)
+                if (owner.customData?.firstmateoftheonyxcinder?.critDamageStacks) {
+                    owner.critDamage += 10
+                    owner.customData.firstmateoftheonyxcinder.critDamageStacks++
+                }
+            }
+            if (attacker.team !== owner.team && target == owner) {
+                await applyEffect(newActionInfo.withSelfAsTarget(), 'burning', 2)
+            }
+        },
+        endedAbility: async function (actionInfo, owner, abilityName, battleBro, target, type, dmgPercent, savedActionInfo) {
+            let hitEnemies = actionInfo?.parentActionInfo?.hitEnemies
+            if (hitEnemies.includes(target) && owner == battleBro) {
+                let newActionInfo = new ActionInfo({ battleBro: owner, target: target })
+                const count = owner.buffs.filter(effect => effect.effectTags.includes('burning')).length
+                for (let i = 0; i < count; i++) {
+                    await dealDmg(newActionInfo, owner.maxHealth * 0.15, 'true', false)
+                }
+            }
+        },
     },
     'Nightsister Nimbleness': {
         displayName: 'Nightsister Nimbleness',
@@ -2089,6 +2320,24 @@ const infoAboutEffects = {
             }
         }
     },
+    'retribution': {
+        name: 'retribution',
+        image: 'images/effects/retribution.png',
+        type: 'buff',
+        effectTags: ['counter', 'attackOutOfTurn'],
+        opposite: 'daze',
+        apply: async function (actionInfo, unit) {
+        },
+        remove: async function (actionInfo, unit) {
+        },
+        endedAbility: async function (actionInfo, unit, effect, abilityName, battleBro, target, type, dmgPercent, savedActionInfo) {
+            let hitEnemies = actionInfo?.parentActionInfo?.hitEnemies
+            if (hitEnemies.includes(unit)) {
+                let newActionInfo = new ActionInfo({ battleBro: unit, target: actionInfo?.parentActionInfo?.battleBro })
+                await addAttackToQueue(newActionInfo)
+            }
+        },
+    },
     'rotating': {
         name: 'rotating',
         image: 'images/effects/rotating.png',
@@ -2277,6 +2526,25 @@ const infoAboutEffects = {
         type: 'debuff',
         effectTags: ['buffImmunity'],
         opposite: 'debuffImmunity',
+    },
+    'burning': {
+        name: 'burning',
+        image: 'images/effects/burning.png',
+        type: 'debuff',
+        effectTags: ['stack', 'speed', 'damageOverTime', 'evasion', 'burning'],
+        opposite: 'healOverTime',
+        apply: async function (actionInfo, unit, effect) {
+            unit.evasion -= 100
+        },
+        remove: async function (actionInfo, unit, effect) {
+            unit.evasion += 100
+        },
+        startedTurn: async function (actionInfo, unit, effect, selectedBro) {
+            if (unit == selectedBro) {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await dealDmg(actionInfo, 15, 'percentage', true, true, false, this.name)
+            }
+        }
     },
     'criticalChanceDown': {
         name: 'criticalChanceDown',
@@ -2616,6 +2884,20 @@ const infoAboutEffects = {
             unit.tenacity += 100
         }
     },
+    // ----------------------------------------------------------------- MISC EFFECTS -----------------------------------------------------------------
+    'challenger': { // unfinished
+        name: 'challenger',
+        image: 'images/effects/challenger.png',
+        type: 'misc',
+        effectTags: ['assist', 'stopAssist', 'targetIgnore', 'stopCallAssist', 'challenger'],
+        opposite: 'tenacityUp',
+        apply: async function (actionInfo, unit) {
+
+        },
+        remove: async function (actionInfo, unit) {
+
+        }
+    },
 }
 
 async function createLimitedAction({
@@ -2821,6 +3103,7 @@ async function createBattleBroVars() {
         battleBro.taunting = false
         battleBro.buffs = []
         battleBro.effects = []
+        battleBro.customData = {} // stores ability data
         battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
         battleBro.passives = battleBro.passives.filter(passive => {
             return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
@@ -4023,7 +4306,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
     let user = actionInfo.battleBro
     let target = actionInfo.target
     //if (user.team===battleBros[selectedBattleBroNumber].team) {
-    if (type !== 'shadow' && triggerEventHandlers == true) {
+    if (type !== 'shadow' && effectDmg == false && triggerEventHandlers == true) {
         if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
         actionInfo.hitEnemies.push(target)
         await eventHandle('attacked', actionInfo, target, user, actionInfo) // activate passive conditions upon being attacked unless the damage is shadow damage
