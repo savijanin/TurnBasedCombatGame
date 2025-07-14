@@ -19,7 +19,8 @@ var omicron = true // activates omicron bonuses on some abilities
 var headbutt = true   // characters will headbutt enmies with melee attacks
 var oldSchool = false // characters will use old school abilities (incredibly overpowered)
 var sharePassives = false // doesn't work
-var startingUltCharge = 8000
+var protectionTurnsIntoShields = true // protection becomes shields, it can't be regenerated, but can be gained from abilities
+var startingUltCharge = 0
 
 var runningDelay = 0;
 
@@ -114,7 +115,7 @@ const infoAboutAbilities = {
         abilityType: 'ultimate',
         ultimateCost: 2900,
         abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
-        desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by damage-over-time, health effects, or other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
+        desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
         use: async function (actionInfo) {
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
                 await dispel(actionInfo.withTarget(ally), 'debuff')
@@ -1752,9 +1753,6 @@ const infoAboutEffects = {
         effectTags: ['stack', 'revive'],
         desc: "Recover 10% Health per turn, Revive with 80% Health and 30% Turn Meter when defeated.",
         opposite: 'inevitableFailure',
-        apply: async function (actionInfo, unit) {
-
-        },
         remove: async function (actionInfo, unit, effect, type) {
             if (type == 'removed' && unit.isDead == true) {
                 let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
@@ -1767,8 +1765,6 @@ const infoAboutEffects = {
                 await heal(actionInfo, 10 * unit.maxHealth) // heal 10% of max health
             }
         },
-        defeated: async function (actionInfo, unit, effect, target, attacker) {
-        }
     },
     'callToAction': {
         name: 'callToAction',
@@ -1850,6 +1846,18 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             unit.critDamage -= 50
+        }
+    },
+    'damageImmunity': {
+        name: 'damageImmunity',
+        image: 'images/effects/damageImmunity.png',
+        type: 'buff',
+        effectTags: ['absorb', 'damageImmunity'],
+        opposite: 'deathmark',
+        damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg) {
+            if (unit == target) {
+                return 0 // 0 damage
+            }
         }
     },
     'defenceUp': {
@@ -2164,6 +2172,21 @@ const infoAboutEffects = {
             }
         },
     },
+    'revival': {
+        name: 'revival',
+        image: 'images/effects/revival.png',
+        type: 'buff',
+        effectTags: ['stack', 'revive'],
+        desc: "When defeated this character revives and recovers 50% of max health and protection then gains 100% turn meter and Bonus Protection (75%) for 2 turns.",
+        opposite: 'doomed',
+        remove: async function (actionInfo, unit, effect, type) {
+            if (type == 'removed' && unit.isDead == true) {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await revive(actionInfo, 50, 50, 100)
+                await applyEffect(actionInfo, 'shields', 2, 1, false, false, 75)
+            }
+        },
+    },
     'rotating': {
         name: 'rotating',
         image: 'images/effects/rotating.png',
@@ -2197,6 +2220,32 @@ const infoAboutEffects = {
                 unit.flatDamageReceived = unit.customData.rotating.savedFlatDamageReceived // restore the flat damage received
                 unit.customData.rotating.wasTriggered = false // reset the flag
             }
+        },
+    },
+    'shields': {
+        name: 'shields',
+        image: 'images/effects/bonusProtection.png',
+        type: 'buff',
+        effectTags: ['stack', 'shields'],
+        desc: "Adds a variable % of bonus max protection.",
+        opposite: 'protectionDisruption',
+        apply: async function (actionInfo, unit, effect) {
+            if (!unit.customData) unit.customData = {}
+            if (!unit.customData.shields) {
+                unit.customData.shields = {
+                    shieldsApplied: unit.maxHealth * 0.01 * effect.bonusData
+                }
+            } else {
+                unit.customData.shields.shieldsApplied += unit.maxHealth * 0.01 * effect.bonusData
+            }
+            effect.shieldsGranted = unit.maxHealth * 0.01 * effect.bonusData
+            unit.shields += unit.maxHealth * 0.01 * effect.bonusData
+        },
+        remove: async function (actionInfo, unit, effect, type) {
+            if (unit.customData?.shields?.shieldsApplied - effect.shieldsGranted < unit.shields) {
+                unit.shields = unit.customData?.shields?.shieldsApplied - effect.shieldsGranted // remove the shields granted by this effect
+            }
+            unit.customData.shields.shieldsApplied -= effect.shieldsGranted
         },
     },
     'speedUp': {
@@ -2268,15 +2317,16 @@ const infoAboutEffects = {
         name: 'unbreakable',
         image: 'images/effects/unbreakable.png',
         type: 'buff',
-        effectTags: ['absorb'],
+        effectTags: ['absorb', 'limit1health'],
         opposite: 'breakingPoint',
-        damaged: async function (actionInfo, unit, effect, target, user, dealtdmg, type, crit, hitPointsRemaining) {
-            if (unit == target) {
-                if (Math.floor(unit.health) <= 1) {
-                    unit.flatDamageReceived += 100
-                }
+        desc: "This unit can't go below 1 health.",
+        damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg, type, crit, HPremaining) {
+            if (unit == target && HPremaining <= 1) {
+                const currentTotal = HPremaining + dealtdmg;
+                const maxAllowed = currentTotal - 1;
+                return Math.max(0, maxAllowed); // clamp the damage to leave 1 HP
             }
-        },
+        }
     },
     // ----------------------------------------------------------------- DEBUFFS -----------------------------------------------------------------
     'abilityBlock': {
@@ -2857,6 +2907,9 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
     //await logFunctionCall('eventHandle', ...arguments)
     console.log("eventHandle", type, arg1, arg2, arg3, arg4, arg5, arg6)
     if (arg1?.isDead == true || arg2?.isDead == true) return
+
+    let returnValue = undefined
+
     if (argsMap[type]) {
         const args = argsMap[type]?.(arg1, arg2, arg3, arg4, arg5, arg6)
         for (let battleBro of battleBros) {
@@ -2876,6 +2929,10 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
                         type: type,
                     }
                     let ret = await fct(childActionInfo, battleBro, ...args)
+                    // If the effect returns a number (e.g. reduced damage), store it
+                    if (ret && returnValue === undefined) {
+                        returnValue = ret
+                    }
                     //console.log("Finished infoAboutPassives " + passive + " " + type + " " + ret)
                 } else {
                     //console.log("Checked infoAboutPassives " + passive + " " + type + " => <not defined>")
@@ -2890,10 +2947,15 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
                         type: type,
                     }
                     let ret = await fct(childActionInfo, battleBro, effect, ...args)
+                    // If the effect returns a number (e.g. reduced damage), store it
+                    if (ret !== undefined && returnValue === undefined) {
+                        returnValue = ret;
+                    }
                 }
             }
         }
     }
+    return returnValue
 }
 //var abilityImagesDivsPerTeam =[[],[]]
 var passiveImagesPerTeam = [[], []]
@@ -2919,7 +2981,7 @@ async function createBattleBroImages() {
         }).on("contextmenu", function (e) {
             if (!e.shiftKey) {
                 e.preventDefault(); // Stop the browser right-click menu
-                showBattleBroStats(battleBro, e.pageX, e.pageY); // Show your custom stat box
+                showStats(battleBro, e.pageX, e.pageY, 'battleBro'); // Show your custom stat box
             }
         })
 
@@ -3001,6 +3063,7 @@ async function createBattleBroVars(battleBro) {
     battleBro.offence = 100
     battleBro.maxHealth = battleBro.health
     battleBro.maxProtection = battleBro.protection
+    battleBro.shields = 0 // used for abilities that give bonus protection
     battleBro.speedPercent = 100 // using this to manipulate speed via buffs etc
     battleBro.flatDamageDealt = 100
     battleBro.flatDamageReceived = 100
@@ -3062,7 +3125,11 @@ async function updateBattleBrosHtmlText() {
         } else if (battleBro.isDead == true) {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
         }
-        battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.protection)
+        let protText = `${Math.ceil(battleBro.protection)}`;
+        if (battleBro.shields > 0) {
+            protText += ` <span style="color: magenta"> + ${Math.ceil(battleBro.shields)}</span>`;
+        }
+        battleBro.avatarHtmlElement.children()[3].firstElementChild.innerHTML = protText
         battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.turnMeter)
         battleBro.avatarHtmlElement.children()[7].firstElementChild.firstChild.nodeValue = ''
     }
@@ -3115,7 +3182,7 @@ async function updateCurrentBattleBroSkillImages() {
             }).on("contextmenu", function (e) {
                 if (!e.shiftKey) {
                     e.preventDefault(); // Stop the browser right-click menu
-                    showAbilityStats(battleBro, processedAbility.skill.displayName, e.pageX, e.pageY); // Show your custom stat box
+                    showStats(battleBro, e.pageX, e.pageY, 'ability', processedAbility.skill.displayName); // Show your custom stat box
                 }
             })
             abilityImageDiv.css({ 'display': 'block' });
@@ -3145,7 +3212,7 @@ async function updateCurrentBattleBroSkillImages() {
             passiveImage.on("contextmenu", function (e) {
                 if (!e.shiftKey) {
                     e.preventDefault(); // Stop the browser right-click menu
-                    showAbilityStats(battleBro, processingPassive, e.pageX, e.pageY, true); // Show your custom stat box
+                    showStats(battleBro, e.pageX, e.pageY, 'passive', processingPassive); // Show your custom stat box
                 }
             })
             passiveImage.css({ 'display': 'block' });
@@ -4314,22 +4381,45 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                     if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
                     actionInfo.hitEnemies.push(target)
                 }
-                await eventHandle('damaged', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
+                let returnedValue = await eventHandle('damaged', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection + target.shields - dealtdmg)
+                if (typeof returnedValue === 'number') {
+                    dealtdmg = returnedValue
+                }
             } // passive effects upon damage that isn't shadow damage
             if (target.buffs.find(e => e.effectTags.includes('loseOnHit'))) await removeEffect(actionInfo, target, 'loseOnHit')
         }
-        if (ignoreProtection == false) {
-            let prot = target.protection
-            target.protection -= Math.min(dealtdmg, prot)
-            if (prot < dealtdmg) {
-                target.health -= dealtdmg - prot
+
+
+        if (ignoreProtection === false) {
+            let remainingDmg = dealtdmg
+
+            // 1 Damage shields first
+            if (target.shields > 0) {
+                const shieldDmg = Math.min(remainingDmg, target.shields)
+                target.shields -= shieldDmg
+                remainingDmg -= shieldDmg
             }
-            if (user.healthSteal > 0 && prot < dealtdmg && effectDmg == false) {
-                await heal({ battleBro: user, target: user }, (dealtdmg - prot) * user.healthSteal * 0.01, 'health', true)
+
+            // 2 Damage protection next
+            if (remainingDmg > 0 && target.protection > 0) {
+                const protDmg = Math.min(remainingDmg, target.protection);
+                target.protection -= protDmg;
+                remainingDmg -= protDmg;
+            }
+
+            // 3 Damage health last
+            if (remainingDmg > 0) {
+                target.health -= remainingDmg;
+
+                if (user.healthSteal > 0 && effectDmg === false) {
+                    await heal({ battleBro: user, target: user }, (dealtdmg - target.protection) * user.healthSteal * 0.01, 'health', true)
+                }
             }
         } else {
-            target.health -= dealtdmg
-            if (user.healthSteal > 0 && effectDmg == false) {
+            // Ignore shields and protection, damage health directly
+            target.health -= dealtdmg;
+
+            if (user.healthSteal > 0 && effectDmg === false) {
                 await heal({ battleBro: user, target: user }, dealtdmg * user.healthSteal * 0.01, 'health', true)
             }
         }
@@ -4494,7 +4584,7 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
     }).on("contextmenu", function (e) {
         if (!e.shiftKey) {
             e.preventDefault(); // Stop the browser right-click menu
-            showAbilityStats(battleBro, ultimate, e.pageX, e.pageY); // Show your custom stat box
+            showStats(battleBro, e.pageX, e.pageY, 'ability', ultimate); // Show your custom stat box
         }
     })
 
@@ -4510,19 +4600,25 @@ async function modifyStat(actionInfo, stat, amount, triggerEventHandlers = true)
     actionInfo.target[stat] += amount
 }
 
-async function showBattleBroStats(battleBro, x, y) {
-    let statBox = $('#battleBroStatBox')
+async function showStats(battleBro, x, y, type, abilityName = null) {
+    let statBox = $('#statBox')
+    if (type == 'battleBro') {
 
-    if (statBox.length === 0) {
-        statBox = $('<div id="battleBroStatBox"></div>').appendTo('body')
-    }
+        if (statBox.length === 0) {
+            statBox = $('<div id="statBox"></div>').appendTo('body')
+        }
 
-    // Clear and populate with stats
-    statBox.html(`
+        let protText = `Protection: ${Math.ceil(battleBro.protection)}/${Math.ceil(battleBro.maxProtection)}`;
+        if (battleBro.shields > 0) {
+            protText += ` <span style="color: magenta"> + ${Math.ceil(battleBro.shields)}</span>`;
+        }
+
+        // Clear and populate with stats
+        statBox.html(`
         <strong>${battleBro.character}</strong><br>
         <span style="color: lightgray">${battleBro.charDesc}<br></span>
         <span style="color: limegreen">Health: ${Math.ceil(battleBro.health)}/${Math.ceil(battleBro.maxHealth)}<br></span>
-        <span style="color: cyan">Protection: ${Math.ceil(battleBro.protection)}/${Math.ceil(battleBro.maxProtection)}<br></span>
+        <span style="color: cyan">${protText}<br></span>
         <span style="color: orange">Armour: ${Math.ceil(battleBro.armour)}<br></span>
         <span style="color: goldenrod">Accuracy: ${Math.ceil(battleBro.accuracy)}<br></span>
         <span style="color: darkorange">Critical Avoidance: ${Math.ceil(battleBro.critAvoidance)}<br></span>
@@ -4543,6 +4639,17 @@ async function showBattleBroStats(battleBro, x, y) {
         <span style="color: white">Leader: ${battleBro.isLeader}<br></span>
         <span style="color: cornflowerblue">Effects: ${battleBro.buffs.map(e => e.name).join(', ') || 'None'}<br></span>
     `);
+    } else {
+        if (statBox.length === 0) {
+            statBox = $('<div id="statBox"></div>').appendTo('body');
+        }
+        let desc = (type == 'ability') ? infoAboutAbilities[abilityName].desc : infoAboutPassives[abilityName].desc
+        // Clear and populate with stats
+        statBox.html(`
+        <strong>${abilityName}</strong><br>
+        <span style="color: lightgray">${desc}<br></span>
+    `);
+    }
 
     // Style and position
     statBox.css({
@@ -4597,71 +4704,6 @@ async function showBattleBroStats(battleBro, x, y) {
     });
 }
 
-async function showAbilityStats(battleBro, abilityName, x, y, isPassive = false) {
-    let statBox = $('#abilityStatBox');
-
-    if (statBox.length === 0) {
-        statBox = $('<div id="abilityStatBox"></div>').appendTo('body');
-    }
-    let desc = (isPassive == false) ? infoAboutAbilities[abilityName].desc : infoAboutPassives[abilityName].desc
-    // Clear and populate with stats
-    statBox.html(`
-        <strong>${abilityName}</strong><br>
-        <span style="color: lightgray">${desc}<br></span>
-    `);
-
-    // Style and position
-    statBox.css({
-        position: 'absolute',
-        top: y + 'px',
-        left: x + 'px',
-        padding: '10px',
-        backgroundColor: '#222831', // 🔷 Dark grey background
-        color: '#00ffcc',            // 🔷 Neon teal text
-        border: '2px solid #00ffcc', // 🔷 Matching border
-        borderRadius: '10px',
-        fontFamily: 'monospace',     // (optional) cool techy font
-        fontSize: '14px',
-        minWidth: '300px',
-        maxWidth: '400px',
-        zIndex: 9999,
-    }).show();
-
-    // Smart positioning
-    const padding = 10;
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-
-    // Temporarily show to measure
-    statBox.css({ visibility: 'hidden', display: 'block' });
-    const boxWidth = statBox.outerWidth();
-    const boxHeight = statBox.outerHeight();
-    statBox.css({ visibility: 'visible' });
-
-    if (x + boxWidth + padding > screenWidth) {
-        x = screenWidth - boxWidth - padding;
-    }
-    if (y + boxHeight + padding > screenHeight) {
-        y = screenHeight - boxHeight - padding;
-    }
-
-    x = Math.max(padding, x);
-    y = Math.max(padding, y);
-
-    statBox.css({ top: y + 'px', left: x + 'px' }).show();
-
-    // Wait for left click anywhere
-    return new Promise(resolve => {
-        const handleClick = (e) => {
-            if (e.button === 0) { // 0 = left click
-                statBox.hide();
-                $(document).off("mousedown", handleClick);
-                resolve(); // Resolve the promise after hiding
-            }
-        };
-        $(document).on("mousedown", handleClick);
-    });
-}
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
 
 async function startKraytRaid() {
