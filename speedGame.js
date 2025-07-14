@@ -1,33 +1,14 @@
 /* eslint-disable no-unused-vars */
 /* global $, ActionInfo */
 
-var selectedBattleBroNumber = -1
-var team2abilitiesAlwaysVisible = false
-var pendingAbility = null
-var aliveBattleBros = []
-var ultimateCharge = []
-var ultimateBeingUsed = false
-//var isAnythingElseRunningHereAtTheSameTime = 0
-var engagingCounters = false
-var characterDying = false
-var promises = []
-var checkingPromises = null
-const wait = ms => new Promise(res => setTimeout(res, ms))
-const floatingTextQueues = new Map()
-// FUNNY CONDITIONS
-var omicron = true // activates omicron bonuses on some abilities
-var headbutt = true   // characters will headbutt enmies with melee attacks
-var oldSchool = false // characters will use old school abilities (incredibly overpowered)
-var sharePassives = false // doesn't work
-var startingUltCharge = 0
-
-var runningDelay = 0;
-
+import { selectedBattleBroNumber, team2abilitiesAlwaysVisible, pendingAbility, aliveBattleBros, ultimateCharge, ultimateBeingUsed, engagingCounters, characterDying, promises, checkingPromises, wait, floatingTextQueues, omicron, headbutt, oldSchool, sharePassives, startingUltCharge, runningDelay } from './globalVars.js'
 import { battleBros } from './battleBros.js'
 
 import { infoAboutCharacters } from './infoAboutCharacters.js'
 
 import { infoAboutAbilities } from './infoAboutAbilities.js'
+
+import { changeTarget, switchTarget, changingTarget } from './combatHelpers/targeting.js'
 
 const infoAboutPassives = {
     'test3': {
@@ -2050,49 +2031,7 @@ async function avatarClicked(clickedElement) {
     await changeTarget(foundBattleBro)
 }
 
-async function changeTarget(target) {
-    await logFunctionCall('changeTarget', ...arguments)
-    let targetTeam = aliveBattleBros[target.team]
-    if (targetTeam.filter(unit => unit.taunting).length == 0) {
-        if (!(target.buffs.find(effect => effect.effectTags.includes('stealth')) || target.isDead == true)) {
-            await changingTarget(target)
-        }
-    } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
-        await changingTarget(target)
-    } else {
-        return
-    }
-}
 
-async function switchTarget(battleBro) {
-    await logFunctionCall('switchTarget', ...arguments)
-    if (battleBro.isTarget == true) { // if this guy is the target, we need to set the target to another member of the same team
-        let otherAllies = aliveBattleBros[battleBro.team].filter(ally => ally !== battleBro)
-        if (otherAllies.length <= 0) return
-        if (otherAllies.filter(ally => ally.taunting).length == 0) {
-            await changingTarget(otherAllies[0])
-        } else { // if there's at least one other guy with taunt on the same team as this guy, make them the target
-            await changingTarget(otherAllies.filter(ally => ally.taunting)[0])
-        }
-    }
-}
-
-async function changingTarget(target) {
-    await logFunctionCall('changingTarget', ...arguments)
-    // Set isTarget=false to all other battleBros from the same team
-    for (let battleBro of battleBros) {
-        if (battleBro.team == target.team) {
-            battleBro.isTarget = false
-        }
-    }
-
-    // Set isTarget=true to our newly-selected battleBro
-    target.isTarget = true
-
-    // Move team's target image
-    let htmlElementName = '#targetTeam' + target.team
-    $(htmlElementName).css({ 'left': target.x + 'px', 'top': target.y + 'px' })
-}
 
 //--------------------------------------------------------ABILITY CLICKED
 
