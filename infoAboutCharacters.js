@@ -50,8 +50,8 @@ export const infoAboutCharacters = {
         resistance: 41.81,
         healthSteal: 10,
         tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'scoundrel'],
-        abilities: ['bowcaster', 'wookieRage', 'defiantRoar'],
-        passiveAbilities: ['wookieResolve'],
+        abilities: ['Bowcaster', 'Wookie Rage', 'Defiant Roar'],
+        passiveAbilities: ['Wookie Resolve'],
         charDesc: 'Durable Tank with both Taunt and self-Healing',
     },
     'Darth Vader': {
@@ -69,8 +69,8 @@ export const infoAboutCharacters = {
         resistance: 34.38,
         healthSteal: 15,
         tags: ['darkSide', 'attacker', 'leader', 'empire', 'sith', 'fleetCommander'],
-        abilities: ['terrifyingSwing', 'forceCrush', 'cullingBlade', 'mercilessMassacre'],
-        passiveAbilities: ['inspiringThroughFear', 'noEscape'],
+        abilities: ['Terrifying Swing', 'Force Crush', 'Culling Blade', 'Merciless Massacre'],
+        passiveAbilities: ['Inspiring Through Fear', 'No Escape'],
         charDesc: 'Fearsome Attacker that applies AoE Damage Over Time, and crushes debuffed targets for extra turns',
     },
     'Hera Syndulla': {
@@ -106,8 +106,8 @@ export const infoAboutCharacters = {
         resistance: 43.31,
         healthSteal: 15,
         tags: ['lightSide', 'tank', 'leader', 'galacticRepublic', 'jedi', 'fleetCommander'],
-        abilities: ['invincibleAssault', 'smite', 'thisPartysOver'],
-        passiveAbilities: ['takeaSeat', 'vaapad', 'senseWeakness'],
+        abilities: ['Invincible Assault', 'Smite', "This Party's Over"],
+        passiveAbilities: ['Take A Seat', 'Vaapad', 'Sense Weakness'],
         charDesc: 'Aggressive Jedi tank with devastating damage if left unchecked',
     },
     'SM-33': {
@@ -163,8 +163,8 @@ export const infoAboutCharacters = {
         resistance: 19.46,
         healthSteal: 5,
         tags: ['lightSide', 'support', 'leader', 'galacticRepublic', 'jedi'],
-        abilities: ['ataru', 'masterstroke', 'unstoppableForce', 'battleMeditation'],
-        passiveAbilities: ['grandMastersGuidance'],
+        abilities: ['Ataru', 'Masterstroke', 'Unstoppable Force', 'Battle Meditation'],
+        passiveAbilities: ["Grand Master's Guidance"],
         charDesc: 'Masterful Jedi support that can replicate enemy buffs and share them with allies',
     },
     // --------------------------------------------------------SAVI'S CHARACTERS

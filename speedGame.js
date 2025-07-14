@@ -29,7 +29,7 @@ import { infoAboutCharacters } from './infoAboutCharacters.js'
 
 const infoAboutAbilities = {
     'test1': {
-        displayName: 'JABBA Bowcaster',
+        displayName: 'test1',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
         abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
@@ -42,7 +42,7 @@ const infoAboutAbilities = {
         }
     },
     'test2': {
-        displayName: 'Jabba take a seat',
+        displayName: 'test2',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         abilityType: 'special',
         cooldown: 3,
@@ -61,7 +61,7 @@ const infoAboutAbilities = {
             await heal(healInfo, battleBro.physicalDamage, 'protection')
         }
     },
-    'bowcaster': {
+    'Bowcaster': {
         displayName: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         abilityType: 'basic',
@@ -78,7 +78,7 @@ const infoAboutAbilities = {
             }
         }
     },
-    'wookieRage': {
+    'Wookie Rage': {
         displayName: 'Wookie Rage',
         image: 'images/abilities/clonewarschewbacca_wookierage.png',
         abilityType: 'special',
@@ -91,14 +91,13 @@ const infoAboutAbilities = {
             await applyEffect(actionInfo.withSelfAsTarget(), 'healthUp', 2, 2);
         }
     },
-    'defiantRoar': {
+    'Defiant Roar': {
         displayName: 'Defiant Roar',
         image: 'images/abilities/clonewarschewbacca_defiantroar.png',
         abilityType: 'special',
         cooldown: 5,
         abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
-        desc: 'Chewbacca recovers 40% of his Max Health and gains Defense Up for 3 Turns, with a 25% Chance to also gain 25% Turn Meter.',
-        zeta_desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
+        desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             await dispel(actionInfo.withSelfAsTarget(), 'debuff')
@@ -109,7 +108,27 @@ const infoAboutAbilities = {
             }
         }
     },
-    'ataru': {
+    'Unbowed and Unbroken': {
+        displayName: 'Unbowed and Unbroken',
+        image: 'images/abilities/clonewarschewbacca_ult.png',
+        abilityType: 'ultimate',
+        ultimateCost: 2900,
+        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
+        desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by damage-over-time, health effects, or other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
+        use: async function (actionInfo) {
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await dispel(actionInfo.withTarget(ally), 'debuff')
+                if (ally !== actionInfo.battleBro) await applyEffect(actionInfo.withTarget(ally), 'unbreakable', 2, 1, false, true)
+            }
+            await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxHealth * 0.5)
+            await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxProtection * 0.5, 'protection')
+            await applyEffect(actionInfo.withSelfAsTarget(), 'taunt', 3, 1, false, true);
+            await applyEffect(actionInfo.withSelfAsTarget(), 'damageImmunity', 2);
+            await applyEffect(actionInfo.withSelfAsTarget(), 'revival', 2);
+            await applyEffect(actionInfo.withSelfAsTarget(), 'retribution', 2);
+        }
+    },
+    'Ataru': {
         displayName: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         abilityType: 'basic',
@@ -135,7 +154,7 @@ const infoAboutAbilities = {
             }
         }
     },
-    'masterstroke': {
+    'Masterstroke': {
         displayName: 'Masterstroke',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         abilityType: 'special',
@@ -170,7 +189,7 @@ const infoAboutAbilities = {
             }
         }
     },
-    'unstoppableForce': {
+    'Unstoppable Force': {
         displayName: 'Unstoppable Force',
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
         abilityType: 'special',
@@ -187,7 +206,7 @@ const infoAboutAbilities = {
             }
         }
     },
-    'battleMeditation': {
+    'Battle Meditation': {
         displayName: 'Battle Meditation',
         image: 'images/abilities/ability_grandmasteryoda_special03.png',
         abilityType: 'special',
@@ -260,8 +279,8 @@ const infoAboutAbilities = {
             await applyEffect(effectActionInfo, 'backupPlan', 3, 1, false, true)
         }
     },
-    'invincibleAssault': {
-        displayName: 'invincibleAssault',
+    'Invincible Assault': {
+        displayName: 'Invincible Assault',
         image: 'images/abilities/ability_macewindu_basic.png',
         abilityType: 'basic',
         abilityTags: ['attack', 'special_damage'],
@@ -281,8 +300,8 @@ const infoAboutAbilities = {
             }
         }
     },
-    'smite': {
-        displayName: 'smite',
+    'Smite': {
+        displayName: 'Smite',
         image: 'images/abilities/ability_macewindu_special01.png',
         abilityType: 'special',
         cooldown: 3,
@@ -301,8 +320,8 @@ const infoAboutAbilities = {
             }
         }
     },
-    'thisPartysOver': {
-        displayName: "This party's over",
+    "This Party's Over": {
+        displayName: "This Party's Over",
         image: 'images/abilities/ability_macewindu_special02.png',
         abilityType: 'special',
         cooldown: 3,
@@ -1259,7 +1278,7 @@ const infoAboutAbilities = {
 
 const infoAboutPassives = {
     'test3': {
-        displayName: 'Battle mooditation',
+        displayName: 'test3',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         desc: 'jabba\'s blubber grants him 50% counter chance',
         abilityType: 'unique',
@@ -1288,7 +1307,7 @@ const infoAboutPassives = {
             }
         }
     },
-    'wookieResolve': {
+    'Wookie Resolve': {
         displayName: 'Wookie Resolve',
         image: 'images/abilities/abilityui_passive_def.png',
         desc: 'All allies have +50 Defense, and a 50% chance to gain Defense Up for 3 turns whenever they are damaged.',
@@ -1329,17 +1348,16 @@ const infoAboutPassives = {
             }
         }
     },
-    'grandMastersGuidance': {
+    'Grand Master\'s Guidance': {
         displayName: 'Grand Master\'s Guidance',
         image: 'images/abilities/abilityui_passive_removeharmful.png',
-        desc: 'Jedi allies have +25% Tenacity. Whenever a Jedi ally Resists a debuff, they gain 25% Turn Meter.',
-        zeta_desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
+        desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
         omicron_desc: 'At the start of battle if there are no galactic legends and all allies are Galactic Republic Jedi, the leadership abilities of all other allies are active until the end of battle.',
         abilityType: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
     },
-    'takeaSeat': {
-        displayName: 'Take a Seat',
+    'Take A Seat': {
+        displayName: 'Take A Seat',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
         abilityType: 'leader',
@@ -1380,10 +1398,10 @@ const infoAboutPassives = {
             }
         }
     },
-    'vaapad': {
+    'Vaapad': {
         displayName: 'Vaapad',
         image: 'images/abilities/abilityui_passive_def.png',
-        zeta_desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
+        desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         abilityType: 'unique',
         abilityTags: ['dispel', 'buff_gain'],
         start: async function (actionInfo, owner) {
@@ -1464,10 +1482,10 @@ const infoAboutPassives = {
             }
         }
     },
-    'senseWeakness': {
+    'Sense Weakness': {
         displayName: 'Sense Weakness',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        zeta_desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
+        desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         abilityType: 'unique',
         abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
@@ -1597,6 +1615,10 @@ const infoAboutPassives = {
             await logFunctionCall('method: start (', ...arguments,)
             owner.critChance += 25
             owner.defencePenetration += 30
+            owner.customData.eliminationProtocol = {
+                offenceStacks: 0,
+                stealthActive: false, // unused
+            }
         },
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             await logFunctionCall('method: damaged (', ...arguments,)
@@ -1621,24 +1643,10 @@ const infoAboutPassives = {
             }
         },
         attacked: async function (actionInfo, owner, target, attacker) {
-            await logFunctionCall('method: attacked (', ...arguments,)
-            await createLimitedAction({
-                limitedActions: {
-                    action: {
-                        fn(owner, target, attacker) {
-                            console.log('' + attacker)
-                            if (owner === attacker && target.buffs.find(e => e.name === 'targetLock')) {
-                                owner.physicalDamage += 10;
-                                owner.specialDamage += 10;
-                                //console.log('thing1 buffAttack applied');
-                                return true
-                            }
-                            return false
-                        },
-                        limit: 5,
-                    }
-                }
-            })
+            if (owner === attacker && target.buffs.find(effect => effect.effectTags.includes('targetLock')) && owner.customData?.eliminationProtocol?.offenceStacks < 5) {
+                await modifyStat(actionInfo.withTarget(owner), 'offence', 10)
+                owner.customData.eliminationProtocol.offenceStacks++
+            }
         }
     },
     // --------------------------------------------------------JAMES' CHARACTERS
@@ -2256,6 +2264,20 @@ const infoAboutEffects = {
             unit.tenacity -= 100
         }
     },
+    'unbreakable': {
+        name: 'unbreakable',
+        image: 'images/effects/unbreakable.png',
+        type: 'buff',
+        effectTags: ['absorb'],
+        opposite: 'breakingPoint',
+        damaged: async function (actionInfo, unit, effect, target, user, dealtdmg, type, crit, hitPointsRemaining) {
+            if (unit == target) {
+                if (Math.floor(unit.health) <= 1) {
+                    unit.flatDamageReceived += 100
+                }
+            }
+        },
+    },
     // ----------------------------------------------------------------- DEBUFFS -----------------------------------------------------------------
     'abilityBlock': {
         name: 'abilityBlock',
@@ -2777,7 +2799,7 @@ const infoAboutEffects = {
     },
 }
 
-async function createLimitedAction({
+/*async function createLimitedAction({
     limitedActions = {}, // object: { actionName: { fn: function, limit: number } }
     unlimitedActions = [], // array of functions
 }) {
@@ -2814,7 +2836,7 @@ async function createLimitedAction({
             await unlimitedFn.apply(this, args);
         }
     };
-}
+}*/
 
 const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
@@ -2829,6 +2851,7 @@ const argsMap = {
     usedAbility: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // abilityName, battleBro, target, type(assist or counter etc), dmgPercent (like when reduced from assists)
     endedAbility: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // abilityName, battleBro, target, type(assist or counter etc), dmgPercent (like when reduced from assists), savedActionInfo
     dodged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], // attacker, target
+    modifiedStat: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // stat name, value, guy Whos Stats Have Been Modified, modifier
 }
 async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6) {
     //await logFunctionCall('eventHandle', ...arguments)
@@ -2893,6 +2916,11 @@ async function createBattleBroImages() {
         childImage.attr("src", infoAboutCharacter.image)
         childImage.off("click").on("click", function () {
             avatarClicked(this)
+        }).on("contextmenu", function (e) {
+            if (!e.shiftKey) {
+                e.preventDefault(); // Stop the browser right-click menu
+                showBattleBroStats(battleBro, e.pageX, e.pageY); // Show your custom stat box
+            }
         })
 
         // Set position
@@ -3004,7 +3032,7 @@ async function createBattleBroVars(battleBro) {
     battleBro.cooldowns = {}
     for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
         const ability = infoAboutAbilities[abilityName]
-        battleBro.cooldowns[abilityName] = ability.abilityTags.includes('initialCooldown') ? ability.cooldown : 0
+        battleBro.cooldowns[abilityName] = ability?.abilityTags?.includes('initialCooldown') ? ability?.cooldown : 0
     }
     // Initialise skill cooldowns
     battleBro.skillsData = []
@@ -3062,7 +3090,7 @@ async function updateCurrentBattleBroSkillImages() {
     }
 
     // loop over battlebro abilities and display them
-    let characterAbilities = infoAboutCharacters[battleBro.character].abilities//[0]
+    let characterAbilities = battleBro.abilities//[0]
     /*const nonUltimateAbilities = battleBro.skillsData.filter(
         ab => ab.skill.abilityType !== 'ultimate'
     )*/
@@ -3084,7 +3112,12 @@ async function updateCurrentBattleBroSkillImages() {
             abilityImage.attr("src", imagePngPath)
             abilityImage.off("click").on("click", function () {
                 abilityClicked(this);
-            });
+            }).on("contextmenu", function (e) {
+                if (!e.shiftKey) {
+                    e.preventDefault(); // Stop the browser right-click menu
+                    showAbilityStats(battleBro, processedAbility.skill.displayName, e.pageX, e.pageY); // Show your custom stat box
+                }
+            })
             abilityImageDiv.css({ 'display': 'block' });
             if (!abilityImage.dataset) {
                 abilityImage.dataset = {}
@@ -3099,7 +3132,7 @@ async function updateCurrentBattleBroSkillImages() {
     }
     await updateUltimateIconForCurrentCharacter(battleBro)
     await changeCooldowns(battleBro, -1)
-    let characterPassives = infoAboutCharacters[battleBro.character].passiveAbilities
+    let characterPassives = battleBro.passives
     if (characterPassives) {
         for (let i = 0; i < characterPassives.length; i++) {
             let processingPassive = characterPassives[i]
@@ -3109,6 +3142,12 @@ async function updateCurrentBattleBroSkillImages() {
             let passiveImagesForCurrentTeam = passiveImagesPerTeam[battleBro.team]
             let passiveImage = passiveImagesForCurrentTeam[i]
             passiveImage.attr("src", imagePngPath)
+            passiveImage.on("contextmenu", function (e) {
+                if (!e.shiftKey) {
+                    e.preventDefault(); // Stop the browser right-click menu
+                    showAbilityStats(battleBro, processingPassive, e.pageX, e.pageY, true); // Show your custom stat box
+                }
+            })
             passiveImage.css({ 'display': 'block' });
         }
     }
@@ -3350,7 +3389,7 @@ async function abilityClicked(clickedElement) {
     let battleBroNumber = eltData.battleBroNumber
     let abilityNumber = eltData.abilityNumber
     let battleBro = battleBros[battleBroNumber]
-    let characterAbilities = infoAboutCharacters[battleBro.character].abilities
+    let characterAbilities = battleBro.abilities
     let abilityName = characterAbilities[abilityNumber]
     let tags = infoAboutAbilities[abilityName].abilityTags
     // abort if the ability is on cooldown
@@ -4127,7 +4166,7 @@ async function changeCooldowns(battleBro, amount = -1) {
             await pdateAbilityCooldownUI(battleBro, abilityName);
         }
     }*/
-    for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
+    for (let abilityName of battleBro.abilities) {
         //console.log(abilityName)
         if (battleBro.cooldowns[abilityName] > 0) {
             battleBro.cooldowns[abilityName] += amount;
@@ -4147,7 +4186,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     if (battleBro !== battleBros[selectedBattleBroNumber]) return;
     const cooldown = battleBro.cooldowns[abilityName] || 0
 
-    const characterAbilities = infoAboutCharacters[battleBro.character].abilities
+    const characterAbilities = battleBro.abilities
     const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
 
@@ -4404,8 +4443,8 @@ async function updateUltimateUI(team) {
     fill2.style.display = charge >= 10000 ? 'block' : 'none';*/
 }
 
-function updateUltimateIconForCurrentCharacter(battleBro) {
-    const ultimate = infoAboutCharacters[battleBro.character].abilities.find(a => infoAboutAbilities[a]?.abilityType === 'ultimate')
+async function updateUltimateIconForCurrentCharacter(battleBro) {
+    const ultimate = battleBro.abilities.find(a => infoAboutAbilities[a]?.abilityType === 'ultimate')
     for (let teamFound = 0; teamFound < ultimateCharge.length; teamFound++) {
         let teamIcon = document.getElementById(`ultimateUI-${teamFound}`).querySelector('.ultimate-icon')
         if (teamIcon) teamIcon.remove()
@@ -4429,7 +4468,7 @@ function updateUltimateIconForCurrentCharacter(battleBro) {
     img.style.borderRadius = '50%';
     img.style.cursor = 'pointer';
     img.dataset.battleBroNumber = battleBros.indexOf(battleBro)
-    img.dataset.abilityIndex = infoAboutCharacters[battleBro.character].abilities.indexOf(ultimate)
+    img.dataset.abilityIndex = battleBro.abilities.indexOf(ultimate)
 
     const charge = ultimateCharge[team] || 0;
     const enoughCharge = charge >= infoAboutAbilities[ultimate].ultimateCost;
@@ -4447,16 +4486,181 @@ function updateUltimateIconForCurrentCharacter(battleBro) {
     img.setAttribute('onclick', `abilityClicked(this)`)
     img.dataset.mydata = JSON.stringify({
         battleBroNumber: battleBros.indexOf(battleBro),
-        abilityNumber: infoAboutCharacters[battleBro.character].abilities.indexOf(ultimate)
+        abilityNumber: battleBro.abilities.indexOf(ultimate)
     })
     const $img = $(img);
     $img.off("click").on("click", function () {
         abilityClicked(this);
-    });
+    }).on("contextmenu", function (e) {
+        if (!e.shiftKey) {
+            e.preventDefault(); // Stop the browser right-click menu
+            showAbilityStats(battleBro, ultimate, e.pageX, e.pageY); // Show your custom stat box
+        }
+    })
 
     ui.appendChild(img);
 
     img.style.display = 'block'
+}
+
+async function modifyStat(actionInfo, stat, amount, triggerEventHandlers = true) {
+    if (triggerEventHandlers == true) {
+        await eventHandle('modifiedStat', actionInfo, stat, amount, actionInfo.target, actionInfo.battleBro)
+    }
+    actionInfo.target[stat] += amount
+}
+
+async function showBattleBroStats(battleBro, x, y) {
+    let statBox = $('#battleBroStatBox')
+
+    if (statBox.length === 0) {
+        statBox = $('<div id="battleBroStatBox"></div>').appendTo('body')
+    }
+
+    // Clear and populate with stats
+    statBox.html(`
+        <strong>${battleBro.character}</strong><br>
+        <span style="color: lightgray">${battleBro.charDesc}<br></span>
+        <span style="color: limegreen">Health: ${Math.ceil(battleBro.health)}/${Math.ceil(battleBro.maxHealth)}<br></span>
+        <span style="color: cyan">Protection: ${Math.ceil(battleBro.protection)}/${Math.ceil(battleBro.maxProtection)}<br></span>
+        <span style="color: orange">Armour: ${Math.ceil(battleBro.armour)}<br></span>
+        <span style="color: goldenrod">Accuracy: ${Math.ceil(battleBro.accuracy)}<br></span>
+        <span style="color: darkorange">Critical Avoidance: ${Math.ceil(battleBro.critAvoidance)}<br></span>
+        <span style="color: orangered">Critical Chance: ${Math.ceil(battleBro.critChance)}<br></span>
+        <span style="color: red">Critical Damage: ${Math.ceil(battleBro.critDamage)}<br></span>
+        <span style="color: crimson">Defence Penetration: ${Math.ceil(battleBro.defencePenetration)}<br></span>
+        <span style="color: plum">Evasion: ${Math.ceil(battleBro.evasion)}<br></span>
+        <span style="color: lime">Health Steal: ${Math.ceil(battleBro.healthSteal)}<br></span>
+        <span style="color: #e7120bff">Offence: ${Math.ceil(battleBro.offence)}<br></span>
+        <span style="color: #2AAA8A">Potency: ${Math.ceil(battleBro.potency)}<br></span>
+        <span style="color: #6082B6">Resistance: ${Math.ceil(battleBro.resistance)}<br></span>
+        <span style="color: brightblue">Speed: ${Math.ceil(battleBro.speed * battleBro.speedPercent * 0.01)}<br></span>
+        <span style="color: #556ae4ff">Tenacity: ${Math.ceil(battleBro.tenacity)}<br></span>
+
+        <span style="color: #6082B6">Turn Meter: ${Math.ceil(battleBro.turnMeter)}<br></span>  
+        <span style="color: white">Damage Dealt: ${Math.ceil(battleBro.flatDamageDealt)}<br></span>
+        <span style="color: white">Damage Received: ${Math.ceil(battleBro.flatDamageReceived)}<br></span>
+        <span style="color: white">Leader: ${battleBro.isLeader}<br></span>
+        <span style="color: cornflowerblue">Effects: ${battleBro.buffs.map(e => e.name).join(', ') || 'None'}<br></span>
+    `);
+
+    // Style and position
+    statBox.css({
+        position: 'absolute',
+        top: y + 'px',
+        left: x + 'px',
+        padding: '10px',
+        backgroundColor: '#222831', // 🔷 Dark grey background
+        color: '#00ffcc',            // 🔷 Neon teal text
+        border: '2px solid #00ffcc', // 🔷 Matching border
+        borderRadius: '10px',
+        fontFamily: 'monospace',     // (optional) cool techy font
+        fontSize: '14px',
+        minWidth: '300px',
+        maxWidth: '400px',
+        zIndex: 9999
+    })
+
+    // Smart positioning
+    const padding = 10;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Temporarily show to measure
+    statBox.css({ visibility: 'hidden', display: 'block' });
+    const boxWidth = statBox.outerWidth();
+    const boxHeight = statBox.outerHeight();
+    statBox.css({ visibility: 'visible' });
+
+    if (x + boxWidth + padding > screenWidth) {
+        x = screenWidth - boxWidth - padding;
+    }
+    if (y + boxHeight + padding > screenHeight) {
+        y = screenHeight - boxHeight - padding;
+    }
+
+    x = Math.max(padding, x);
+    y = Math.max(padding, y);
+
+    statBox.css({ top: y + 'px', left: x + 'px' }).show();
+
+    // Wait for left click anywhere
+    return new Promise(resolve => {
+        const handleClick = (e) => {
+            if (e.button === 0) { // 0 = left click
+                statBox.hide();
+                $(document).off("mousedown", handleClick);
+                resolve(); // Resolve the promise after hiding
+            }
+        };
+        $(document).on("mousedown", handleClick);
+    });
+}
+
+async function showAbilityStats(battleBro, abilityName, x, y, isPassive = false) {
+    let statBox = $('#abilityStatBox');
+
+    if (statBox.length === 0) {
+        statBox = $('<div id="abilityStatBox"></div>').appendTo('body');
+    }
+    let desc = (isPassive == false) ? infoAboutAbilities[abilityName].desc : infoAboutPassives[abilityName].desc
+    // Clear and populate with stats
+    statBox.html(`
+        <strong>${abilityName}</strong><br>
+        <span style="color: lightgray">${desc}<br></span>
+    `);
+
+    // Style and position
+    statBox.css({
+        position: 'absolute',
+        top: y + 'px',
+        left: x + 'px',
+        padding: '10px',
+        backgroundColor: '#222831', // 🔷 Dark grey background
+        color: '#00ffcc',            // 🔷 Neon teal text
+        border: '2px solid #00ffcc', // 🔷 Matching border
+        borderRadius: '10px',
+        fontFamily: 'monospace',     // (optional) cool techy font
+        fontSize: '14px',
+        minWidth: '300px',
+        maxWidth: '400px',
+        zIndex: 9999,
+    }).show();
+
+    // Smart positioning
+    const padding = 10;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Temporarily show to measure
+    statBox.css({ visibility: 'hidden', display: 'block' });
+    const boxWidth = statBox.outerWidth();
+    const boxHeight = statBox.outerHeight();
+    statBox.css({ visibility: 'visible' });
+
+    if (x + boxWidth + padding > screenWidth) {
+        x = screenWidth - boxWidth - padding;
+    }
+    if (y + boxHeight + padding > screenHeight) {
+        y = screenHeight - boxHeight - padding;
+    }
+
+    x = Math.max(padding, x);
+    y = Math.max(padding, y);
+
+    statBox.css({ top: y + 'px', left: x + 'px' }).show();
+
+    // Wait for left click anywhere
+    return new Promise(resolve => {
+        const handleClick = (e) => {
+            if (e.button === 0) { // 0 = left click
+                statBox.hide();
+                $(document).off("mousedown", handleClick);
+                resolve(); // Resolve the promise after hiding
+            }
+        };
+        $(document).on("mousedown", handleClick);
+    });
 }
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
 
