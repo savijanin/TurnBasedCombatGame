@@ -9,6 +9,7 @@ var ultimateCharge = []
 var ultimateBeingUsed = false
 //var isAnythingElseRunningHereAtTheSameTime = 0
 var engagingCounters = false
+var characterDying = false
 var promises = []
 var checkingPromises = null
 const wait = ms => new Promise(res => setTimeout(res, ms))
@@ -367,6 +368,26 @@ const infoAboutCharacters = {
         abilities: ['Massive Crush', 'Septuple Lightsaber Slash', 'Unpreventable', 'Second Chance'],
         passiveAbilities: ['I Have Been Summoned', 'The Fall'],
         charDesc: 'Heed my broken words...',
+    },
+    // --------------------------------------------------------SUPERPIG'S BRAVADO
+    'Business Pig': {
+        image: 'images/avatars/businessPig.png',
+        imageSize: 100,
+        health: 53200,
+        protection: 0,
+        speed: 139,
+        potency: 42,
+        tenacity: 43,
+        critChance: 27,
+        physicalDamage: 4300,
+        specialDamage: 3250,
+        armour: 31,
+        resistance: 27,
+        healthSteal: 5,
+        tags: ['lightSide', 'support', 'leader', 'earthling', 'superpigsBravado'],
+        abilities: ['Thwart the Plan', 'Important Meeting', 'Pig Profit', 'Oinks of Approval'],
+        passiveAbilities: ['Large Partnership', 'Very Important Pig'],
+        charDesc: 'Business Pig is here to sabotage any future competitors to his prosperous business.',
     },
     // --------------------------------------------------------OLIV'S CHARACTERS
     'Super Striker': {
@@ -1077,10 +1098,10 @@ const infoAboutAbilities = {
         use: async function (actionInfo) {
             let targetedEnemies = []
             let enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
-            let enemyHealths = enemies.map(guy => guy.health+guy.protection)
+            let enemyHealths = enemies.map(guy => guy.health + guy.protection)
             const weakestEnemy = enemies[enemyHealths.indexOf(Math.min(...enemyHealths))]
             enemies.splice(enemyHealths.indexOf(Math.min(...enemyHealths)), 1)
-            enemyHealths = enemies.map(guy => guy.health+guy.protection)
+            enemyHealths = enemies.map(guy => guy.health + guy.protection)
             const secondWeakestEnemy = enemies[enemyHealths.indexOf(Math.min(...enemyHealths))]
             targetedEnemies.push(actionInfo.target, weakestEnemy, secondWeakestEnemy)
             let numberOfDebuffedEnemiesHit = 0
@@ -1120,6 +1141,52 @@ const infoAboutAbilities = {
         use: async function (actionInfo) {
             for (let i = 0; i < 3; i++) {
                 let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            }
+        }
+    },
+    // --------------------------------------------------------SUPERPIG'S BRAVADO
+    'Thwart the Plan': {
+        displayName: 'Thwart the Plan',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'basic',
+        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        projectile: 'redLaser',
+        abilityDamage: 63,
+        desc: "Business pig's hoof gloves shoot out a little capsule that folds out into two miniature stun-guns. Deals 2x low damage to target enemy. Each amount of damage has a 25% chance to be physical damage, a 50% chance to be special damage and a 25% chance to be ultra damage. If an attack deals physical damage, double Business Pig's critical hit chance and penetrate defence by 25%.",
+        use: async function (actionInfo) {
+            for (let i = 0; i < 2; i++) {
+                const randomChance = Math.random()
+                if (randomChance < 0.25) {
+                    const critChance = actionInfo.battleBro.critChance
+                    actionInfo.battleBro.critChance += critChance
+                    actionInfo.battleBro.defencePenetration += 25
+                    await dealDmg(actionInfo, this.abilityDamage, 'physical')
+                    actionInfo.battleBro.critChance -= critChance
+                    actionInfo.battleBro.defencePenetration -= 25
+                } else if (randomChance < 0.75) {
+                    await dealDmg(actionInfo, this.abilityDamage, 'special')
+                } else {
+                    await dealDmg(actionInfo, this.abilityDamage, 'ultra')
+                }
+            }
+        }
+    },
+    'Important Meeting': {
+        displayName: 'Important Meeting',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        abilityType: 'special',
+        cooldown: 5,
+        abilityTags: ['debuff_gain', 'buff_gain'],
+        desc: "Business Pig must interrupt the battle for an important meeting. Inflicts Locked Stun on all enemies that can't be resisted and sets the turn meter of all Superpig's Bravado allies to 0. Business Pig's speed is set to 0 until all enemies have come out of stun. Then Business Pig activates his jetpack and gains Aerial Advantage for 2 turns. During this Aerial Advantage he can use all other abilities except for Important Meeting and Oinks of Approval.",
+        use: async function (actionInfo) {
+            for (let enemy of actionInfo.enemies) {
+                await applyEffect(actionInfo.withTarget(enemy), 'stun', 1, 1, false, true)
+            }
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                ally.turnMeter = 0
+            }
+            actionInfo.battleBro.customData.importantMeeting = {
+                enemiesStunned: true
             }
         }
     },
@@ -2228,18 +2295,24 @@ const infoAboutEffects = {
         image: 'images/effects/backupPlan.png',
         type: 'buff',
         effectTags: ['stack', 'revive'],
+        desc: "Recover 10% Health per turn, Revive with 80% Health and 30% Turn Meter when defeated.",
         opposite: 'inevitableFailure',
         apply: async function (actionInfo, unit) {
 
         },
-        remove: async function (actionInfo, unit) {
-
+        remove: async function (actionInfo, unit, effect, type) {
+            if (type == 'removed' && unit.isDead == true) {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await revive(actionInfo, 80, 0, 30)
+            }
         },
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
             if (unit == selectedBro) {
                 let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
                 await heal(actionInfo, 10 * unit.maxHealth) // heal 10% of max health
             }
+        },
+        defeated: async function (actionInfo, unit, effect, target, attacker) {
         }
     },
     'callToAction': {
@@ -3321,7 +3394,7 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
             var childActionInfo = new ActionInfo({ battleBro: battleBro })
             childActionInfo.abilityName = actionInfo?.abilityName // Copying this manually for the moment, because it is not in the ActionInfo constructor
             childActionInfo.parentActionInfo = actionInfo
-
+            childActionInfo.enemies = aliveBattleBros.filter((_, i) => i !== battleBro.team).flat()
             for (let passive of battleBro.passives) { // iterate through all passives to see if they do something when this happens
                 let fct = infoAboutPassives[passive]?.[type]
 
@@ -3430,77 +3503,75 @@ function createUltimateUIForTeam(teamNumber) {
     container.appendChild(wrapper);
 }
 
-async function createBattleBroVars() {
+async function createBattleBroVars(battleBro) {
     await logFunctionCall('createBattleBroVars', ...arguments)
-    for (let battleBro of battleBros) {
-        let infoAboutCharacter = infoAboutCharacters[battleBro.character]
-        // battleBro.speed = infoAboutCharacter.speed
-        battleBro.turnMeter = 0
-        // battleBro.health = infoAboutCharacter.health
-        for (let info in infoAboutCharacter) {
-            if (Object.prototype.hasOwnProperty.call(infoAboutCharacter, info)) { // fix for: if (infoAboutCharacter.hasOwnProperty(info)) {
-                battleBro[info] = infoAboutCharacter[info];
-            }
+    let infoAboutCharacter = infoAboutCharacters[battleBro.character]
+    // battleBro.speed = infoAboutCharacter.speed
+    battleBro.turnMeter = 0
+    // battleBro.health = infoAboutCharacter.health
+    for (let info in infoAboutCharacter) {
+        if (Object.prototype.hasOwnProperty.call(infoAboutCharacter, info)) { // fix for: if (infoAboutCharacter.hasOwnProperty(info)) {
+            battleBro[info] = infoAboutCharacter[info];
         }
-        // add extra variables
-        battleBro.critDamage = 150
-        battleBro.critAvoidance = 0
-        battleBro.accuracy = 0
-        battleBro.evasion = 0
-        battleBro.defencePenetration = 0
-        battleBro.offence = 100
-        battleBro.maxHealth = battleBro.health
-        battleBro.maxProtection = battleBro.protection
-        battleBro.speedPercent = 100 // using this to manipulate speed via buffs etc
-        battleBro.flatDamageDealt = 100
-        battleBro.flatDamageReceived = 100
-        battleBro.isDead = false
-        battleBro.cantRevive = false
-        battleBro.queuedAttacks = []
-        battleBro.taunting = false
-        battleBro.buffs = []
-        battleBro.effects = []
-        battleBro.customData = {} // stores ability data
-        battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
-        battleBro.passives = battleBro.passives.filter(passive => {
-            return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
-        }) // remove leader passives of characters that aren't leaders
-        battleBro.abilityImageDivs = []
-        //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
-        const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.abilityType !== 'ultimate')
-        for (let i = 0; i < abilities.length; i++) {
-            let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
-            console.log('' + battleBro.team)
-            if (battleBro.team == 0) {
-                newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
-            } else {
-                newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' })
-            }
-            newAbilityImageDiv.appendTo('#myAbilities');
-            battleBro.abilityImageDivs.push(newAbilityImageDiv);
-        }
-        battleBro.cooldowns = {}
-        for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
-            const ability = infoAboutAbilities[abilityName]
-            battleBro.cooldowns[abilityName] = ability.abilityTags.includes('initialCooldown') ? ability.cooldown : 0
-        }
-        // Initialise skill cooldowns
-        battleBro.skillsData = []
-        for (let skillName of infoAboutCharacter?.abilities || []) {
-            let skill = JSON.parse(JSON.stringify(infoAboutAbilities[skillName]))
-            let skillData = {
-                skill: skill,
-                cooldown: skill.initialCooldown,
-            }
-            battleBro.skillsData.push(skillData)
-
-            // make sure cooldowns are keyed by name for checking and updating
-            //battleBro.cooldowns[skillName] = skill.initialCooldown || 0
-        }
-        if (!aliveBattleBros[battleBro.team]) aliveBattleBros[battleBro.team] = [] // if the aliveBattleBros array doesn't have a row for their team, create it
-        aliveBattleBros[battleBro.team].push(battleBro) // add to aliveGuys
-        if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = startingUltCharge // if the ultimateCharge array doesn't have a row for their team, create it
     }
+    // add extra variables
+    battleBro.critDamage = 150
+    battleBro.critAvoidance = 0
+    battleBro.accuracy = 0
+    battleBro.evasion = 0
+    battleBro.defencePenetration = 0
+    battleBro.offence = 100
+    battleBro.maxHealth = battleBro.health
+    battleBro.maxProtection = battleBro.protection
+    battleBro.speedPercent = 100 // using this to manipulate speed via buffs etc
+    battleBro.flatDamageDealt = 100
+    battleBro.flatDamageReceived = 100
+    battleBro.isDead = false
+    battleBro.cantRevive = false
+    battleBro.queuedAttacks = []
+    battleBro.taunting = false
+    battleBro.buffs = []
+    battleBro.effects = []
+    battleBro.customData = {} // stores ability data
+    battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
+    battleBro.passives = battleBro.passives.filter(passive => {
+        return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
+    }) // remove leader passives of characters that aren't leaders
+    battleBro.abilityImageDivs = []
+    //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
+    const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.abilityType !== 'ultimate')
+    for (let i = 0; i < abilities.length; i++) {
+        let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
+        console.log('' + battleBro.team)
+        if (battleBro.team == 0) {
+            newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
+        } else {
+            newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' })
+        }
+        newAbilityImageDiv.appendTo('#myAbilities');
+        battleBro.abilityImageDivs.push(newAbilityImageDiv);
+    }
+    battleBro.cooldowns = {}
+    for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
+        const ability = infoAboutAbilities[abilityName]
+        battleBro.cooldowns[abilityName] = ability.abilityTags.includes('initialCooldown') ? ability.cooldown : 0
+    }
+    // Initialise skill cooldowns
+    battleBro.skillsData = []
+    for (let skillName of infoAboutCharacter?.abilities || []) {
+        let skill = JSON.parse(JSON.stringify(infoAboutAbilities[skillName]))
+        let skillData = {
+            skill: skill,
+            cooldown: skill.initialCooldown,
+        }
+        battleBro.skillsData.push(skillData)
+
+        // make sure cooldowns are keyed by name for checking and updating
+        //battleBro.cooldowns[skillName] = skill.initialCooldown || 0
+    }
+    if (!aliveBattleBros[battleBro.team]) aliveBattleBros[battleBro.team] = [] // if the aliveBattleBros array doesn't have a row for their team, create it
+    aliveBattleBros[battleBro.team].push(battleBro) // add to aliveGuys
+    if (!ultimateCharge[battleBro.team]) ultimateCharge[battleBro.team] = startingUltCharge // if the ultimateCharge array doesn't have a row for their team, create it
 }
 
 async function updateBattleBrosHtmlText() {
@@ -3512,22 +3583,6 @@ async function updateBattleBrosHtmlText() {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.health)
         } else if (battleBro.isDead !== true) {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
-            battleBro.isDead = true
-            aliveBattleBros[battleBro.team].splice(aliveBattleBros[battleBro.team].indexOf(battleBro), 1) // remove it from the array of alive guys on their team
-            let actionInfo = new ActionInfo({ battleBro: battleBro })
-            await removeEffect(actionInfo, battleBro, null, null, null, true)
-            await switchTarget(battleBro)
-            // change avatar look to be dead
-            const img = battleBro.avatarHtmlElement.children()
-            img.css({
-                transition: 'transform 0.5s ease'
-            })
-            img.css({
-                filter: 'grayscale(100%) brightness(50%)', // grey and dim
-                transform: 'rotate(180deg)',               // flipped upside down
-                pointerEvents: 'none'                      // disables interaction
-            })
-            await wait(500)
         }
         battleBro.avatarHtmlElement.children()[3].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.protection)
         battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.turnMeter)
@@ -3624,7 +3679,9 @@ $(document).ready(function () {
 
         // How to change text
         //$('#jabbaHealth').text("dead")
-        await createBattleBroVars()
+        for (let battleBro of battleBros) {
+            await createBattleBroVars(battleBro)
+        }
         await createBattleBroImages()
         await updateBattleBrosHtmlText()
         for (let team = 0; team < ultimateCharge.length; team++) {
@@ -3654,6 +3711,31 @@ $(document).ready(function () {
         await changeTarget(battleBros.find(guy => guy.team == 1))
     })();
 })
+
+async function dead(battleBro) {
+    characterDying = true
+    battleBro.isDead = true
+    aliveBattleBros[battleBro.team].splice(aliveBattleBros[battleBro.team].indexOf(battleBro), 1) // remove it from the array of alive guys on their team
+    let actionInfo = new ActionInfo({ battleBro: battleBro })
+    await removeEffect(actionInfo, battleBro, null, null, null, true)
+    if (battleBro.isDead == false) {
+        characterDying = false
+        return
+    } // if the character is revived instantly, abort the rest of the function
+    await switchTarget(battleBro)
+    // change avatar look to be dead
+    const img = battleBro.avatarHtmlElement.children()
+    img.css({
+        transition: 'transform 0.5s ease'
+    })
+    img.css({
+        filter: 'grayscale(100%) brightness(50%)', // grey and dim
+        transform: 'rotate(180deg)',               // flipped upside down
+        pointerEvents: 'none'                      // disables interaction
+    })
+    await wait(500)
+    characterDying = false
+}
 
 async function calculateNextTurnFromTurnMetersAndSpeeds() {
     //console.clear()
@@ -3927,6 +4009,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
 
     await eventHandle('usedAbility', actionInfo, abilityName, actionInfo.battleBro, actionInfo.target, type, dmgPercent)
     actionInfo.hitEnemies = []
+    actionInfo.enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
     let savedActionInfo = actionInfo.copy()
     await ability?.use(actionInfo)//executeAbility(abilityName, actionInfo)
     await eventHandle('endedAbility', actionInfo, abilityName, actionInfo.battleBro, actionInfo.target, type, dmgPercent, savedActionInfo)
@@ -4767,6 +4850,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         await gainUltCharge(target, dealtdmg * 0.002)
         const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
         if (target.health + protUsed - dealtdmg <= 0 && target.isDead == false) {
+            await dead(target)
             await gainUltCharge(target, 500)
             await eventHandle('defeated', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
         }
@@ -4779,7 +4863,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
     }
 }
 
-async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false) {
+async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false, triggerEventHandlers = true) {
     await logFunctionCall('heal', ...arguments)
     if (ignoreHealImmunity == false && actionInfo.target.buffs.find(effect => effect.effectTags.includes('healingImmunity'))) return
     actionInfo.actionDetails = {
@@ -4813,6 +4897,29 @@ async function TMchange(actionInfo, change, resistable = true) {
     }
     target.turnMeter += change
     target.turnMeter = (target.turnMeter < 0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
+}
+
+async function revive(actionInfo, health = 0, protection = 0, turnMeter = 0) {
+    if (actionInfo.target.cantRevive == true) return
+    if (characterDying == false) {
+        const img = actionInfo.target.avatarHtmlElement.children()
+        img.css({
+            transition: 'transform 0.5s ease'
+        })
+        img.css({
+            filter: 'grayscale(100%) brightness(50%)', // grey and dim
+            transform: 'rotate(180deg)',               // flipped upside down
+            pointerEvents: 'none'                      // disables interaction
+        })
+    }
+    await createBattleBroVars(actionInfo.target)
+    const healthGained = actionInfo.target.maxHealth * health * 0.01
+    const protectionGained = actionInfo.target.maxProtection * protection * 0.01
+    actionInfo.target.health = 1
+    actionInfo.target.protection = 0
+    await heal(actionInfo, healthGained, 'health', false, true, false)
+    await heal(actionInfo, protectionGained, 'protection', false, true, false)
+    actionInfo.target.turnMeter += turnMeter
 }
 
 async function gainUltCharge(battleBro, chargeAmount = 1) {
