@@ -18,7 +18,7 @@ export var battleBros = [
         x: 400,
         y: 300,
         team: 0,
-        isLeader: false,
+        isLeader: true,
     },
     {
         id: "03",
@@ -50,7 +50,7 @@ export var battleBros = [
         x: 250,
         y: 400,
         team: 0,
-        isLeader: true,
+        isLeader: false,
     },
     {
         id: "07",

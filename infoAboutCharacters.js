@@ -144,7 +144,7 @@ export const infoAboutCharacters = {
         resistance: 42.2,
         healthSteal: 10,
         tags: ['darkSide', 'healer', 'leader', 'nightsister'],
-        abilities: ['Draining Strike', 'Water of Life', 'Harrowing Assault'],
+        abilities: ['Draining Strike', 'Water of Life', 'Harrowing Assault', 'Blood Moon Ritual'],
         passiveAbilities: ['Nightsister Nimbleness'],
         charDesc: 'Aggressive Healer that sacrifices Health so allies can recover Health and Turn Meter',
     },

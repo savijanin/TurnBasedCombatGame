@@ -32,7 +32,7 @@ const infoAboutAbilities = {
     'test1': {
         displayName: 'test1',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
         abilityDamage: 100,
         desc: 'This is a test, deal physical damage to target enemy.',
@@ -45,7 +45,7 @@ const infoAboutAbilities = {
     'test2': {
         displayName: 'test2',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['target_ally', 'attack', 'special_damage', 'health_recovery'],
         abilityDamage: 160,
@@ -65,7 +65,7 @@ const infoAboutAbilities = {
     'Bowcaster': {
         displayName: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
         projectile: 'redLaser',
         abilityDamage: 117.8,
@@ -82,7 +82,7 @@ const infoAboutAbilities = {
     'Wookie Rage': {
         displayName: 'Wookie Rage',
         image: 'images/abilities/clonewarschewbacca_wookierage.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
@@ -95,7 +95,7 @@ const infoAboutAbilities = {
     'Defiant Roar': {
         displayName: 'Defiant Roar',
         image: 'images/abilities/clonewarschewbacca_defiantroar.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
         desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
@@ -112,8 +112,8 @@ const infoAboutAbilities = {
     'Unbowed and Unbroken': {
         displayName: 'Unbowed and Unbroken',
         image: 'images/abilities/clonewarschewbacca_ult.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2900,
+        type: 'ultimate',
+        ultimateCost: 3000,
         abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
         desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
         use: async function (actionInfo) {
@@ -132,7 +132,7 @@ const infoAboutAbilities = {
     'Ataru': {
         displayName: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
         desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
@@ -158,11 +158,11 @@ const infoAboutAbilities = {
     'Masterstroke': {
         displayName: 'Masterstroke',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
         abilityDamage: 60.2,
-        desc: 'Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can\'t be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.',
+        desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for ${(oldSchool ? 3 : 2)} turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             const enemies = aliveBattleBros // multi-enemy-team functionality
@@ -180,7 +180,7 @@ const infoAboutAbilities = {
                 }
             }
             for (let buff of copiedEffects) {
-                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, 3)
+                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, (oldSchool ? 3 : 2))
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
                 if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
@@ -193,7 +193,7 @@ const infoAboutAbilities = {
     'Unstoppable Force': {
         displayName: 'Unstoppable Force',
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'debuff_gain', 'special_damage'],
         abilityDamage: 299.9,
@@ -210,10 +210,10 @@ const infoAboutAbilities = {
     'Battle Meditation': {
         displayName: 'Battle Meditation',
         image: 'images/abilities/ability_grandmasteryoda_special03.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['turnmeter_recovery', 'buff_gain'],
-        desc: 'Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.',
+        desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for ${(oldSchool ? '2 turns' : '1 turn')}. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             await applyEffect(actionInfo.withSelfAsTarget(), 'tenacityUp', 2)
@@ -223,7 +223,7 @@ const infoAboutAbilities = {
             let bonusTurnMeter = 0
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
                 for (let buff of copiedEffects) {
-                    await applyEffect(actionInfo.withTarget(ally), buff.name, 2)
+                    await applyEffect(actionInfo.withTarget(ally), buff.name, (oldSchool ? 2 : 1))
                 }
                 if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
                     bonusTurnMeter += 10
@@ -235,7 +235,7 @@ const infoAboutAbilities = {
     'Outwit': {
         displayName: 'Outwit',
         image: 'images/abilities/ability_hera_s3_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'projectile_attack', 'debuff_gain'],
         abilityDamage: 238.9,
         desc: 'Deal Physical damage to target enemy. If that enemy was the healthiest enemy, also Expose them for 1 turn.',
@@ -252,7 +252,7 @@ const infoAboutAbilities = {
     'Play to Strengths': {
         displayName: 'Play to Strengths',
         image: 'images/abilities/ability_hera_s3_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['target_ally', 'assist', 'buff_gain'],
         desc: 'Call another target ally to assist. That ally\'s attack has +50% Potency and deals 35% more damage. Dispel all debuffs on them, reduce their cooldowns by 1, and grant them 50% Turn Meter.',
@@ -270,7 +270,7 @@ const infoAboutAbilities = {
     'Backup Plan': {
         displayName: 'Backup Plan',
         image: 'images/abilities/ability_hera_s3_special02.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['target_ally', 'buff_gain'],
         desc: 'Target other ally gains locked Backup Plan for 3 turns. Backup Plan: Recover 10% Health per turn, revive with 80% Health and 30% Turn Meter when defeated',
@@ -283,7 +283,7 @@ const infoAboutAbilities = {
     'Invincible Assault': {
         displayName: 'Invincible Assault',
         image: 'images/abilities/ability_macewindu_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'special_damage'],
         abilityDamage: 154.3,
         desc: "Meal Special damage to target enemy and inflict Ability Block for 1 turn. This attack deals bonus damage equal to 5% of Mace's Max Health. If Mace is above 50% Health, he gains 15% Turn Meter. If Mace is below 50% Health, he recovers Health equal to 100% of the damage dealt.",
@@ -304,7 +304,7 @@ const infoAboutAbilities = {
     'Smite': {
         displayName: 'Smite',
         image: 'images/abilities/ability_macewindu_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'special_damage'],
         abilityDamage: 184,
@@ -324,7 +324,7 @@ const infoAboutAbilities = {
     "This Party's Over": {
         displayName: "This Party's Over",
         image: 'images/abilities/ability_macewindu_special02.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['target_ally', 'attack', 'special_damage'],
         abilityDamage: 184,
@@ -351,7 +351,7 @@ const infoAboutAbilities = {
     'Rattling Uppercut': {
         displayName: 'Rattling Uppercut',
         image: 'images/abilities/ability_sm33_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 380,
         desc: "Deal physical damage to target enemy and stagger them for 2 turns. If the target is a challenger, remove 100% turn meter and inflict ability block and daze for 1 turn.",
@@ -370,7 +370,7 @@ const infoAboutAbilities = {
     'Limb From Limb': {
         displayName: 'Limb From Limb',
         image: 'images/abilities/ability_sm33_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 210,
@@ -400,7 +400,7 @@ const infoAboutAbilities = {
     'Forearm Bucklers': {
         displayName: 'Forearm Bucklers',
         image: 'images/abilities/ability_sm33_special02.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'dispel', 'buff_gain', 'debuff_gain'],
         desc: "Dispel all buffs on target enemy then inflict buff immunity and burning for 2 turns. SM-33 gains defence up for 2 turns. If SM-33 was burning, recover 50% health and protection and inflict 5 stacks of damage over time. Omicron: SM-33 dispels all debuffs on himself and gains locked retribution for 1 turn. All Pirate allies gain 25% bonus Protection for 2 turns. If the target is a challenger, SM-33 gains burning for the rest of the battle.",
@@ -429,7 +429,7 @@ const infoAboutAbilities = {
     'Draining Strike': {
         displayName: 'Draining Strike',
         image: 'images/abilities/ability_talia_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 154.3,
         desc: "Deal Physical damage to target enemy, dealing +50% damage if Talia is below full Health. Allies recover Health equal to the damage dealt.",
@@ -448,7 +448,7 @@ const infoAboutAbilities = {
     'Water of Life': {
         displayName: 'Water of Life',
         image: 'images/abilities/ability_talia_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['dispel', 'heal', 'turnmeter_recovery'],
         desc: "Dispel all debuffs on allies. Talia consumes 20% of her Max Health and gains 15% Turn Meter for each active ally. Allies recover 50% Health and gain 30% Turn Meter.",
@@ -460,14 +460,14 @@ const infoAboutAbilities = {
                     await TMchange(actionInfo.withTarget(ally), 30)
                 }
             }
-            await dealDmg(actionInfo.withSelfAsTarget(), 20, 'percentage', false, false, true)
+            await dealDmg(actionInfo.withSelfAsTarget(), 20, 'percentage', false, false, true, 'Water of Life', false, false)
             await TMchange(actionInfo.withSelfAsTarget(), 15 * aliveBattleBros[actionInfo.battleBro.team].length)
         }
     },
     'Harrowing Assault': {
         displayName: 'Harrowing Assault',
         image: 'images/abilities/ability_talia_special02.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'special_damage', 'damageOverTime', 'stagger'],
         abilityDamage: 165.3,
@@ -487,11 +487,40 @@ const infoAboutAbilities = {
             }
         }
     },
+    'Blood Moon Ritual': {
+        displayName: 'Blood Moon Ritual',
+        image: 'images/abilities/ability_talia_ult.png',
+        type: 'ultimate',
+        ultimateCost: 3000,
+        abilityTags: ['revive', 'equalize', 'health_recovery', 'buff_gain', 'cleanse'],
+        desc: "Talia performs a forbidden Nightsister ritual, sacrificing her own vitality to defy death. She consumes 50% of her Max Health to revive all defeated allies at 50% Health and cleanse all debuffs from them. All allies gain Offense Up, Speed Up, and Foresight for 2 turns. Talia then equalizes her remaining Health among all allies and recovers Protection equal to 50% of the total Health sacrificed. If Talia would be defeated by this ability, she is reduced to 1% Health instead and gains Damage Immunity for 1 turn.",
+        use: async function (actionInfo) {
+            const savedHealth = actionInfo.battleBro.health
+            if (actionInfo.battleBro.health > actionInfo.battleBro.maxHealth * 0.5) {
+                await dealDmg(actionInfo.withSelfAsTarget(), 50, 'percentage', false, false, true, 'Blood Moon Ritual', false, false)
+            } else {
+                await dealDmg(actionInfo.withSelfAsTarget(), actionInfo.battleBro.health - 1, 'unchangeable', false, false, true, 'Blood Moon Ritual', false, false)
+                await applyEffect(actionInfo.withSelfAsTarget(), 'damageImmunity', 1)
+            }
+            const deadAllies = battleBros.filter(guy => guy.team == actionInfo.battleBro.team && guy.isDead == true)
+            for (let ally of deadAllies) {
+                await revive(actionInfo.withTarget(ally), 50)
+                await dispel(actionInfo.withTarget(ally), 'debuff')
+            }
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await applyEffect(actionInfo.withTarget(ally), 'offenceUp', 2)
+                await applyEffect(actionInfo.withTarget(ally), 'speedUp', 2)
+                await applyEffect(actionInfo.withTarget(ally), 'foresight', 2)
+            }
+            await equalize(actionInfo, aliveBattleBros[actionInfo.battleBro.team], 'health')
+            await heal(actionInfo.withSelfAsTarget(), (savedHealth - actionInfo.battleBro.health) * 0.5, 'protection')
+        }
+    },
     // --------------------------------------------------------SAVI'S CHARACTERS
     'Slipper Slam': {
         displayName: 'Slipper Slam',
         image: 'images/abilities/johnWok1.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'projectile_attack', 'physical_damage', 'debuff_gain'],
         projectile: 'slipper',
         abilityDamage: 68,
@@ -511,7 +540,7 @@ const infoAboutAbilities = {
     'Belt Flashbang': {
         displayName: 'Belt Flashbang',
         image: 'images/abilities/johnWok2.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['debuff_gain'],
         abilityDamage: 48,
@@ -539,7 +568,7 @@ const infoAboutAbilities = {
     'Belt Nunchuck': {
         displayName: 'Belt Nunchuck',
         image: 'images/abilities/johnWok3.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 120,
@@ -582,8 +611,8 @@ const infoAboutAbilities = {
     'Minute Rice in 59 Seconds': {
         displayName: 'Minute Rice in 59 Seconds',
         image: 'images/abilities/johnWok4.png',
-        abilityType: 'ultimate',
-        ultimateCost: '3500',
+        type: 'ultimate',
+        ultimateCost: 3500,
         abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 150,
         desc: "Deals physical damage to target enemy three times, inflicting locked Emotional Damage for 1 turn. Dispel all debuffs on allies, then they gain locked Minute Rice for 2 turns.",
@@ -597,7 +626,7 @@ const infoAboutAbilities = {
     'Thwart the Plan': {
         displayName: 'Thwart the Plan',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
         projectile: 'redLaser',
         abilityDamage: 63,
@@ -623,7 +652,7 @@ const infoAboutAbilities = {
     'Important Meeting': {
         displayName: 'Important Meeting',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['debuff_gain', 'buff_gain'],
         desc: "Business Pig must interrupt the battle for an important meeting. Inflicts Locked Stun on all enemies that can't be resisted and sets the turn meter of all Superpig's Bravado allies to 0. Business Pig's speed is set to 0 until all enemies have come out of stun. Then Business Pig activates his jetpack and gains Aerial Advantage for 2 turns. During this Aerial Advantage he can use all other abilities except for Important Meeting and Oinks of Approval.",
@@ -645,7 +674,7 @@ const infoAboutAbilities = {
     'Lethal Swing': {
         displayName: "Lethal Swing",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 117.8,
         desc: 'Deals physical damage and inflicts Tenacity Down and Potency Down, this ability ignores defence and can\'t be evaded. If this ability scores a critical hit, inflict Ability Block on a random enemy.',
@@ -672,7 +701,7 @@ const infoAboutAbilities = {
     'Piercing Edge': {
         displayName: "Piercing Edge",
         image: 'images/abilities/superStriker2.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 130,
@@ -693,7 +722,7 @@ const infoAboutAbilities = {
     'Disruptor Blade': {
         displayName: "Disruptor Blade",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 135,
@@ -723,8 +752,8 @@ const infoAboutAbilities = {
     'Super Strike': {
         displayName: "Super Strike",
         image: 'images/abilities/superStrike.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2600,
+        type: 'ultimate',
+        ultimateCost: 3000,
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 10000,
         desc: 'Deal true damage to target enemy, inflict Doomed, Fear and Bleed for 3 turns to target enemy. If this ability scores a critical hit, use this ability again. If this ability defeats an enemy, inflict Fear to all enemies for 1 turn.',
@@ -755,7 +784,7 @@ const infoAboutAbilities = {
     'Cloning Strike': {
         displayName: "Cloning Strike",
         image: 'images/abilities/shadowMenaceOriginal1.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage', 'healthSteal'],
         abilityDamage: 45,
         desc: 'Deal physical damage 5 times to target enemy and recover health equal to the damage dealt. On 3 or more critical hits inflict offense down for 3 turns.',
@@ -775,7 +804,7 @@ const infoAboutAbilities = {
     'Sabre Storm': {
         displayName: "Sabre Storm",
         image: 'images/abilities/shadowMenaceOriginal2.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'ultra_damage'],
         abilityDamage: 22,
@@ -803,7 +832,7 @@ const infoAboutAbilities = {
     'Rotating Blades': {
         displayName: "Rotating Blades",
         image: 'images/abilities/shadowMenaceOriginal3.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 7,
         abilityTags: ['buffGain'],
         desc: 'Gain the Rotation effect and defense up for 4 turns, and recover 35% protection. Rotating: Reflect projectile attacks such as blaster shots, absorb force/magic attacks, and reduce melee attacks by 50%.',
@@ -816,8 +845,8 @@ const infoAboutAbilities = {
     'Cut it short': {
         displayName: "Cut it short",
         image: 'images/abilities/shadowMenaceOriginal4.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2100,
+        type: 'ultimate',
+        ultimateCost: 2200,
         abilityTags: ['buffGain'],
         desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each fallen ally. Shadow menace gains 1 stack of fallen ally for each fallen ally. Fallen ally When attacking an enemy revive a random fallen ally with 1 health who assists dealing 10% damage for each stack. Then defeat these allies.',
         use: async function (actionInfo) {
@@ -833,7 +862,7 @@ const infoAboutAbilities = {
     'Sword Slash': {
         displayName: "Sword Slash",
         image: 'images/abilities/ninja1.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 200,
         desc: 'Deals physical damage and inflicts healing immunity for 3 turns.',
@@ -847,7 +876,7 @@ const infoAboutAbilities = {
     'Sneak Attack': {
         displayName: "Sneak Attack",
         image: 'images/abilities/ninja2.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'special_damage'],
         abilityDamage: 260,
@@ -860,8 +889,8 @@ const infoAboutAbilities = {
     'Dread Slash': {
         displayName: "Dread Slash",
         image: 'images/abilities/ninja3.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2700,
+        type: 'ultimate',
+        ultimateCost: 3500,
         abilityTags: ['attack', 'shadow_damage'],
         abilityDamage: 18000,
         desc: 'Deals shadow damage. Buffs ninja with offence up and stealth for 3 turns this can\'t be dispelled while the opponents will gain blind and defence down for 2 turns can\'t be dispelled.',
@@ -879,7 +908,7 @@ const infoAboutAbilities = {
     'Gooseballs': {
         displayName: "Gooseballs",
         image: 'images/abilities/ability_jediconsular_special01.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 100,
         projectile: 'gooseball',
@@ -895,7 +924,7 @@ const infoAboutAbilities = {
     'Honk of Approval': {
         displayName: "Honk of Approval",
         image: 'images/abilities/KraytDragonSkill4.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 5,
         abilityTags: ['target_ally', 'buff_gain'],
         abilityDamage: 100,
@@ -912,7 +941,7 @@ const infoAboutAbilities = {
     'Belly Bounce': {
         displayName: "Belly Bounce",
         image: 'images/abilities/KraytDragonSkill3.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'debuff_gain'],
         abilityDamage: 600,
@@ -933,7 +962,7 @@ const infoAboutAbilities = {
     'Gooseball Barrage': {
         displayName: "Gooseball Barrage",
         image: 'images/abilities/ability_dathcha_basic.png',
-        abilityType: 'ultimate',
+        type: 'ultimate',
         ultimateCost: 2700,
         abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 100,
@@ -950,7 +979,7 @@ const infoAboutAbilities = {
     'Bob Bash': {
         displayName: "Bob Bash",
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 200,
         desc: 'Deals physical damage and inflicts a random locked debuff for 4 turns.',
@@ -966,7 +995,7 @@ const infoAboutAbilities = {
     'Bob Force': {
         displayName: 'Bob Force',
         image: 'images/abilities/ability_jediconsular_special01.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 3,
         abilityTags: ['target_ally', 'health_recovery'],
         desc: 'Heal target ally, with extra healing passing into protection, and give them a random locked buff for 4 turns.',
@@ -988,10 +1017,10 @@ const infoAboutAbilities = {
     'Bob Blast': {
         displayName: "Bob Blast",
         image: 'images/abilities/ability_jediconsular_special02.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2500,
+        type: 'ultimate',
+        ultimateCost: 4300,
         abilityTags: ['buff_gain', 'debuff'],
-        desc: 'Inflicts 3 locked debuffs on all enemies for 3 turns and 3 locked buffs on all allies for 3 turns.',
+        desc: 'Inflicts 5 locked debuffs on all enemies for 3 turns and 5 locked buffs on all allies for 3 turns.',
         use: async function (actionInfo) {
             const effects = Object.entries(infoAboutEffects)
             const debuffs = effects.filter(effect => effect[1].type === 'debuff')
@@ -1014,7 +1043,7 @@ const infoAboutAbilities = {
     'Dragon Strike': {
         displayName: "Dragon Strike",
         image: 'images/abilities/dragonStrike.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 50,
         desc: 'Deals physical damage thrice.',
@@ -1027,7 +1056,7 @@ const infoAboutAbilities = {
     'Defensive Formation': {
         displayName: "Defensive Formation",
         image: 'images/abilities/defensiveFormation.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 1,
         abilityTags: ['target_ally', 'buffGain'],
         desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
@@ -1044,8 +1073,8 @@ const infoAboutAbilities = {
     'Heroic Strike': {
         displayName: "Heroic Strike",
         image: 'images/abilities/rageChili.png',
-        abilityType: 'ultimate',
-        ultimateCost: 2300,
+        type: 'ultimate',
+        ultimateCost: 2500,
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 500,
         desc: 'Deals physical damage to the enemy with the most health.',
@@ -1060,7 +1089,7 @@ const infoAboutAbilities = {
     'Acid Rain': {
         displayName: "Acid Rain",
         image: 'images/abilities/acidRain.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 20,
         desc: 'Deals physical damage to all enemies and inflict damage over time for 3 turns.',
@@ -1077,7 +1106,7 @@ const infoAboutAbilities = {
     'Healing Rain': {
         displayName: "Healing Rain",
         image: 'images/abilities/healingRain.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 1,
         abilityTags: ['target_ally', 'heal', 'dispel'],
         desc: 'Dispels all debuffs from target ally and heals all allies for 20% of Chuck\'s max health',
@@ -1094,8 +1123,8 @@ const infoAboutAbilities = {
     'Speed of Light': {
         displayName: "Speed of Light",
         image: 'images/abilities/rageChili.png',
-        abilityType: 'ultimate',
-        ultimateCost: 1750,
+        type: 'ultimate',
+        ultimateCost: 3200,
         abilityTags: ['assist'],
         desc: 'Unleash five attacks from allies.',
         use: async function (actionInfo) {
@@ -1108,7 +1137,7 @@ const infoAboutAbilities = {
     'Thorny Vine': {
         displayName: "Thorny Vine",
         image: 'images/abilities/thornyVine.png',
-        abilityType: 'basic',
+        type: 'basic',
         abilityTags: ['attack', 'physical_damage'],
         abilityDamage: 35,
         desc: 'Deals physical damage to target enemy and inflicts 3 stacks of damage over time for 3 turns.',
@@ -1120,7 +1149,7 @@ const infoAboutAbilities = {
     'Regrowth': {
         displayName: "Regrowth",
         image: 'images/abilities/regrowth.png',
-        abilityType: 'special',
+        type: 'special',
         cooldown: 1,
         abilityTags: ['target_ally', 'heal'],
         desc: 'Heals target ally for 22% of their max health and all other allies by 10%.',
@@ -1140,8 +1169,8 @@ const infoAboutAbilities = {
     'Matildas Medicine': {
         displayName: "Matildas Medicine",
         image: 'images/abilities/rageChili.png',
-        abilityType: 'ultimate',
-        ultimateCost: 1400,
+        type: 'ultimate',
+        ultimateCost: 2000,
         abilityTags: ['heal', 'dispel'],
         desc: 'Dispels all debuffs from all allies and heals them for 35% of their max health, which ignores any heal-blocking effects.',
         use: async function (actionInfo) {
@@ -1282,7 +1311,7 @@ const infoAboutPassives = {
         displayName: 'test3',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         desc: 'jabba\'s blubber grants him 50% counter chance',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: [],
         endedAbility: async function (actionInfo) {
             await logFunctionCall('method: attacked (', ...arguments,)
@@ -1313,7 +1342,7 @@ const infoAboutPassives = {
         image: 'images/abilities/abilityui_passive_def.png',
         desc: 'All allies have +50 Defense, and a 50% chance to gain Defense Up for 3 turns whenever they are damaged.',
         omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
-        abilityType: 'leader',
+        type: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
         start: async function (actionInfo) {
             await logFunctionCall('method: start (', ...arguments,)
@@ -1354,14 +1383,14 @@ const infoAboutPassives = {
         image: 'images/abilities/abilityui_passive_removeharmful.png',
         desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
         omicron_desc: 'At the start of battle if there are no galactic legends and all allies are Galactic Republic Jedi, the leadership abilities of all other allies are active until the end of battle.',
-        abilityType: 'leader',
+        type: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
     },
     'Take A Seat': {
         displayName: 'Take A Seat',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
-        abilityType: 'leader',
+        type: 'leader',
         abilityTags: ['health_recovery'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
@@ -1403,7 +1432,7 @@ const infoAboutPassives = {
         displayName: 'Vaapad',
         image: 'images/abilities/abilityui_passive_def.png',
         desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['dispel', 'buff_gain'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
@@ -1488,7 +1517,7 @@ const infoAboutPassives = {
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
         start: async function (actionInfo, owner) {
             owner.offence *= 1.3
@@ -1524,7 +1553,7 @@ const infoAboutPassives = {
         displayName: 'First Mate of the Onyx Cinder',
         image: 'images/abilities/abilityui_passive_firstmateoftheonyxcinder.png',
         desc: 'At the start of the battle, SM-33 gains locked Defence Up for 2 turns. If no enemies are challengers, whenever an enemy damages the leader, they gain challenger. Whenever an enemy damages the leader, SM-33 gains 15% Turn Meter and 10% Critical Damage (stacking) for 1 turn. Whenever SM-33 is damaged, he gains burning for 2 turns. Attacked enemies and attackers take all the damage SM-33 would sustain from burning. While in Territory Wars: Allied leaders gain 10% Max Health and Offense, and 10 Speed, doubled if they\'re also a Pirate. The first active enemy that damaged the Pirate in the Leader slot (excluding SM-33) deals 30% less damage and has -50% Potency to all allies aside from SM-33, and SM-33 and the allied Pirate in the Leader slot can ignore Taunt effects to target them. Whenever the allied Pirate in the Leader slot attacks, SM-33 is called to assist. Challenger: Can\'t call allies to assist and can\'t be called to assist. Can ignore taunt to target the enemy leader.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['buff_gain', 'damage_effect'],
         start: async function (actionInfo, owner) {
             let battleBro = owner
@@ -1569,7 +1598,7 @@ const infoAboutPassives = {
         displayName: 'Nightsister Nimbleness',
         image: 'images/abilities/abilityui_passive_dodge.png',
         desc: 'Allies gain 16% Evasion. When an ally evades they recover 15% of their Max Health.',
-        abilityType: 'leader',
+        type: 'leader',
         abilityTags: ['health_recovery', 'evasion'],
         start: async function (actionInfo, ownerOld) {
 
@@ -1595,7 +1624,7 @@ const infoAboutPassives = {
         displayName: 'Very Important Pig',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can\'t be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally is at <20% health, they gain Backup Plan for 3 turns. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle or until another teammate steals it. +Contain Detect Important Meeting Stun Removal Trigger',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['debuff_gain', 'revive'],
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
             if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('stun') && effect.caster == owner)).length < 0) {
@@ -1610,7 +1639,7 @@ const infoAboutPassives = {
         displayName: 'Elimination Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Super Striker has +25% Critical Chance and +30% Defense Penetration. Whenever he attacks an enemy with Target Lock, he gains +10% Offense (stacking, max 50%) for the rest of the encounter. If Super Striker defeats an enemy, he gains Stealth for 1 turn and resets the cooldown of Super Strike. While Stealthed, Super Striker gains +100% Accuracy and his attacks deal +20% damage.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['cooldownReset'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
@@ -1656,7 +1685,7 @@ const infoAboutPassives = {
         image: 'images/abilities/shadowMenaceOriginal5.png',
         desc: 'Shadow menace grants a random ally heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time, and half that much whenever an ally gains heal over time. Heal over times last for 3 turns.',
         oldSchoolDesc: 'Shadow menace grants his allies heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time. Whenever an ally with heal over time hits an enemy, they gain another stack of it. These heal over times recover 5% health each turn for 3 turns.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['health_recovery'],
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             if (oldSchool == true) { // Old school version
@@ -1688,7 +1717,7 @@ const infoAboutPassives = {
         displayName: 'Reign of Mandalore',
         image: 'images/abilities/shadowMenaceOriginal6.png',
         desc: 'All mandalorian allies have the Power of Mandalore buff at the start of the battle for 1 turn. Power of Mandalore: When an ability is used then gain all up buffs for 3 turns. If these buffs are dispelled, gain 5% turn metre for each buff dispelled.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['buffGain', 'mandalorian'],
         start: async function (actionInfo, owner) {
             for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('mandalorian'))) {
@@ -1701,7 +1730,7 @@ const infoAboutPassives = {
         displayName: 'Trust is Key to Victory',
         image: 'images/abilities/ninja4.png',
         desc: 'If the character is a sith ninja will give the buffs to them.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['buffGain', 'sith'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
             if (owner === target && effect.type == 'buff' && effect.name !== 'stealth') {
@@ -1717,7 +1746,7 @@ const infoAboutPassives = {
         displayName: 'A Ninja Way is Stealth',
         image: 'images/abilities/abilityui_passive_stealth.png',
         desc: 'While in stealth he gains critical damage up when stealth wears off gain one more turn of stealth.',
-        abilityType: 'unique',
+        type: 'unique',
         abilityTags: ['buffGain', 'sith'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
             if (owner === target && effect.effectTags.includes('stealth')) {
@@ -2515,7 +2544,7 @@ const infoAboutEffects = {
             unit.offence -= 50
         },
         usedAbility: async function (actionInfo, unit, effect, abilityName, battleBro) {
-            if (unit == battleBro && infoAboutAbilities[abilityName].abilityType == 'basic') {
+            if (unit == battleBro && infoAboutAbilities[abilityName].type == 'basic') {
                 let newActionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
                 await applyEffect(newActionInfo, 'damageOverTime', 2, 1, false)
             }
@@ -3076,11 +3105,11 @@ async function createBattleBroVars(battleBro) {
     battleBro.customData = {} // stores ability data
     battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
     battleBro.passives = battleBro.passives.filter(passive => {
-        return !(infoAboutPassives[passive].abilityType === 'leader' && !battleBro.isLeader);
+        return !(infoAboutPassives[passive].type === 'leader' && !battleBro.isLeader);
     }) // remove leader passives of characters that aren't leaders
     battleBro.abilityImageDivs = []
     //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
-    const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.abilityType !== 'ultimate')
+    const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.type !== 'ultimate')
     for (let i = 0; i < abilities.length; i++) {
         let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
         console.log('' + battleBro.team)
@@ -3125,11 +3154,18 @@ async function updateBattleBrosHtmlText() {
         } else if (battleBro.isDead == true) {
             battleBro.avatarHtmlElement.children()[1].firstElementChild.firstChild.nodeValue = 'dead'
         }
-        let protText = `${Math.ceil(battleBro.protection)}`;
-        if (battleBro.shields > 0) {
-            protText += ` <span style="color: magenta"> + ${Math.ceil(battleBro.shields)}</span>`;
+        let protectionContainer = battleBro.avatarHtmlElement.children()[3];
+
+        if (battleBro.protection + battleBro.shields > 0) {
+            let protText = (battleBro.protection > 0) ? `${Math.ceil(battleBro.protection)}` : ''
+            if (battleBro.shields > 0) {
+                protText += ` <span style="color: magenta"> + ${Math.ceil(battleBro.shields)}</span>`;
+            }
+            protectionContainer.style.display = 'inline';
+            protectionContainer.firstElementChild.innerHTML = protText;
+        } else {
+            protectionContainer.style.display = 'none'; // Hide the full span
         }
-        battleBro.avatarHtmlElement.children()[3].firstElementChild.innerHTML = protText
         battleBro.avatarHtmlElement.children()[5].firstElementChild.firstChild.nodeValue = '' + Math.ceil(battleBro.turnMeter)
         battleBro.avatarHtmlElement.children()[7].firstElementChild.firstChild.nodeValue = ''
     }
@@ -3159,13 +3195,13 @@ async function updateCurrentBattleBroSkillImages() {
     // loop over battlebro abilities and display them
     let characterAbilities = battleBro.abilities//[0]
     /*const nonUltimateAbilities = battleBro.skillsData.filter(
-        ab => ab.skill.abilityType !== 'ultimate'
+        ab => ab.skill.type !== 'ultimate'
     )*/
     let uiIndex = 0
     if (battleBro.skillsData) {
         for (let i = 0; i < battleBro.skillsData.length; i++) {
             let processedAbility = battleBro.skillsData[i]
-            if (processedAbility.skill.abilityType === 'ultimate') {
+            if (processedAbility.skill.type === 'ultimate') {
                 continue // ultimate goes in its own ring, not here
             }
             let imagePngPath = processedAbility.skill.image
@@ -3505,7 +3541,7 @@ async function abilityClicked(clickedElement) {
 }
 
 async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = 'main') {
-    if (infoAboutAbilities[abilityName].abilityType === 'ultimate') {
+    if (infoAboutAbilities[abilityName].type === 'ultimate') {
         ultimateBeingUsed = true
         ultimateCharge[actionInfo.battleBro.team] -= infoAboutAbilities[abilityName].ultimateCost || 0
     }
@@ -3525,7 +3561,7 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
     checkingPromises = null
     await engageCounters()
     await Promise.all(promises) // waiting for counter attacks to finish
-    if (infoAboutAbilities[abilityName].abilityType === 'ultimate') ultimateBeingUsed = false
+    if (infoAboutAbilities[abilityName].type === 'ultimate') ultimateBeingUsed = false
     await endTurn(actionInfo, battleBros[selectedBattleBroNumber])
     promises = []
 }
@@ -4124,6 +4160,14 @@ async function updateEffectIcons(battleBro) {
         img.style.height = '30px'
         img.style.display = 'block'
 
+        const $img = $(img)
+        $img.on("contextmenu", function (e) {
+            if (!e.shiftKey) {
+                e.preventDefault() // Stop the browser right-click menu
+                showStats(battleBro, e.pageX, e.pageY, 'effect', effect.name) // Show your custom stat box
+            }
+        })
+
         wrapper.appendChild(img);
 
         if (effect.isLocked) {
@@ -4257,15 +4301,15 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const abilityIndex = battleBro.team == 0 ? characterAbilities.indexOf(abilityName) : (characterAbilities.length - characterAbilities.indexOf(abilityName) - 1)
     if (abilityIndex === -1) console.log("no ability index found")
 
-    const abilityImageDiv = (battleBro.team == 1 && characterAbilities.find(ability => infoAboutAbilities[ability].abilityType == 'ultimate')) ? battleBro.abilityImageDivs[abilityIndex - 1] : battleBro.abilityImageDivs[abilityIndex]
+    const abilityImageDiv = (battleBro.team == 1 && characterAbilities.find(ability => infoAboutAbilities[ability].type == 'ultimate')) ? battleBro.abilityImageDivs[abilityIndex - 1] : battleBro.abilityImageDivs[abilityIndex]
     if (!abilityImageDiv) console.log("no ability Image Div found")
     if (!abilityImageDiv) return;
 
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
     console.log(abilityName, 'cooldown:', cooldown, 'abilityIndex:', abilityIndex, 'img:', img, 'cooldownSpan:', cooldownSpan)
-    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].abilityType !== 'basic')) {
-        //|| (infoAboutAbilities[abilityName].abilityType === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
+    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].type !== 'basic')) {
+        //|| (infoAboutAbilities[abilityName].type === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
         cooldownSpan.style.display = 'block';
@@ -4298,7 +4342,7 @@ async function dodge(actionInfo, user, target) {
     await removeEffect(actionInfo, target, 'loseOnDodge')
 }
 
-async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effectDmg = false, ignoreProtection = false, sourceName = null, counterable = true) {
+async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effectDmg = false, ignoreProtection = false, sourceName = null, counterable = true, healthSteal = true) {
     await logFunctionCall('dealDmg', ...arguments)
     actionInfo.actionDetails = {
         category: 'dealDmg',
@@ -4316,7 +4360,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
         await eventHandle('attacked', actionInfo, target, user, actionInfo) // activate passive conditions upon being attacked unless the damage is shadow damage
     }
-    if (Math.random() > (target.evasion - user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
+    if (Math.random() > (target.evasion - user.accuracy) * 0.01 || ['shadow', 'massive', 'percentage', 'ultra', 'unchangeable'].includes(type)) { // shadow, massive, percentage, and ultra damage can't be evaded.
         const logElement = target.avatarHtmlElement.children()[7].firstElementChild
         let crit = false // prepare crits in the case of physical damage!
         let colour // prepare the colour for the damage types
@@ -4371,6 +4415,9 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         } else if (type == 'percentage') {
             dealtdmg = Math.max(dmg * target.maxHealth * target.flatDamageReceived * 0.0001, 0) // in this case 'dmg' would the the percentage of health dealt as damage
             colour = 'white'
+        } else if (type == 'unchangeable') {
+            dealtdmg = Math.max(dmg, 0) // can't be changed
+            colour = 'white'
         }
 
         if (dealtdmg > 0) {
@@ -4411,7 +4458,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
             if (remainingDmg > 0) {
                 target.health -= remainingDmg;
 
-                if (user.healthSteal > 0 && effectDmg === false) {
+                if (user.healthSteal > 0 && effectDmg === false && healthSteal == true) {
                     await heal({ battleBro: user, target: user }, (dealtdmg - target.protection) * user.healthSteal * 0.01, 'health', true)
                 }
             }
@@ -4419,7 +4466,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
             // Ignore shields and protection, damage health directly
             target.health -= dealtdmg;
 
-            if (user.healthSteal > 0 && effectDmg === false) {
+            if (user.healthSteal > 0 && effectDmg === false && healthSteal == true) {
                 await heal({ battleBro: user, target: user }, dealtdmg * user.healthSteal * 0.01, 'health', true)
             }
         }
@@ -4430,8 +4477,8 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         }
         await gainUltCharge(user, dealtdmg * 0.003)
         await gainUltCharge(target, dealtdmg * 0.002)
-        const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
-        if (target.health + protUsed - dealtdmg <= 0 && target.isDead == false) {
+        //const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
+        if (target.health <= 0 && target.isDead == false) {
             await dead(target)
             await gainUltCharge(target, 500)
             await eventHandle('defeated', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
@@ -4504,6 +4551,30 @@ async function revive(actionInfo, health = 0, protection = 0, turnMeter = 0) {
     actionInfo.target.turnMeter += turnMeter
 }
 
+async function equalize(actionInfo, targets, type = 'health', ignoreHealImmunity = true) {
+    if (targets == undefined) {
+        targets = [actionInfo.battleBro, actionInfo.target]
+    }
+    let totalHitPointsPercent = 0
+    for (let guy of targets) {
+        totalHitPointsPercent += (type == 'health') ? guy.health / guy.maxHealth : guy.protection / guy.maxProtection
+    }
+    const averageHitPointsPercent = totalHitPointsPercent / targets.length
+    let HPchangeArray = []
+    for (let guy of targets) {
+        const healingAmountPercent = averageHitPointsPercent - ((type == 'health') ? guy.health / guy.maxHealth : guy.protection / guy.maxProtection)
+        const healingAmount = (type == 'health') ? healingAmountPercent * guy.maxHealth : healingAmountPercent * guy.maxProtection
+        HPchangeArray.push(healingAmount)
+        let newActionInfo = new ActionInfo({ battleBro: actionInfo.battleBro, target: guy })
+        if (healingAmount > 0) {
+            await heal(newActionInfo, healingAmount, type, false, ignoreHealImmunity, false)
+        } else if (healingAmount < 0) {
+            await dealDmg(newActionInfo, -healingAmount, 'unchangeable', false, false, ((type == 'health') ? true : false), null, false, false)
+        }
+    }
+    return HPchangeArray
+}
+
 async function gainUltCharge(battleBro, chargeAmount = 1) {
     if (ultimateBeingUsed === true) return
     let team = battleBro.team
@@ -4534,7 +4605,7 @@ async function updateUltimateUI(team) {
 }
 
 async function updateUltimateIconForCurrentCharacter(battleBro) {
-    const ultimate = battleBro.abilities.find(a => infoAboutAbilities[a]?.abilityType === 'ultimate')
+    const ultimate = battleBro.abilities.find(a => infoAboutAbilities[a]?.type === 'ultimate')
     for (let teamFound = 0; teamFound < ultimateCharge.length; teamFound++) {
         let teamIcon = document.getElementById(`ultimateUI-${teamFound}`).querySelector('.ultimate-icon')
         if (teamIcon) teamIcon.remove()
@@ -4565,7 +4636,7 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
 
     if (!enoughCharge) {
         img.style.filter = 'grayscale(100%) brightness(50%)';
-        img.style.pointerEvents = 'none';
+        img.style.pointerEvents = 'auto';
     } else {
         img.style.filter = '';
         img.style.pointerEvents = 'auto';
@@ -4580,7 +4651,9 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
     })
     const $img = $(img);
     $img.off("click").on("click", function () {
-        abilityClicked(this);
+        if (infoAboutAbilities[ultimate].ultimateCost <= ultimateCharge[team]) {
+            abilityClicked(this);
+        }
     }).on("contextmenu", function (e) {
         if (!e.shiftKey) {
             e.preventDefault(); // Stop the browser right-click menu
@@ -4613,9 +4686,19 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
             protText += ` <span style="color: magenta"> + ${Math.ceil(battleBro.shields)}</span>`;
         }
 
+        let effects = battleBro.buffs.map(e => e.name) || 'None'
+        let effectNames = []
+        for (let effect of effects) {
+            const neweffect = effect
+                .replace(/([A-Z])/g, ' $1') // insert space before capital letters
+                .replace(/^./, str => str.toUpperCase()) // capitalize first letter
+                .trim(); // remove leading/trailing space
+            effectNames.push(neweffect)
+        }
+
         // Clear and populate with stats
         statBox.html(`
-        <strong>${battleBro.character}</strong><br>
+        <span style="font-size: 1.2em"><strong>${battleBro.character}</strong><br></span>
         <span style="color: lightgray">${battleBro.charDesc}<br></span>
         <span style="color: limegreen">Health: ${Math.ceil(battleBro.health)}/${Math.ceil(battleBro.maxHealth)}<br></span>
         <span style="color: cyan">${protText}<br></span>
@@ -4637,17 +4720,58 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         <span style="color: white">Damage Dealt: ${Math.ceil(battleBro.flatDamageDealt)}<br></span>
         <span style="color: white">Damage Received: ${Math.ceil(battleBro.flatDamageReceived)}<br></span>
         <span style="color: white">Leader: ${battleBro.isLeader}<br></span>
-        <span style="color: cornflowerblue">Effects: ${battleBro.buffs.map(e => e.name).join(', ') || 'None'}<br></span>
+        <span style="color: cornflowerblue">Effects: ${effectNames}<br></span>
+    `);
+    } else if (type == 'effect') {
+        if (statBox.length === 0) {
+            statBox = $('<div id="statBox"></div>').appendTo('body');
+        }
+
+        const regularName = abilityName
+                .replace(/([A-Z])/g, ' $1') // insert space before capital letters
+                .replace(/^./, str => str.toUpperCase()) // capitalize first letter
+                .trim(); // remove leading/trailing space
+
+        let desc = infoAboutEffects[abilityName].desc
+
+        let effectType = infoAboutEffects[abilityName].type
+        if (effectType == 'buff') {
+            effectType = `<span style="color: limegreen">Buff</span>`
+        } else if (effectType == 'debuff') {
+            effectType = `<span style="color: red">Debuff</span>`
+        } else if (effectType == 'misc') {
+            effectType = `<span style="color: cornflowerblue">Miscellaneous Effect</span>`
+        }
+        // Clear and populate with stats
+        statBox.html(`
+        <span style="font-size: 1.2em"><strong>${regularName}</strong><br></span>
+        <span style="color: lightgray; font-size: 0.9em;">${effectType}<br></span>
+        <span style="color: lightgray">${desc}<br></span>
     `);
     } else {
         if (statBox.length === 0) {
             statBox = $('<div id="statBox"></div>').appendTo('body');
         }
+
         let desc = (type == 'ability') ? infoAboutAbilities[abilityName].desc : infoAboutPassives[abilityName].desc
+        desc = await highlightKeywords(desc)
+        let abilityType = (type == 'ability') ? infoAboutAbilities[abilityName].type : infoAboutPassives[abilityName].type
+        if (abilityType == 'basic') {
+            abilityType = `<span style="color: white">Basic Ability</span>`
+        } else if (abilityType == 'special') {
+            abilityType = `<span style="color: cornflowerblue">Special Ability<br>Cooldown: ${infoAboutAbilities[abilityName].cooldown} Turns</span>`
+        } else if (abilityType == 'ultimate') {
+            abilityType = `<span style="color: orange">Ultimate Ability<br>Ultimate Cost: ${infoAboutAbilities[abilityName].ultimateCost}</span>`
+        } else if (abilityType == 'unique') {
+            abilityType = `<span style="color: cyan">Unique Passive</span>`
+        } else if (abilityType == 'leader') {
+            abilityType = `<span style="color: plum">Leader Passive</span>`
+        }
         // Clear and populate with stats
         statBox.html(`
-        <strong>${abilityName}</strong><br>
+        <span style="font-size: 1.2em"><strong>${abilityName}</strong><br></span>
         <span style="color: lightgray">${desc}<br></span>
+        <span style="color: lightgray; font-size: 1.1em;">${abilityType}<br></span>
     `);
     }
 
@@ -4702,6 +4826,28 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         };
         $(document).on("mousedown", handleClick);
     });
+}
+
+async function highlightKeywords(text) {
+    let newText = text
+    const highlights = {
+        'physical damage': 'orange',
+        'special damage': 'cornflowerblue',
+        'true damage': 'white',
+        'ultra damage': 'violet',
+        'silver damage': 'silver',
+        'shadow damage': 'white',
+        'massive damage': 'white',
+        'instantly defeat': 'red'
+    };
+
+    for (let word in highlights) {
+        const regex = new RegExp(`\\b(${word})\\b`, 'gi') // match whole words
+        const color = highlights[word]
+        newText = newText.replace(regex, `<span style="color:${color}">$1</span>`)
+    }
+
+    return newText
 }
 
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
