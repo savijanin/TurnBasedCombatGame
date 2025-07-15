@@ -988,7 +988,7 @@ const infoAboutAbilities = {
             if (hit[0] > 0) {
                 const debuffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'debuff')
                 let randomDebuffIndex = Math.floor(Math.random() * debuffs.length)
-                await applyEffect(actionInfo, debuffs[randomDebuffIndex][1].name, 4, 1, false, true)
+                await applyEffect(actionInfo, debuffs[randomDebuffIndex][1].name, 4, 1, false, true, 50)
             }
         },
     },
@@ -1011,7 +1011,7 @@ const infoAboutAbilities = {
             }
             const buffs = Object.entries(infoAboutEffects).filter(effect => effect[1].type === 'buff')
             let randomBuffIndex = Math.floor(Math.random() * buffs.length)
-            await applyEffect(healInfo, buffs[randomBuffIndex][1].name, 4, 1, false, true)
+            await applyEffect(healInfo, buffs[randomBuffIndex][1].name, 4, 1, false, true, 50)
         }
     },
     'Bob Blast': {
@@ -1028,13 +1028,13 @@ const infoAboutAbilities = {
             for (let enemy of aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()) {
                 for (let i = 0; i < 5; i++) {
                     let randomDebuffIndex = Math.floor(Math.random() * debuffs.length)
-                    await applyEffect(actionInfo.withTarget(enemy), debuffs[randomDebuffIndex][1].name, 3, 1, false, true)
+                    await applyEffect(actionInfo.withTarget(enemy), debuffs[randomDebuffIndex][1].name, 3, 1, false, true, 50)
                 }
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
                 for (let i = 0; i < 5; i++) {
                     let randomBuffIndex = Math.floor(Math.random() * buffs.length)
-                    await applyEffect(actionInfo.withTarget(ally), buffs[randomBuffIndex][1].name, 3, 1, false, true)
+                    await applyEffect(actionInfo.withTarget(ally), buffs[randomBuffIndex][1].name, 3, 1, false, true, 50)
                 }
             }
         },
@@ -1627,7 +1627,7 @@ const infoAboutPassives = {
         type: 'unique',
         abilityTags: ['debuff_gain', 'revive'],
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
-            if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('stun') && effect.caster == owner)).length < 0) {
+            if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('stun') && effect.caster == owner)).length <= 0) {
                 owner.speed += owner.customData.importantMeeting.savedSpeed
                 await applyEffect(actionInfo.withTarget(owner), 'aerialAdvantage', 2, 1, false)
                 owner.customData.importantMeeting.enemiesStunned = false
@@ -1767,6 +1767,7 @@ const infoAboutEffects = {
         image: 'images/effects/accuracyUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'accuracy'],
+        desc: "+100% Accuracy",
         opposite: 'accuracyDown',
         apply: async function (actionInfo, unit) {
             unit.accuracy += 100
@@ -1800,6 +1801,7 @@ const infoAboutEffects = {
         image: 'images/effects/callToAction.png',
         type: 'buff',
         effectTags: ['accuracy', 'critChance', 'critDamage', 'target'],
+        desc: "+50% Accuracy, +50% Critical Chance, + 50% Critical Damage, and ignores taunts during this character's turn.",
         opposite: 'criticalChanceDown',
         apply: async function (actionInfo, unit) {
             unit.accuracy += 50
@@ -1840,6 +1842,7 @@ const infoAboutEffects = {
         image: 'images/effects/chainAttack.png',
         type: 'buff',
         effectTags: ['stack', 'damage'],
+        desc: "Upon damaging the targeted enemy, deal damage to a random enemy equal to 50% of the damage dealt.",
         opposite: 'breach',
         damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg) {
             if (unit == attacker && target.isTarget == true) {
@@ -1856,6 +1859,7 @@ const infoAboutEffects = {
         image: 'images/effects/criticalChanceUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'critChance'],
+        desc: "+25% Critical Chance",
         opposite: 'criticalChanceDown',
         apply: async function (actionInfo, unit) {
             unit.critChance += 25
@@ -1869,6 +1873,7 @@ const infoAboutEffects = {
         image: 'images/effects/criticalDamageUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'critDamage'],
+        desc: "+50% Critical Damage",
         opposite: 'criticalDamageDown',
         apply: async function (actionInfo, unit) {
             unit.critDamage += 50
@@ -1882,7 +1887,14 @@ const infoAboutEffects = {
         image: 'images/effects/damageImmunity.png',
         type: 'buff',
         effectTags: ['absorb', 'damageImmunity'],
+        desc: "-100% damage received",
         opposite: 'deathmark',
+        apply: async function (actionInfo, unit) {
+            unit.flatDamageReceived -= 100
+        },
+        remove: async function (actionInfo, unit) {
+            unit.flatDamageReceived += 100
+        },
         damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg) {
             if (unit == target) {
                 return 0 // 0 damage
@@ -1894,6 +1906,7 @@ const infoAboutEffects = {
         image: 'images/effects/defenceUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'defence'],
+        desc: "+50% Armour and Resistance",
         opposite: 'defenceDown',
         apply: async function (actionInfo, unit) {
             unit.armour += 50
@@ -1909,6 +1922,7 @@ const infoAboutEffects = {
         image: 'images/effects/defencePenetrationUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'defence'],
+        desc: "+50% Defence Penetration",
         opposite: 'defencePenetrationDown',
         apply: async function (actionInfo, unit) {
             unit.defencePenetration += 50
@@ -1922,6 +1936,7 @@ const infoAboutEffects = {
         image: 'images/effects/evasionUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'evasion'],
+        desc: "+15% Evasion",
         opposite: 'evasionDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -1937,6 +1952,7 @@ const infoAboutEffects = {
         image: 'images/effects/fallenAlly.png',
         type: 'buff',
         effectTags: ['stack', 'fallenAlly'],
+        desc: "When attacking an enemy, call a defeated ally to assist, dealing 20% of their regular damage for each stack of fallen ally.",
         apply: async function (actionInfo, unit) {
             // create memory space
             if (!unit.customData) unit.customData = {}
@@ -1972,6 +1988,7 @@ const infoAboutEffects = {
         image: 'images/effects/foresight.png',
         type: 'buff',
         effectTags: ['stack', 'singleUse', 'loseOnDodge', 'evasion'],
+        desc: "Evades the next attack.",
         opposite: 'blind',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -1987,6 +2004,7 @@ const infoAboutEffects = {
         image: 'images/effects/healOverTime.png',
         type: 'buff',
         effectTags: ['stack', 'healOverTime'],
+        desc: "Heal 5% of health each turn.",
         opposite: 'damageOverTime',
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
             if (unit == selectedBro) {
@@ -2000,6 +2018,7 @@ const infoAboutEffects = {
         image: 'images/effects/healthStealUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'healthSteal'],
+        desc: "Heal health equal to +50% of damage dealt.",
         opposite: 'healthStealDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2015,6 +2034,7 @@ const infoAboutEffects = {
         image: 'images/effects/healthUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'maxHealth', 'heal'],
+        desc: "+15% Max Health",
         opposite: 'healthDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2033,6 +2053,7 @@ const infoAboutEffects = {
         image: 'images/effects/offenceUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'offence'],
+        desc: "+50% Offence (Damage Dealt)",
         opposite: 'offenceDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2048,6 +2069,7 @@ const infoAboutEffects = {
         image: 'images/effects/potencyUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'potency'],
+        desc: "+100% Potency (Chance to apply debuffs)",
         opposite: 'potencyDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2063,6 +2085,7 @@ const infoAboutEffects = {
         image: 'images/effects/powerOfMandalore.png',
         type: 'buff',
         effectTags: ['stack', 'buffGain'],
+        desc: "When an ability is used then gain Power Up (all Up Buffs) for 3 turns. If these buffs are dispelled, go up to 100% turn meter.",
         opposite: 'powerDown',
         usedAbility: async function (actionInfo, unit, effect, abilityName, user, target, type, dmgPercent) {
             if (user !== unit) return // only apply this effect if the user is the unit itself
@@ -2082,6 +2105,7 @@ const infoAboutEffects = {
         image: 'images/effects/powerUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
+        desc: "All Up-Type buffs.",
         opposite: 'powerDown',
         apply: async function (actionInfo, unit) {
             unit.accuracy += 100
@@ -2126,6 +2150,7 @@ const infoAboutEffects = {
         image: 'images/effects/protectionUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'protection', 'protectionHeal'],
+        desc: "+15% Max Protection",
         opposite: 'protectionDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2144,6 +2169,7 @@ const infoAboutEffects = {
         image: 'images/effects/resilience.png',
         type: 'buff',
         effectTags: ['ally', 'damageReduce'],
+        desc: "Take 10% less damage for each living ally.",
         opposite: 'discourage',
         apply: async function (actionInfo, unit) {
             const allyNum = aliveBattleBros[unit.team].length - 1
@@ -2164,6 +2190,7 @@ const infoAboutEffects = {
         image: 'images/effects/resilientDefence.png',
         type: 'buff',
         effectTags: ['stack', 'taunt', 'target', 'loseOnHit'],
+        desc: "Taunt and lose one stack of Resilient Defence when damaged by an attack.",
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.taunting = true
@@ -2188,6 +2215,7 @@ const infoAboutEffects = {
         image: 'images/effects/retribution.png',
         type: 'buff',
         effectTags: ['counter', 'attackOutOfTurn'],
+        desc: "Counters attacks with their basic ability.",
         opposite: 'daze',
         apply: async function (actionInfo, unit) {
         },
@@ -2221,6 +2249,7 @@ const infoAboutEffects = {
         image: 'images/effects/rotating.png',
         type: 'buff',
         effectTags: ['deflection'],
+        desc: "Reflect projectile attacks and mitigate other attacks by 50%.",
         opposite: 'outmaneuvered',
         apply: async function (actionInfo, unit) {
             // create memory space
@@ -2256,7 +2285,7 @@ const infoAboutEffects = {
         image: 'images/effects/bonusProtection.png',
         type: 'buff',
         effectTags: ['stack', 'shields'],
-        desc: "Adds a variable % of bonus max protection.",
+        desc: "Adds a variable % of bonus protection on top of regular protection.",
         opposite: 'protectionDisruption',
         apply: async function (actionInfo, unit, effect) {
             if (!unit.customData) unit.customData = {}
@@ -2282,6 +2311,7 @@ const infoAboutEffects = {
         image: 'images/effects/speedUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'speed'],
+        desc: "+25% Speed",
         opposite: 'speedDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2297,6 +2327,7 @@ const infoAboutEffects = {
         image: 'images/effects/stealth.png',
         type: 'buff',
         effectTags: ['stealth', 'target', 'counterImmunity'],
+        desc: "Can't be targeted or countered.",
         opposite: 'marked',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2310,6 +2341,7 @@ const infoAboutEffects = {
         image: 'images/effects/taunt.png',
         type: 'buff',
         effectTags: ['taunt', 'target'],
+        desc: "Enemies will target this character.",
         opposite: 'tauntImmunity',
         apply: async function (actionInfo, unit) {
             unit.taunting = true
@@ -2332,6 +2364,7 @@ const infoAboutEffects = {
         image: 'images/effects/tenacityUp.png',
         type: 'buff',
         effectTags: ['stack', 'up', 'tenacity'],
+        desc: "+100% Tenacity (Chance to resist debuffs)",
         opposite: 'tenacityDown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2363,6 +2396,7 @@ const infoAboutEffects = {
         image: 'images/effects/abilityBlock.png',
         type: 'debuff',
         effectTags: ['stifle', 'abilityBlock'],
+        desc: "Can't use special abilities.",
         opposite: 'tacticalGenius',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2379,6 +2413,7 @@ const infoAboutEffects = {
         image: 'images/effects/accuracyDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'accuracy'],
+        desc: "-15% Accuracy",
         opposite: 'accuracyUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2394,6 +2429,7 @@ const infoAboutEffects = {
         image: 'images/effects/bleed.png',
         type: 'debuff',
         effectTags: ['stack', 'speed', 'tenacity', 'maxHealth', 'loseOnHeal'],
+        desc: "-5% speed and tenacity, 5% max health removed each turn. 1 stack of bleed is removed when healed. Max health regained upon losing bleed.",
         opposite: 'healOverTime',
         apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2424,6 +2460,7 @@ const infoAboutEffects = {
         image: 'images/effects/blind.png',
         type: 'debuff',
         effectTags: ['stack', 'singleUse', 'accuracy', 'blind'],
+        desc: "Miss the next attack.",
         opposite: 'foresight',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2444,6 +2481,7 @@ const infoAboutEffects = {
         image: 'images/effects/buffImmunity.png',
         type: 'debuff',
         effectTags: ['buffImmunity'],
+        desc: "Can't gain buffs.",
         opposite: 'debuffImmunity',
     },
     'burning': {
@@ -2451,6 +2489,7 @@ const infoAboutEffects = {
         image: 'images/effects/burning.png',
         type: 'debuff',
         effectTags: ['stack', 'speed', 'damageOverTime', 'evasion', 'burning'],
+        desc: "Take damage equal to 15% of max health per turn, can't dodge attacks.",
         opposite: 'healOverTime',
         apply: async function (actionInfo, unit, effect) {
             unit.evasion -= 100
@@ -2470,6 +2509,7 @@ const infoAboutEffects = {
         image: 'images/effects/criticalChanceDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'critChance'],
+        desc: "-25% Critical Chance",
         opposite: 'criticalChanceUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2485,6 +2525,7 @@ const infoAboutEffects = {
         image: 'images/effects/criticalDamageDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'critDamage'],
+        desc: "-50% Critical Damage",
         opposite: 'criticalDamageUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2500,6 +2541,7 @@ const infoAboutEffects = {
         image: 'images/effects/damageOverTime.png',
         type: 'debuff',
         effectTags: ['stack', 'damageOverTime'],
+        desc: "Take damage equal to 5% max health each turn.",
         opposite: 'healOverTime',
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
             if (unit == selectedBro) {
@@ -2520,6 +2562,7 @@ const infoAboutEffects = {
         image: 'images/effects/defenceDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'defence'],
+        desc: "-50% Armour and Resistance",
         opposite: 'defenceUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2537,6 +2580,7 @@ const infoAboutEffects = {
         image: 'images/effects/disarm.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'critDamage', 'offence', 'debuff_gain'],
+        desc: "-50% Critical Damage and Offense. Whenever this character uses a Basic ability, they gain Damage Over Time for 2 turns.",
         opposite: 'advancedTechnology',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2560,6 +2604,7 @@ const infoAboutEffects = {
         image: 'images/effects/doomed.png',
         type: 'debuff',
         effectTags: ['stopRevive', 'conditional'],
+        desc: "Can't be revived if this character is defeated.",
         opposite: 'instantDefeatImmunity',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2575,6 +2620,7 @@ const infoAboutEffects = {
         image: 'images/effects/evasionDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'evasion'],
+        desc: "-100% Evasion",
         opposite: 'evasionUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2590,6 +2636,7 @@ const infoAboutEffects = {
         image: 'images/effects/expose.png',
         type: 'debuff',
         effectTags: ['stack', 'singleUse', 'loseOnHit', 'percentageDamage'],
+        desc: "Take damage equal -20% of max health if damaged by attack, then Expose is removed.",
         apply: async function (actionInfo, unit) {
         },
         remove: async function (actionInfo, unit, effect, removalType) {
@@ -2604,6 +2651,7 @@ const infoAboutEffects = {
         image: 'images/effects/fear.png',
         type: 'debuff',
         effectTags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
+        desc: "Miss the next turn, but Fear is removed upon taking damage. If it is, increase cooldowns by 1.",
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.evasion -= 10000
@@ -2621,6 +2669,7 @@ const infoAboutEffects = {
         image: 'images/effects/healingImmunity.png',
         type: 'debuff',
         effectTags: ['healingImmunity'],
+        desc: "Can't recover health or protection.",
         opposite: 'lifeMark',
     },
     'healthDown': {
@@ -2628,6 +2677,7 @@ const infoAboutEffects = {
         image: 'images/effects/healthDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'maxHealth'],
+        desc: "-15% Max Health",
         opposite: 'healthUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2645,6 +2695,7 @@ const infoAboutEffects = {
         image: 'images/effects/healthStealDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'healthSteal'],
+        desc: "-50% Health Steal",
         opposite: 'healthStealUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2660,6 +2711,7 @@ const infoAboutEffects = {
         image: 'images/effects/knockback.png',
         type: 'debuff',
         effectTags: ['stack', 'defence'],
+        desc: "-10% defence. Lose 5% defence whenever damaged or inflicted with a debuff.",
         opposite: 'defenceUp',
         apply: async function (actionInfo, unit, effect) {
             effect.knockbackTriggers = 0
@@ -2696,6 +2748,7 @@ const infoAboutEffects = {
         image: 'images/effects/offenceDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'offence'],
+        desc: "-50% Offence (Damage Dealt)",
         opposite: 'offenceUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2711,6 +2764,7 @@ const infoAboutEffects = {
         image: 'images/effects/potencyDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'potency'],
+        desc: "-100% Potency (Chance to inflict debuffs)",
         opposite: 'potencyUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2726,6 +2780,7 @@ const infoAboutEffects = {
         image: 'images/effects/powerDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
+        desc: "All Down-Type debuffs.",
         opposite: 'powerUp',
         apply: async function (actionInfo, unit) {
             unit.accuracy -= 15
@@ -2769,6 +2824,7 @@ const infoAboutEffects = {
         image: 'images/effects/protectionDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'maxProtection'],
+        desc: "-15% Max Protection",
         opposite: 'protectionUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2786,6 +2842,7 @@ const infoAboutEffects = {
         image: 'images/effects/shatterpoint.png',
         type: 'debuff',
         effectTags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
+        desc: "Receiving damage removes Shatterpoint and reduces Defense, Max Health, and Offense by 10%. Enemies can ignore Taunt effects to target this unit.",
         opposite: 'barrier',
         apply: async function (actionInfo, unit) { },
         remove: async function (actionInfo, unit) {
@@ -2803,6 +2860,7 @@ const infoAboutEffects = {
         image: 'images/effects/speedDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'speed'],
+        desc: "-25% Speed",
         opposite: 'speedUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2818,6 +2876,7 @@ const infoAboutEffects = {
         image: 'images/effects/stagger.png',
         type: 'debuff',
         effectTags: ['turnMeterRemoval', 'loseOnHit'],
+        desc: "Lose 100% Turn Meter if damaged by attack, then remove Stagger.",
         opposite: 'frenzy',
         remove: async function (actionInfo, unit, effect, removalType, dispeller) {
             if (removalType == 'removed') {
@@ -2830,6 +2889,7 @@ const infoAboutEffects = {
         image: 'images/effects/stun.png',
         type: 'debuff',
         effectTags: ['stun', 'evasion'],
+        desc: "Can't use abilities.",
         opposite: 'lockdown',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2845,6 +2905,7 @@ const infoAboutEffects = {
         image: 'images/effects/targetLock.png',
         type: 'debuff',
         effectTags: ['targetLock'],
+        desc: "Some abilities have extra effects against target-locked characters.",
         opposite: 'chaff',
     },
     'tenacityDown': {
@@ -2852,6 +2913,7 @@ const infoAboutEffects = {
         image: 'images/effects/tenacityDown.png',
         type: 'debuff',
         effectTags: ['stack', 'down', 'potency'],
+        desc: "-100% Tenacity (Chance to resist debuffs)",
         opposite: 'tenacityUp',
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2868,6 +2930,7 @@ const infoAboutEffects = {
         image: 'images/effects/challenger.png',
         type: 'misc',
         effectTags: ['assist', 'stopAssist', 'targetIgnore', 'stopCallAssist', 'challenger'],
+        desc: "Can't assist or be assisted. The Pirate Code demands single combat.",
         opposite: 'tenacityUp',
         apply: async function (actionInfo, unit) {
 
@@ -4279,10 +4342,10 @@ async function changeCooldowns(battleBro, amount = -1) {
     }*/
     for (let abilityName of battleBro.abilities) {
         //console.log(abilityName)
-        if (battleBro.cooldowns[abilityName] > 0) {
+        if (infoAboutAbilities[abilityName].type == 'special') {
             battleBro.cooldowns[abilityName] += amount;
+            await updateAbilityCooldownUI(battleBro, abilityName)
         }
-        await updateAbilityCooldownUI(battleBro, abilityName)
     }
     for (let skillData of battleBro.skillsData) {
         if (skillData.cooldown > 0) {
@@ -4728,9 +4791,9 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         }
 
         const regularName = abilityName
-                .replace(/([A-Z])/g, ' $1') // insert space before capital letters
-                .replace(/^./, str => str.toUpperCase()) // capitalize first letter
-                .trim(); // remove leading/trailing space
+            .replace(/([A-Z])/g, ' $1') // insert space before capital letters
+            .replace(/^./, str => str.toUpperCase()) // capitalize first letter
+            .trim(); // remove leading/trailing space
 
         let desc = infoAboutEffects[abilityName].desc
 
