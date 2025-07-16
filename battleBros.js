@@ -2,11 +2,11 @@ export var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'John Wok',
+        character: 'Clone Wars Chewbacca',
         x: 400,
         y: 100,
         team: 0,
-        isLeader: false,
+        isLeader: true,
         // Defined elsewhere
         // - avatarHtmlElement
         // - isTargeted
@@ -14,15 +14,15 @@ export var battleBros = [
     },
     {
         id: "02",
-        character: 'Clone Wars Chewbacca',
+        character: 'Mace Windu',
         x: 400,
         y: 300,
         team: 0,
-        isLeader: true,
+        isLeader: false,
     },
     {
         id: "03",
-        character: 'Hera Syndulla',
+        character: 'Talia',
         x: 400,
         y: 500,
         team: 0,
@@ -30,7 +30,7 @@ export var battleBros = [
     },
     {
         id: "04",
-        character: 'Mace Windu',
+        character: 'Ninja',
         x: 400,
         y: 700,
         team: 0,
@@ -38,7 +38,7 @@ export var battleBros = [
     },
     {
         id: "05",
-        character: 'Talia',
+        character: 'Super Striker',
         x: 250,
         y: 200,
         team: 0,
@@ -46,15 +46,15 @@ export var battleBros = [
     },
     {
         id: "06",
-        character: 'Yoda',
+        character: 'Super Striker (Awakened)',
         x: 250,
         y: 400,
         team: 0,
-        isLeader: false,
+        isLeader: true,
     },
     {
         id: "07",
-        character: 'Super Striker',
+        character: 'Shadow Menace (Original)',
         x: 250,
         y: 600,
         team: 0,

@@ -704,6 +704,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 3,
         abilityTags: ['attack', 'physical_damage'],
+        desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns. Target Lock: Inflict Vulnerable to target enemy.",
         abilityDamage: 130,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -725,6 +726,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 4,
         abilityTags: ['attack', 'physical_damage'],
+        desc: "Deal special damage to the target enemy and dispel all buffs. This ability has +30% Critical Chance and Critical Damage when used against tanks. Target Lock: This attack deals +50% damage and inflicts Daze and Buff Immunity for 2 turns.",
         abilityDamage: 135,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -777,6 +779,109 @@ const infoAboutAbilities = {
             if (actionInfo.target.isDead == false && Math.random() < (actionInfo.battleBro.critChance - actionInfo.target.critAvoidance) * 0.01) { // && hit[1] == true
                 await wait(300)
                 await useAbility('Super Strike', actionInfo, false, 'chained')
+            }
+        }
+    },
+    'Focused Blast': {
+        displayName: "Focused Blast",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'basic',
+        abilityTags: ['attack', 'projectile_attack', 'special_damage', 'shadow_damage', 'debuff_gain'],
+        abilityDamage: 70,
+        desc: 'Deal special damage and shadow damage and inflict Shock for 3 turns.',
+        use: async function (actionInfo) {
+            let hit1 = await dealDmg(actionInfo, this.abilityDamage, 'special')
+            let hit2 = await dealDmg(actionInfo, this.abilityDamage * 0.3 * actionInfo.battleBro.offence, 'shadow')
+            if (hit1[0] > 0 || hit2[0] > 0) {
+                await applyEffect(actionInfo, 'shock', 3)
+            }
+        }
+    },
+    'Cybernetic Overload': {
+        displayName: "Cybernetic Overload",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'special',
+        cooldown: 2,
+        abilityTags: ['attack', 'special_damage', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 150,
+        desc: "Deal high physical damage to target enemy and inflict Scam to all enemies for 1 turn. If this ability scores a critical hit, deal high special damage again and increase the cooldown by 2.",
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            for (let enemy of actionInfo.enemies) {
+                await applyEffect(actionInfo.withTarget(enemy), 'scam', 1)
+            }
+            if (hit[1] == true) { // crit condition
+                await dealDmg(actionInfo, this.abilityDamage, 'special')
+                return [2] // increases cooldowns of Cybernetic Overload by 2
+            }
+        }
+    },
+    'Crippling Slice': {
+        displayName: "Crippling Slice",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'special',
+        cooldown: 4,
+        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 145,
+        desc: "Deal physical damage and inflict Bleed and Decay to target enemy for 3 turns. These effects cannot be resisted. This attack cannot be evaded.",
+        use: async function (actionInfo) {
+            const savedEvasion = actionInfo.target.evasion
+            actionInfo.target.evasion = -1000
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            actionInfo.target.evasion += savedEvasion + 1000
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'bleed', 3, 1, false)
+                await applyEffect(actionInfo, 'decay', 3, 1, false)
+            }
+        }
+    },
+    'Atomic Detonation': {
+        displayName: "Atomic Detonation",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'special',
+        cooldown: 5,
+        abilityTags: ['attack', 'mines', 'debuff_gain'],
+        desc: "Inflict 5 stacks of Concussion Mine to all enemies and decrease the cooldown by 4. Use this ability again to explode all Concussion Mines. When this ability detonates, inflict radiation on all enemies for 1 turn.",
+        use: async function (actionInfo) {
+            if (!actionInfo.battleBro.customData.atomicDetonation) {
+                actionInfo.battleBro.customData.atomicDetonation = {
+                    minesPlaced: false,
+                }
+            }
+            if (actionInfo.battleBro.customData.atomicDetonation.minesPlaced == false) {
+                for (let enemy of actionInfo.enemies) {
+                    await applyEffect(actionInfo.withTarget(enemy), 'concussionMine', Infinity, 5)
+                }
+                actionInfo.battleBro.customData.atomicDetonation.minesPlaced = true
+                return [-4] // decreases cooldowns of Atomic Detonation by 4
+            } else {
+                for (let enemy of actionInfo.enemies) {
+                    let concussionMines = enemy.buffs.filter(effect => effect.effectTags.includes('mine') && effect.caster == actionInfo.battleBro)
+                    for (let mine of concussionMines) {
+                        await expireEffect(actionInfo.withTarget(enemy), enemy, mine, 'detonated')
+                    }
+                    await applyEffect(actionInfo.withTarget(enemy), 'radiation', 1)
+                }
+                actionInfo.battleBro.customData.atomicDetonation.minesPlaced = false
+            }
+        }
+    },
+    'Quantum Surge': {
+        displayName: "Quantum Surge",
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'ultimate',
+        ultimateCost: 2400,
+        abilityTags: ['attack', 'physical_damage', 'special_damage', 'ultra_damage', 'debuff_gain'],
+        abilityDamage: 80,
+        desc: "Deal special damage, ultra damage and physical damage and inflict EMP Device to all enemies for 3 turns. EMP Device: Zero speed until the end of 2 turns. When an EMP Device expires, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
+        use: async function (actionInfo) {
+            for (let enemy of actionInfo.enemies) {
+                let hit1 = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'special')
+                let hit2 = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'ultra')
+                let hit3 = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'physical')
+                if (hit1[0] > 0 || hit2[0] > 0 || hit3[0] > 0) {
+                    await applyEffect(actionInfo.withTarget(enemy), 'EMPDevice', 3)
+                }
             }
         }
     },
@@ -1381,10 +1486,43 @@ const infoAboutPassives = {
     'Grand Master\'s Guidance': {
         displayName: 'Grand Master\'s Guidance',
         image: 'images/abilities/abilityui_passive_removeharmful.png',
-        desc: 'Jedi allies have +30% Tenacity. Whenever a Jedi ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock.',
-        omicron_desc: 'At the start of battle if there are no galactic legends and all allies are Galactic Republic Jedi, the leadership abilities of all other allies are active until the end of battle.',
+        desc: 'Allies have +30% Tenacity. Whenever an ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock. Omicron: The leadership abilities of all other allies are active until the end of battle.',
         type: 'leader',
         abilityTags: ['buff_gain', 'grand_arena_omicron'],
+        start: async function (actionInfo, owner) {
+            for (let ally of aliveBattleBros[owner.team]) {
+                ally.tenacity += 30
+            }
+        },
+        resisted: async function (actionInfo, owner, target, user, type) {
+            if (target.team == owner.team && type == 'effect') {
+                await TMchange(actionInfo.withTarget(target), 30)
+                await applyEffect(actionInfo.withTarget(target), 'criticalChanceUp', 2)
+                await applyEffect(actionInfo.withTarget(target), 'criticalDamageUp', 2)
+            }
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (target.team == owner.team && effect.type == 'debuff') {
+                // Only apply at the end of the turn
+                if (!target.customData) target.customData = {}
+                if (!target.customData.grandmastersGuidance) target.customData.grandmastersGuidance = {
+                    gainedDebuffThisTurn: true
+                }
+                target.customData.grandmastersGuidance.gainedDebuffThisTurn = true
+            }
+            if (effect.effectTags.includes('shock') && target === owner) {
+                // Yoda is immune to shock
+                await removeEffect(actionInfo.withTarget(target), owner, 'shock')
+            }
+        },
+        endedTurn: async function (actionInfo, owner, selectedBro) {
+            for (let ally of aliveBattleBros[owner.team]) {
+                if (ally.customData?.grandmastersGuidance?.gainedDebuffThisTurn) {
+                    await applyEffect(actionInfo.withTarget(ally), 'tenacityUp', 1)
+                    ally.customData.grandmastersGuidance.gainedDebuffThisTurn = false
+                }
+            }
+        }
     },
     'Take A Seat': {
         displayName: 'Take A Seat',
@@ -1623,9 +1761,33 @@ const infoAboutPassives = {
     'Very Important Pig': {
         displayName: 'Very Important Pig',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        desc: 'Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can\'t be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally is at <20% health, they gain Backup Plan for 3 turns. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle or until another teammate steals it. +Contain Detect Important Meeting Stun Removal Trigger',
+        desc: "Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can't be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle. Targeted enemies damaged during Aerial Advantage also gain 2 stacks of locked Inevitable Failure for 10 turns which can't be resisted. +Contain Detect Important Meeting Stun Removal Trigger",
         type: 'unique',
         abilityTags: ['debuff_gain', 'revive'],
+        start: async function (actionInfo, owner) {
+            await applyEffect(actionInfo.withTarget(owner), 'VIP', Infinity, 1, false, false, "Superpig's Bravado")
+        },
+        revived: async function (actionInfo, owner, revivedAlly, reviver, healthGained, protectionGained, turnMeterGained) {
+            if (revivedAlly.team == owner.team) {
+                let vipAlly = aliveBattleBros[owner.team].find(ally => ally.buffs.find(effect => effect.name == 'VIP'))
+                let vipEffect = vipAlly?.buffs.find(effect => effect.name == 'VIP')
+                if (vipEffect) {
+                    await removeEffect(actionInfo.withTarget(vipAlly), vipAlly, null, 'VIP')
+                }
+                await applyEffect(actionInfo.withTarget(revivedAlly), 'VIP', Infinity, 1, false, false, "Superpig's Bravado")
+            }
+        },
+        attacked: async function (actionInfo, owner, target, attacker) {
+            if (owner == target) {
+                await applyEffect(actionInfo.withTarget(attacker), 'concussionMine', 1, 1, false)
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (owner == attacker && owner.buffs.find(effect => effect.name == 'aerialAdvantage')) {
+                let actionInfo = new ActionInfo({ battleBro: owner, target: target })
+                await applyEffect(actionInfo, 'inevitableFailure', 10, 2, false, true)
+            }
+        },
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
             if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('stun') && effect.caster == owner)).length <= 0) {
                 owner.speed += owner.customData.importantMeeting.savedSpeed
@@ -1678,6 +1840,82 @@ const infoAboutPassives = {
                 owner.customData.eliminationProtocol.offenceStacks++
             }
         }
+    },
+    'Unchained Arsenal': {
+        displayName: 'Unchained Arsenal',
+        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        desc: 'Super Striker gains +10% Special Damage and +5 Speed for each debuffed enemy (max 5 stacks). At the start of his turn, he inflicts Target Lock on a random non-Stealthed Droid enemy for 2 turns (limit once per turn). When Super Striker damages an enemy suffering from Shock, EMP Device, or Radiation, he gains +20% Offense (stacking, max 100%, resets on defeat) and 10% Turn Meter.',
+        type: 'unique',
+        abilityTags: ['speed'],
+        start: async function (actionInfo, owner) {
+            owner.customData.unchainedArsenal = {
+                debuffedEnemies: [],
+                damageStacks: 0,
+            }
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.team !== target.team && effect.type == 'debuff' && owner.customData?.unchainedArsenal?.debuffedEnemies.length < 5 && owner.customData?.unchainedArsenal?.debuffedEnemies.includes(target) !== true) {
+                owner.specialDamage += 0.1 * infoAboutCharacters[owner.character].specialDamage
+                owner.speed += 5
+                owner.customData.unchainedArsenal.debuffedEnemies.push(target)
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.customData?.unchainedArsenal?.debuffedEnemies.includes(target) == true && target.buffs.filter(effect => effect.type == 'debuff').length <= 0) {
+                owner.specialDamage -= 0.1 * infoAboutCharacters[owner.character].specialDamage
+                owner.speed -= 5
+                owner.customData.unchainedArsenal.debuffedEnemies.splice(owner.customData.unchainedArsenal.debuffedEnemies.indexOf(target), 1)
+            }
+        },
+        startedTurn: async function (actionInfo, owner, selectedBro) {
+            if (owner == selectedBro) {
+                const NotStealthedDroidEnemies = actionInfo.enemies.filter(enemy => infoAboutCharacters[enemy.character].tags.includes('droid') == true && enemy.buffs.filter(effect => effect.effectTags.includes('stealth')).length <= 0)
+                if (NotStealthedDroidEnemies.length > 0) {
+                    const randomEnemy = NotStealthedDroidEnemies[Math.floor(Math.random() * NotStealthedDroidEnemies.length)]
+                    if (randomEnemy) {
+                        let newActionInfo = new ActionInfo({ battleBro: owner, target: randomEnemy })
+                        await applyEffect(newActionInfo, 'targetLock', 2)
+                    }
+                }
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            await logFunctionCall('method: damaged (', ...arguments,)
+            if (owner == attacker && target.buffs.find(effect => effect.name == 'shock' || effect.name == 'EMPDevice' || effect.name == 'radiation')) {
+                await TMchange(actionInfo.withSelfAsTarget(), 10)
+                if (owner.customData.unchainedArsenal.damageStacks < 5) {
+                    owner.offence += 20
+                    owner.customData.unchainedArsenal.damageStacks++
+                }
+            }
+        },
+        defeated: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, HPremaining) {
+            if (owner == target) {
+                owner.customData.unchainedArsenal.damageStacks = 0
+            }
+        }
+    },
+    'Unrelenting Protocol': {
+        displayName: 'Unrelenting Protocol',
+        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        desc: 'If Super Striker is the last active ally, he is immune to Stun and Healing Immunity effects and at the start of his turns, he recovers 15% Protection and dispels one random debuff.',
+        type: 'unique',
+        abilityTags: ['protection_recovery'],
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (aliveBattleBros[owner.team].length == 1 && (effect.effectTags.includes('stun') || effect.effectTags.includes('healingImmunity'))) {
+                await removeEffect(actionInfo, owner, null, null, null, false, effect)
+            }
+        },
+        startedTurn: async function (actionInfo, owner, selectedBro) {
+            if (aliveBattleBros[owner.team].length == 1 && owner == selectedBro) {
+                await heal(actionInfo.withSelfAsTarget(), owner.maxProtection * 0.15, 'protection')
+                let debuffs = owner.buffs.filter(buff => buff.type == 'debuff' && buff.isLocked == false)
+                let randomDebuff = debuffs[Math.floor(Math.random() * debuffs.length)]
+                if (randomDebuff) {
+                    await dispel(actionInfo.withSelfAsTarget(), null, null, null, false, randomDebuff)
+                }
+            }
+        },
     },
     // --------------------------------------------------------JAMES' CHARACTERS
     'Prime Era': {
@@ -2285,7 +2523,7 @@ const infoAboutEffects = {
         image: 'images/effects/bonusProtection.png',
         type: 'buff',
         effectTags: ['stack', 'shields'],
-        desc: "Adds a variable % of bonus protection on top of regular protection.",
+        desc: "Adds {{bonusData}}% of bonus protection on top of regular protection.",
         opposite: 'protectionDisruption',
         apply: async function (actionInfo, unit, effect) {
             if (!unit.customData) unit.customData = {}
@@ -2305,6 +2543,12 @@ const infoAboutEffects = {
             }
             unit.customData.shields.shieldsApplied -= effect.shieldsGranted
         },
+        endedTurn: async function (actionInfo, unit, effect, selectedBro) {
+            if (unit.customData?.shields?.shieldsApplied - effect.shieldsGranted >= unit.shields) {
+                let newActionInfo = new ActionInfo({ battleBro: unit, target: unit })
+                await removeEffect(newActionInfo, unit, null, null, null, false, effect)
+            }
+        }
     },
     'speedUp': {
         name: 'speedUp',
@@ -2504,6 +2748,21 @@ const infoAboutEffects = {
             }
         }
     },
+    'concussionMine': {
+        name: 'concussionMine',
+        image: 'images/effects/concussionMine.png',
+        type: 'debuff',
+        effectTags: ['stack', 'mine'],
+        desc: "Deals damage equal to 10% of target's max health and dazes them for 1 turn when it explodes.",
+        opposite: 'healOverTime',
+        remove: async function (actionInfo, unit, effect, removalType) {
+            if (removalType == 'expired' || removalType == 'detonated') {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await dealDmg(actionInfo, 10, 'percentage', true, true, false, 'concussionMine', false, false)
+                await applyEffect(actionInfo, 'daze', 1) // daze for 1 turn
+            }
+        },
+    },
     'criticalChanceDown': {
         name: 'criticalChanceDown',
         image: 'images/effects/criticalChanceDown.png',
@@ -2555,7 +2814,28 @@ const infoAboutEffects = {
         image: 'images/effects/daze.png',
         type: 'debuff',
         effectTags: ['stopAssist', 'stopCounter', 'stopTMgain'],
+        desc: "Can't assist, counter or gain turn meter.",
         opposite: 'retribution',
+    },
+    'decay': {
+        name: 'decay',
+        image: 'images/effects/decay.png',
+        type: 'debuff',
+        effectTags: ['stack', 'maxHealth', 'healthSteal'],
+        desc: "-10% max health per stack. 0% health steal.",
+        opposite: 'vampire',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.maxHealth *= 0.9
+            unit.health *= 0.9
+            unit.healthSteal -= 100
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.maxHealth /= 0.9
+            unit.health /= 0.9
+            unit.healthSteal += 100
+        }
     },
     'defenceDown': {
         name: 'defenceDown',
@@ -2606,14 +2886,45 @@ const infoAboutEffects = {
         effectTags: ['stopRevive', 'conditional'],
         desc: "Can't be revived if this character is defeated.",
         opposite: 'instantDefeatImmunity',
-        apply: async function (actionInfo, unit) {
-            await logFunctionCall('method: apply (', ...arguments,)
-
-        },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
             if (unit.isDead == true) unit.cantRevive = true
         }
+    },
+    'EMPDevice': {
+        name: 'EMPDevice',
+        image: 'images/effects/EMPDevice.png',
+        type: 'debuff',
+        effectTags: ['stack', 'mine'],
+        desc: "Zero speed until the end of 2 turns. When an EMP Device explodes or is dispelled, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
+        opposite: 'overcharge',
+        apply: async function (actionInfo, unit, effect) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            effect.turnsPassed = 0
+            effect.haltingTurns = true
+            effect.savedSpeed = unit.speedPercent
+            unit.speedPercent = 0
+        },
+        endedTurn: async function (actionInfo, unit, effect, selectedBro) {
+            if (effect.turnsPassed >= 2 && effect.haltingTurns == true) {
+                effect.haltingTurns = false
+                unit.speedPercent += effect.savedSpeed // restore the speed
+            } else if (effect.haltingTurns == true) {
+                effect.turnsPassed++
+                unit.speedPercent = 0 // zero speed until the end of 2 turns
+            }
+        },
+        remove: async function (actionInfo, unit, effect, removalType) {
+            if (removalType == 'expired' || removalType == 'detonated' || removalType == 'dispelled') {
+                let actionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await dealDmg(actionInfo, 100, 'special', true, true, false, 'EMPDevice', false, false)
+                await applyEffect(actionInfo, 'expose', 2)
+                await applyEffect(actionInfo, 'protectionDisruption', 2)
+                if (infoAboutCharacters[unit.character].tags.includes('droid')) {
+                    await applyEffect(actionInfo, 'stun', 1)
+                }
+            }
+        },
     },
     'evasionDown': {
         name: 'evasionDown',
@@ -2668,7 +2979,7 @@ const infoAboutEffects = {
         name: 'healingImmunity',
         image: 'images/effects/healingImmunity.png',
         type: 'debuff',
-        effectTags: ['healingImmunity'],
+        effectTags: ['healingImmunity', 'protectionHealingImmunity'],
         desc: "Can't recover health or protection.",
         opposite: 'lifeMark',
     },
@@ -2819,6 +3130,50 @@ const infoAboutEffects = {
             unit.tenacity += 100
         }
     },
+    'protectionDisruption': {
+        name: 'protectionDisruption',
+        image: 'images/effects/protectionDisruption.png',
+        type: 'debuff',
+        effectTags: ['maxProtection', 'protectionDisruption'],
+        desc: "Protection is disabled, immune to Protection Up and Shields.",
+        opposite: 'protectionUp',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            if (!unit.customData.protectionDisruption) {
+                unit.customData.protectionDisruption = {
+                    savedProtection: null,
+                    savedMaxProtection: null,
+                    savedShields: null,
+                }
+            }
+            await removeEffect(actionInfo, unit, 'shields') // clear the effects they're now immune to
+            await removeEffect(actionInfo, unit, null, 'protectionUp')
+            if (unit.customData.protectionDisruption.savedProtection == null) unit.customData.protectionDisruption.savedProtection = unit.protection
+            if (unit.customData.protectionDisruption.savedMaxProtection == null) unit.customData.protectionDisruption.savedMaxProtection = unit.maxProtection
+            if (unit.customData.protectionDisruption.savedShields == null) unit.customData.protectionDisruption.savedShields = unit.shields
+            unit.protection = 0
+            unit.maxProtection = 0
+            unit.shields = 0
+        },
+        gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
+            if (unit == target && (gainedEffect.name == 'shields' || gainedEffect.name == 'protectionUp')) {
+                await removeEffect(actionInfo, unit, null, gainedEffect.name)
+            }
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            if (!unit.buffs.find(effect => effect.effectTags.includes('protectionDisruption'))) {
+                unit.protection = unit.customData.protectionDisruption.savedProtection
+                unit.maxProtection = unit.customData.protectionDisruption.savedMaxProtection
+                unit.shields = unit.customData.protectionDisruption.savedShields
+                unit.customData.protectionDisruption = {
+                    savedProtection: null,
+                    savedMaxProtection: null,
+                    savedShields: null,
+                }
+            }
+        }
+    },
     'protectionDown': {
         name: 'protectionDown',
         image: 'images/effects/protectionDown.png',
@@ -2835,6 +3190,93 @@ const infoAboutEffects = {
             await logFunctionCall('method: remove (', ...arguments,)
             unit.maxProtection *= 1.15
             unit.protection *= 1.15
+        }
+    },
+    'radiation': { // unfinished - attackers effects need finishing
+        name: 'radiation',
+        image: 'images/effects/radiation.png',
+        type: 'debuff',
+        effectTags: ['lockDebuffs'],
+        desc: "Attackers ignore protection and defensive effects. Debuffs on this character can't be dispelled.",
+        opposite: 'determined',
+        apply: async function (actionInfo, unit) {
+            if (!unit.customData.radiation) {
+                unit.customData.radiation = {
+                    otherDebuffs: []
+                }
+            }
+            const otherDebuffs = unit.buffs.filter(buff => buff.type == 'debuff' && buff.isLocked == false && buff.name != 'radiation')
+            unit.customData.radiation.otherDebuffs = unit.customData.radiation.otherDebuffs.concat(otherDebuffs)
+            for (let debuff of otherDebuffs) {
+                debuff.isLocked = true
+            }
+        },
+        gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
+            if (unit == target && gainedEffect.type == 'debuff' && gainedEffect.name != 'radiation') {
+                unit.customData.radiation.otherDebuffs.push(gainedEffect)
+                gainedEffect.isLocked = true
+            }
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            if (!unit.buffs.find(effect => effect.effectTags.includes('lockDebuffs'))) {
+                for (let debuff of unit.customData.radiation.otherDebuffs) {
+                    debuff.isLocked = false // unlock all other debuffs
+                }
+                unit.customData.radiation.otherDebuffs = [] // clear the memory space
+            }
+        }
+    },
+    'scam': { // 3 stacks effect is unfinished
+        name: 'scam',
+        image: 'images/effects/scam.png',
+        type: 'debuff',
+        effectTags: ['stack', 'offence', 'critChance'],
+        desc: "1 Stack: -50% Offence and Crit Chance. Lose a random buff every turn.<br>2 Stacks: Attackers will bonus attack and gain Retribution for 1 turn.<br>3 Stacks: Attackers will bonus attack for each buff they have, dealing 50% damage without inflicting status effects.",
+        opposite: 'translation',
+        apply: async function (actionInfo, unit, effect) {
+            if (!unit.customData.scam) {
+                unit.customData.scam = {
+                    masterEffect: undefined, // The master effect does all the effects - the other stacks do nothing. When the master effect is removed, the master status passes to the next effect.
+                }
+            }
+            if (unit.customData.scam.masterEffect == undefined) {
+                unit.customData.scam.masterEffect = effect // set the master effect to this one if there's no other master effects
+                unit.offence -= 50
+                unit.critChance -= 50
+            }
+        },
+        remove: async function (actionInfo, unit, effect) {
+            if (unit.customData.scam.masterEffect == effect) {
+                unit.customData.scam.masterEffect = undefined // clear the master effect if this one was the master effect
+                unit.offence += 50
+                unit.critChance += 50
+            }
+        },
+        lostEffect: async function (actionInfo, unit, effect, target, lostEffect, removalType, dispeller) {
+            if (unit.customData.scam.masterEffect == undefined) {
+                unit.customData.scam.masterEffect = effect // set the master effect to this one if the last master effect was lost
+                unit.offence -= 50
+                unit.critChance -= 50
+            }
+        },
+        startedTurn: async function (actionInfo, unit, effect, selectedBro) {
+            if (unit == selectedBro && unit.customData.scam.masterEffect == effect) {
+                let buffs = unit.buffs.filter(buff => buff.type == 'buff' && buff.isLocked == false)
+                let randomBuff = buffs[Math.floor(Math.random() * buffs.length)]
+                if (randomBuff) {
+                    let newActionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                    await dispel(newActionInfo, null, null, null, false, randomBuff)
+                }
+            }
+        },
+        attacked: async function (actionInfo, unit, effect, target, attacker) {
+            if (unit == target && effect == unit.customData.scam.masterEffect && unit.buffs.filter(effect => effect.name == 'scam').length >= 2 && actionInfo.parentActionInfo.type !== "bonus") {
+                let newActionInfo = new ActionInfo({ battleBro: effect.caster, target: attacker })
+                await applyEffect(newActionInfo, 'retribution', 1)
+                newActionInfo = new ActionInfo({ battleBro: attacker, target: unit })
+                await addAttackToQueue(newActionInfo)
+            }
         }
     },
     'shatterpoint': {
@@ -2854,6 +3296,14 @@ const infoAboutEffects = {
             unit.health /= 1.1
             unit.offence *= 0.9
         }
+    },
+    'shock': {
+        name: 'shock',
+        image: 'images/effects/shock.png',
+        type: 'debuff',
+        effectTags: ['healingImmunity', 'stopTMgain', 'buffImmunity'],
+        desc: "Can't heal, gain buffs or bonus turn meter.",
+        opposite: 'overcharge',
     },
     'speedDown': {
         name: 'speedDown',
@@ -2880,7 +3330,8 @@ const infoAboutEffects = {
         opposite: 'frenzy',
         remove: async function (actionInfo, unit, effect, removalType, dispeller) {
             if (removalType == 'removed') {
-                unit.turnMeter = 0 // remove all turn meter
+                let newActionInfo = new ActionInfo({ battleBro: effect.caster, target: unit })
+                await TMchange(newActionInfo, -100, false)
             }
         }
     },
@@ -2931,7 +3382,19 @@ const infoAboutEffects = {
         type: 'misc',
         effectTags: ['assist', 'stopAssist', 'targetIgnore', 'stopCallAssist', 'challenger'],
         desc: "Can't assist or be assisted. The Pirate Code demands single combat.",
-        opposite: 'tenacityUp',
+        apply: async function (actionInfo, unit) {
+
+        },
+        remove: async function (actionInfo, unit) {
+
+        }
+    },
+    'VIP': { // unfinished
+        name: 'VIP',
+        image: 'images/effects/VIP.png',
+        type: 'misc',
+        effectTags: ['health_recovery', 'protectionRecovery', 'stealth', 'bonusData'],
+        desc: "When receiving damage, stealth for 1 turn and {{caster}} recovers 5% health and protection. Whenever {{caster}} is damaged, this character recovers health and protection equal to 5% of {{caster}}'s max health and protection. If all allies are {{bonusData}}, {{caster}} and this character are immune to Turn Meter reduction.",
         apply: async function (actionInfo, unit) {
 
         },
@@ -2994,6 +3457,8 @@ const argsMap = {
     endedAbility: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5, arg6], // abilityName, battleBro, target, type(assist or counter etc), dmgPercent (like when reduced from assists), savedActionInfo
     dodged: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2], // attacker, target
     modifiedStat: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // stat name, value, guy Whos Stats Have Been Modified, modifier
+    revived: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // revived guy, reviver, healthGained, protectionGained, turnMeterGained
+    resisted: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, user, type, effect/change
 }
 async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6) {
     //await logFunctionCall('eventHandle', ...arguments)
@@ -3135,7 +3600,7 @@ function createUltimateUIForTeam(teamNumber) {
     container.appendChild(wrapper);
 }
 
-async function createBattleBroVars(battleBro) {
+async function createBattleBroVars(battleBro, skipUI = false) {
     await logFunctionCall('createBattleBroVars', ...arguments)
     let infoAboutCharacter = infoAboutCharacters[battleBro.character]
     // battleBro.speed = infoAboutCharacter.speed
@@ -3172,17 +3637,19 @@ async function createBattleBroVars(battleBro) {
     }) // remove leader passives of characters that aren't leaders
     battleBro.abilityImageDivs = []
     //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
-    const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.type !== 'ultimate')
-    for (let i = 0; i < abilities.length; i++) {
-        let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
-        console.log('' + battleBro.team)
-        if (battleBro.team == 0) {
-            newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
-        } else {
-            newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' })
+    if (!skipUI) {
+        const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.type !== 'ultimate')
+        for (let i = 0; i < abilities.length; i++) {
+            let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
+            console.log('' + battleBro.team)
+            if (battleBro.team == 0) {
+                newAbilityImageDiv.css({ 'left': (i * 115 + 15) + 'px' })
+            } else {
+                newAbilityImageDiv.css({ 'right': (i * 115 + 15) + 'px' })
+            }
+            newAbilityImageDiv.appendTo('#myAbilities');
+            battleBro.abilityImageDivs.push(newAbilityImageDiv);
         }
-        newAbilityImageDiv.appendTo('#myAbilities');
-        battleBro.abilityImageDivs.push(newAbilityImageDiv);
     }
     battleBro.cooldowns = {}
     for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
@@ -3374,14 +3841,8 @@ async function dead(battleBro) {
     characterDying = true
     battleBro.isDead = true
     aliveBattleBros[battleBro.team].splice(aliveBattleBros[battleBro.team].indexOf(battleBro), 1) // remove it from the array of alive guys on their team
-    let actionInfo = new ActionInfo({ battleBro: battleBro })
-    await removeEffect(actionInfo, battleBro, null, null, null, true)
-    if (battleBro.isDead == false) {
-        characterDying = false
-        return
-    } // if the character is revived instantly, abort the rest of the function
-    await switchTarget(battleBro)
-    // change avatar look to be dead
+
+    // Phase 1: Death animation
     const img = battleBro.avatarHtmlElement.children()
     img.css({
         transition: 'transform 0.5s ease'
@@ -3393,6 +3854,12 @@ async function dead(battleBro) {
     })
     await wait(500)
     characterDying = false
+
+    // Phase 2: cleanup — AFTER animation
+    let actionInfo = new ActionInfo({ battleBro: battleBro })
+    await removeEffect(actionInfo, battleBro, null, null, null, true)
+    if (battleBro.isDead == true) await switchTarget(battleBro)
+    // change avatar look to be dead
 }
 
 async function calculateNextTurnFromTurnMetersAndSpeeds() {
@@ -3669,7 +4136,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
     actionInfo.hitEnemies = []
     actionInfo.enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
     let savedActionInfo = actionInfo.copy()
-    await ability?.use(actionInfo)//executeAbility(abilityName, actionInfo)
+    let abilityUsed = await ability?.use(actionInfo) // [cooldown increase]
     await eventHandle('endedAbility', actionInfo, abilityName, actionInfo.battleBro, actionInfo.target, type, dmgPercent, savedActionInfo)
 
 
@@ -3685,6 +4152,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
         await updateUltimateUI(team)
     }
     actionInfo.battleBro.cooldowns[abilityName] = ability.cooldown || 0
+    if (abilityUsed) actionInfo.battleBro.cooldowns[abilityName] += abilityUsed[0] // adds optional cooldown increase
     await updateAbilityCooldownUI(actionInfo.battleBro, abilityName)
     if (type !== 'chained') { // if this ability is used from another ability, we don't do this ending turn stuff so it doesn't execute multiple times
         let attack
@@ -3696,7 +4164,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
                 if (ally.queuedAttacks.length > 0) { // if they have a queued attack
                     let firstQueuedAttack = ally.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
                     let assistAbilityName = infoAboutCharacters[ally.character].abilities[firstQueuedAttack[3]] // name of the ability stored in their queued attack
-                    let actionInfo_assist = new ActionInfo({ battleBro: ally, target: firstQueuedAttack[0] })
+                    let actionInfo_assist = new ActionInfo({ battleBro: ally, target: firstQueuedAttack[0], type: firstQueuedAttack[1] })
                     let promise = useAbility(assistAbilityName, actionInfo_assist, false, firstQueuedAttack[1], firstQueuedAttack[2])
                     promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
                 }
@@ -3706,6 +4174,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
             let firstQueuedAttack = actionInfo.battleBro.queuedAttacks[0] // target, type, dmg multipler, abilityIndex
             let nextAbilityName = infoAboutCharacters[actionInfo.battleBro.character].abilities[firstQueuedAttack[3]] // chosen ability index (usually the basic)
             let actionInfo_extra = actionInfo.withTarget(firstQueuedAttack[0])
+            actionInfo_extra.type = firstQueuedAttack[1]
             let promise = useAbility(nextAbilityName, actionInfo_extra, hasTurn, firstQueuedAttack[1], firstQueuedAttack[2]) // after the attack is done, use the next attack in the list of queued attacks
             promises.push(promise)
         }
@@ -3800,38 +4269,7 @@ async function engageCounters() {
             promises.push(promise) // add the ability being used to promises so we can wait for all of them to finish later
         }
     }
-    /*let promises = []
-    for (let battleBro of battleBros) {
-        if (battleBro.queuedAttacks.length > 0) {
-            let abilityName = infoAboutCharacters[battleBro.character].abilities[battleBro.queuedAttacks[0][3]]
-            let promise = useAbility(abilityName, battleBro, battleBro.queuedAttacks[0][0], false, battleBro.queuedAttacks[0][1]) // add AWAIT in the case of bug
-            promises.push(promise)
-        }
-    }
-    await Promise.all(promises)*/
 }
-
-/*async function engageQueuedAttacks() { await logFunctionCall('engageQueuedAttacks', ...arguments)
-    for (const [type,attacker,target] of queuedAttacks) {
-        let abilityName = infoAboutCharacters[attacker.character].abilities[0]
-        if (await useAbility(abilityName,attacker,target,false,type)) {
-            setTimeout(() => {},601)
-        }
-        console.log(attacker.character+' '+type+'s on '+target.character+' using '+abilityName)
-    }
-    console.log(queuedAttacks)
-    queuedAttacks = [] // all attacks have been iterated over so we don't need them anymore
-      -----------------------------------AI Generated helpful code that provides an alternate method of removing attacks from queuedAttacks
-    while (queuedEffects.length > 0) {
-        const [type, applier, target] = queuedEffects.shift();
-
-        if (thing === true) {
-            queuedEffects.push([newType, newApplier, newTarget]);
-        }
-
-        // No need to remove the current one — it's already removed by shift()
-    }
-}*/
 
 async function playProjectileAttackAnimation(actionInfo, abilityName, hasTurn, type, imageName, colour = '#00FFFF') {
     await logFunctionCall('playProjectileAttackAnimation', ...arguments)
@@ -4074,6 +4512,7 @@ async function playStatusEffectGlow(characterDiv, effectName) {
 }
 
 async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, resistable = true, isLocked = false, bonusData = null) {
+    const identifier = Math.random().toString(36).substring(2, 15) // generate a random identifier for the effect
     actionInfo.actionDetails = {
         category: 'applyEffect',
         effectName: effectName,
@@ -4082,15 +4521,12 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         resistable: resistable,
         isLocked: isLocked,
         bonusData: bonusData,
+        identifier: identifier,
     }
     if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.effectTags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
     for (let i = 0; i < stacks; i++) {
-        if (info.type == 'debuff' && resistable == true && Math.random() < (actionInfo.target.tenacity - actionInfo.battleBro.potency) * 0.01) {
-            await addFloatingText(actionInfo.target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
-            return
-        }
         const effect = {
             ...info,
             duration: actionInfo.target === actionInfo.battleBro ? duration + 1 : duration, // if the caster applies effects to themself, the duration is knocked down by 1 at the end of their turn
@@ -4099,6 +4535,12 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
             caster: actionInfo.battleBro,
             apply: info?.apply,
             remove: info?.remove,
+            identifier: identifier,
+        }
+        if (info.type == 'debuff' && resistable == true && Math.random() < (actionInfo.target.tenacity - actionInfo.battleBro.potency) * 0.01) {
+            await addFloatingText(actionInfo.target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
+            await eventHandle('resisted', actionInfo, actionInfo.target, actionInfo.battleBro, 'effect', effect)
+            return
         }
         actionInfo.target.buffs.push(effect)
         if (!(effect.effectTags.includes('stack') == false && actionInfo.target.buffs.filter(e => e.name == effectName).length > 1)) {
@@ -4121,13 +4563,17 @@ async function updateEffectsAtTurnEnd(actionInfo, battleBro) {
         const effect = battleBro.buffs[i]
         effect.duration -= 1
         if (effect.duration <= 0) {
-            battleBro.buffs.splice(i, 1)
-            let actionInfo = new ActionInfo({ battleBro: battleBro })
-            if (effect?.remove) await effect.remove(actionInfo, battleBro, effect, 'expired')
-            await eventHandle('lostEffect', actionInfo, battleBro, effect, 'expired')
+            await expireEffect(actionInfo, battleBro, effect, 'expired')
         }
     }
     await updateEffectIcons(battleBro);
+}
+
+async function expireEffect(actionInfo, battleBro, effect, type) {
+    battleBro.buffs.splice(battleBro.buffs.indexOf(effect), 1)
+    let newActionInfo = new ActionInfo({ battleBro: battleBro })
+    if (effect?.remove) await effect.remove(newActionInfo, battleBro, effect, type)
+    await eventHandle('lostEffect', newActionInfo, battleBro, effect, type)
 }
 
 async function updateEffectIcons(battleBro) {
@@ -4158,6 +4604,7 @@ async function updateEffectIcons(battleBro) {
             let longest = instances.reduce((prev, current) => {
                 return (prev.duration > current.duration) ? prev : current;
             });
+            instances = [longest]
 
             // Remove all other instances of this effect name from battleBro.buffs
             battleBro.buffs = battleBro.buffs.filter(effect => {
@@ -4181,6 +4628,7 @@ async function updateEffectIcons(battleBro) {
                 image: effectInfo.image,
                 count: instances.length,
                 duration: Math.max(...instances.map(e => e.duration)), // for optional sorting or tooltip
+                instances: instances, // keep track of all instances for potential future use
             });
         } else {
             // NON-STACKABLE: There will only be a single instance remaining so we set that to 1
@@ -4190,6 +4638,7 @@ async function updateEffectIcons(battleBro) {
                 image: effectInfo.image,
                 count: 1, // always going to be just a single instance
                 duration: Math.max(...instances.map(e => e.duration)),
+                instances: instances,
             });
         }
     }
@@ -4227,7 +4676,7 @@ async function updateEffectIcons(battleBro) {
         $img.on("contextmenu", function (e) {
             if (!e.shiftKey) {
                 e.preventDefault() // Stop the browser right-click menu
-                showStats(battleBro, e.pageX, e.pageY, 'effect', effect.name) // Show your custom stat box
+                showStats(battleBro, e.pageX, e.pageY, 'effect', effect) // Show your custom stat box
             }
         })
 
@@ -4264,7 +4713,7 @@ async function updateEffectIcons(battleBro) {
     });
 }
 
-async function dispel(actionInfo, type = null, tag = null, name = null, dispelLocked = false) {
+async function dispel(actionInfo, type = null, tag = null, name = null, dispelLocked = false, specificEffect = null) {
     await logFunctionCall('dispel', ...arguments)
     actionInfo.actionDetails = {
         category: 'dispel',
@@ -4285,6 +4734,10 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
         dispelledEffects = dispelledEffects.filter(effect => effect.isLocked !== true || dispelLocked == true)
     }
 
+    if (specificEffect) {
+        dispelledEffects = dispelledEffects.filter(effect => effect == specificEffect && (effect.isLocked !== true || dispelLocked == true))
+    }
+
     for (let i = actionInfo.target.buffs.length - 1; i >= 0; i--) {
         const effect = actionInfo.target.buffs[i];
         if (dispelledEffects.includes(effect)) {
@@ -4297,7 +4750,7 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
     await updateEffectIcons(actionInfo.target)
 }
 
-async function removeEffect(actionInfo, target, bufftag = null, name = null, type = null, all = false) {
+async function removeEffect(actionInfo, target, bufftag = null, name = null, type = null, all = false, specificEffect = null) {
     //console.log(target.evasion)
     let filteredEffects = target.buffs
     if (type) {
@@ -4307,6 +4760,9 @@ async function removeEffect(actionInfo, target, bufftag = null, name = null, typ
         filteredEffects = filteredEffects.filter(effect => infoAboutEffects[effect.name].effectTags.includes(bufftag) == true)
     } else if (name) {
         filteredEffects = filteredEffects.filter(effect => effect.name === name)
+    }
+    if (specificEffect) {
+        filteredEffects = filteredEffects.filter(effect => effect === specificEffect)
     }
     if (filteredEffects.length > 0) {
         if (all == false) {
@@ -4332,7 +4788,7 @@ async function removeEffect(actionInfo, target, bufftag = null, name = null, typ
     }
 }
 
-async function changeCooldowns(battleBro, amount = -1) {
+async function changeCooldowns(battleBro, amount = -1, ability = null) {
     await logFunctionCall('changeCooldowns', ...arguments)
     /*for (let abilityName in battleBro.cooldowns) {
         if (battleBro.cooldowns[abilityName] > 0) {
@@ -4340,17 +4796,28 @@ async function changeCooldowns(battleBro, amount = -1) {
             await pdateAbilityCooldownUI(battleBro, abilityName);
         }
     }*/
-    for (let abilityName of battleBro.abilities) {
-        //console.log(abilityName)
-        if (infoAboutAbilities[abilityName].type == 'special') {
-            battleBro.cooldowns[abilityName] += amount;
-            await updateAbilityCooldownUI(battleBro, abilityName)
+    if (ability == null) {
+        for (let abilityName of battleBro.abilities) {
+            //console.log(abilityName)
+            if (infoAboutAbilities[abilityName].type == 'special') {
+                battleBro.cooldowns[abilityName] += amount;
+                await updateAbilityCooldownUI(battleBro, abilityName)
+            }
         }
-    }
-    for (let skillData of battleBro.skillsData) {
-        if (skillData.cooldown > 0) {
-            skillData.cooldown += amount;
-            //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
+        for (let skillData of battleBro.skillsData) {
+            if (skillData.cooldown > 0) {
+                skillData.cooldown += amount;
+                //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
+            }
+        }
+    } else {
+        battleBro.cooldowns[ability] += amount
+        await updateAbilityCooldownUI(battleBro, ability)
+        for (let skillData of battleBro.skillsData) {
+            if (skillData.skill.displayName == ability) {
+                skillData.cooldown += amount
+                //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
+            }
         }
     }
 }
@@ -4435,7 +4902,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         const physicalDamage = user.physicalDamage * user.offence * 0.01
         const specialDamage = user.specialDamage * user.offence * 0.01
         if (type == 'physical') {
-            dealtdmg = ((dmg * physicalDamage * 0.01) * (1 - Math.max((target.armour - user.defencePenetration), -50) / 100) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // 20=100-80 where 80 is the max damage negation from defence
+            dealtdmg = ((dmg * physicalDamage * 0.01) * Math.max((1 - Math.max((target.armour - user.defencePenetration), -50) / 100), 0.3) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // 20=100-80 where 80 is the max damage negation from defence
             if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // physical attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'yellow' // change colour upon crit!
@@ -4446,14 +4913,14 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                 secondaryColour = 'orange'
             }
         } else if (type == 'special') {
-            dealtdmg = ((dmg * specialDamage * 0.01) * (1 - Math.max((target.resistance - user.defencePenetration), -50) / 100) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // uses resistance/special damage instead of armour/physical damage
+            dealtdmg = ((dmg * specialDamage * 0.01) * Math.max((1 - Math.max((target.resistance - user.defencePenetration), -50) / 100), 0.3) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001 // uses resistance/special damage instead of armour/physical damage
             colour = 'cornflowerblue'
             secondaryColour = 'cyan'
         } else if (type === 'true') {
             dealtdmg = Math.max(dmg * user.flatDamageDealt * target.flatDamageReceived * 0.0001, 0) // nice and simple true damage doesn't have damage variance
             colour = 'white'
         } else if (type == 'ultra') {
-            dealtdmg = ((dmg * (physicalDamage + specialDamage) * 0.01) * (1 - Math.max((target.armour + target.resistance - user.defencePenetration), -50) / 100) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001
+            dealtdmg = ((dmg * (physicalDamage + specialDamage) * 0.01) * Math.max((1 - Math.max((target.armour + target.resistance - user.defencePenetration), -50) / 100), 0.3) - Math.floor(Math.random() * 501)) * user.flatDamageDealt * target.flatDamageReceived * 0.0001
             if (Math.random() < (user.critChance - target.critAvoidance) * 0.01) { // ultra attacks can crit
                 dealtdmg = dealtdmg * user.critDamage * 0.01
                 colour = 'violet' // change colour upon crit!
@@ -4464,7 +4931,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                 secondaryColour = 'orchid'
             }
         } else if (type == 'silver') {
-            dealtdmg = ((dmg * specialDamage * 0.015) * (1 - Math.max((infoAboutCharacters[target.character].resistance - user.defencePenetration), -50) / 100) - Math.floor(Math.random() * dmg * specialDamage * 0.01)) * user.flatDamageDealt * target.flatDamageReceived * 0.000001 * user.critDamage // lots of damage variance and ignores resistance buffs
+            dealtdmg = ((dmg * specialDamage * 0.015) * Math.max((1 - Math.max((infoAboutCharacters[target.character].resistance - user.defencePenetration), -50) / 100), 0.3) - Math.floor(Math.random() * dmg * specialDamage * 0.01)) * user.flatDamageDealt * target.flatDamageReceived * 0.000001 * user.critDamage // lots of damage variance and ignores resistance buffs
             colour = 'silver'
             secondaryColour = 'platinum'
             crit = true // always crits
@@ -4538,8 +5005,8 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         if (type !== 'shadow' && triggerEventHandlers == true) {
             await eventHandle('endOfDamage', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
         }
-        await gainUltCharge(user, dealtdmg * 0.003)
-        await gainUltCharge(target, dealtdmg * 0.002)
+        await gainUltCharge(user, dealtdmg * 0.005)
+        await gainUltCharge(target, dealtdmg * 0.0035)
         //const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
         if (target.health <= 0 && target.isDead == false) {
             await dead(target)
@@ -4557,7 +5024,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
 async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false, triggerEventHandlers = true) {
     await logFunctionCall('heal', ...arguments)
-    if (ignoreHealImmunity == false && actionInfo.target.buffs.find(effect => effect.effectTags.includes('healingImmunity'))) return
+    if (ignoreHealImmunity == false && ((actionInfo.target.buffs.find(effect => effect.effectTags.includes('healingImmunity')) && type == 'health') || (actionInfo.target.buffs.find(effect => effect.effectTags.includes('protectionHealingImmunity')) && type == 'protection'))) return
     actionInfo.actionDetails = {
         category: 'heal',
         type: type,
@@ -4585,6 +5052,7 @@ async function TMchange(actionInfo, change, resistable = true) {
     if (target.buffs.find(effect => effect.effectTags.includes('stopTMgain') && change > 0)) return
     if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
         await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
+        await eventHandle('resisted', actionInfo, target, user, 'turnMeter', change)
         return
     }
     target.turnMeter += change
@@ -4592,19 +5060,23 @@ async function TMchange(actionInfo, change, resistable = true) {
 }
 
 async function revive(actionInfo, health = 0, protection = 0, turnMeter = 0) {
-    if (actionInfo.target.cantRevive == true) return
-    if (characterDying == false) {
-        const img = actionInfo.target.avatarHtmlElement.children()
-        img.css({
-            transition: 'transform 0.5s ease'
-        })
-        img.css({
-            filter: 'grayscale(100%) brightness(50%)', // grey and dim
-            transform: 'rotate(180deg)',               // flipped upside down
-            pointerEvents: 'none'                      // disables interaction
-        })
+    await wait(1) // ensure revive visuals start after death visuals complete
+    let instantRevive = false
+    if (characterDying == true) {
+        instantRevive = true
+        await wait(501)
     }
-    await createBattleBroVars(actionInfo.target)
+    if (actionInfo.target.cantRevive == true) return
+    const img = actionInfo.target.avatarHtmlElement.children()
+    img.css({
+        transition: 'transform 0.5s ease'
+    })
+    img.css({
+        filter: 'none',
+        transform: 'none',
+        pointerEvents: 'auto'
+    })
+    await createBattleBroVars(actionInfo.target, true)
     const healthGained = actionInfo.target.maxHealth * health * 0.01
     const protectionGained = actionInfo.target.maxProtection * protection * 0.01
     actionInfo.target.health = 1
@@ -4612,6 +5084,7 @@ async function revive(actionInfo, health = 0, protection = 0, turnMeter = 0) {
     await heal(actionInfo, healthGained, 'health', false, true, false)
     await heal(actionInfo, protectionGained, 'protection', false, true, false)
     actionInfo.target.turnMeter += turnMeter
+    await eventHandle('revived', actionInfo, actionInfo.target, actionInfo.battleBro, healthGained, protectionGained, turnMeter)
 }
 
 async function equalize(actionInfo, targets, type = 'health', ignoreHealImmunity = true) {
@@ -4786,18 +5259,40 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         <span style="color: cornflowerblue">Effects: ${effectNames}<br></span>
     `);
     } else if (type == 'effect') {
+        let effect = abilityName
         if (statBox.length === 0) {
             statBox = $('<div id="statBox"></div>').appendTo('body');
         }
 
-        const regularName = abilityName
+        const regularName = effect.name
             .replace(/([A-Z])/g, ' $1') // insert space before capital letters
             .replace(/^./, str => str.toUpperCase()) // capitalize first letter
             .trim(); // remove leading/trailing space
 
-        let desc = infoAboutEffects[abilityName].desc
+        const oldDesc = infoAboutEffects[effect.name].desc
+        let desc = oldDesc.replace(/{{(.*?)}}/g, (_, key) => {
+            let value = effect.instances[0][key]
+            if (typeof value === 'number') {
+                for (let i = 1; i < effect.instances.length; i++) {
+                    const instanceValue = effect.instances[i][key];
+                    if (instanceValue !== undefined) {
+                        value += instanceValue // sum up values from all instances
+                    }
+                }
+            }
+            if (key == 'caster') {
+                value = effect.instances[0].caster.character // get the character name of the caster
+            }
+            return value !== undefined ? value : `{{${key}}}`; // leave it unchanged if missing
+        })
+        /*for (let word in effect) {
+            const regex = new RegExp(`\\b(${word})\\b`, 'gi') // match whole words
+            desc = desc.replace(regex, `$1`)
+        }*/
+        console.log(oldDesc)
+        console.log(desc)
 
-        let effectType = infoAboutEffects[abilityName].type
+        let effectType = infoAboutEffects[effect.name].type
         if (effectType == 'buff') {
             effectType = `<span style="color: limegreen">Buff</span>`
         } else if (effectType == 'debuff') {
@@ -4805,6 +5300,7 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         } else if (effectType == 'misc') {
             effectType = `<span style="color: cornflowerblue">Miscellaneous Effect</span>`
         }
+
         // Clear and populate with stats
         statBox.html(`
         <span style="font-size: 1.2em"><strong>${regularName}</strong><br></span>
