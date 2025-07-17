@@ -30,10 +30,10 @@ import { infoAboutCharacters } from './infoAboutCharacters.js'
 
 const infoAboutAbilities = {
     'test1': {
-        displayName: 'test1',
+        name: 'test1',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
+        tags: ['attack', 'physical_damage', 'projectile_attack'],
         abilityDamage: 100,
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (actionInfo) {
@@ -43,11 +43,11 @@ const infoAboutAbilities = {
         }
     },
     'test2': {
-        displayName: 'test2',
+        name: 'test2',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['target_ally', 'attack', 'special_damage', 'health_recovery'],
+        tags: ['target_ally', 'attack', 'special_damage', 'health_recovery'],
         abilityDamage: 160,
         desc: 'Heal target ally + special dmg dealt',
         use: async function (actionInfo) {
@@ -63,10 +63,10 @@ const infoAboutAbilities = {
         }
     },
     'Bowcaster': {
-        displayName: 'Bowcaster',
+        name: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage', 'projectile_attack'],
+        tags: ['attack', 'physical_damage', 'projectile_attack'],
         projectile: 'redLaser',
         abilityDamage: 117.8,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
@@ -80,11 +80,11 @@ const infoAboutAbilities = {
         }
     },
     'Wookie Rage': {
-        displayName: 'Wookie Rage',
+        name: 'Wookie Rage',
         image: 'images/abilities/clonewarschewbacca_wookierage.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['buff_gain'],
+        tags: ['buff_gain'],
         desc: 'Chewbacca Taunts and gains 2 stacks of Health Up for 2 turns.',
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -93,11 +93,11 @@ const infoAboutAbilities = {
         }
     },
     'Defiant Roar': {
-        displayName: 'Defiant Roar',
+        name: 'Defiant Roar',
         image: 'images/abilities/clonewarschewbacca_defiantroar.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
+        tags: ['dispel', 'health_recovery', 'buff_gain', 'turnmeter_recovery'],
         desc: 'Chewbacca dispels all debuffs from himself, recovers 50% of his Max Health, gains Defense Up for 3 Turns, and has a 50% Chance to gain 25% Turn Meter.',
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -110,11 +110,11 @@ const infoAboutAbilities = {
         }
     },
     'Unbowed and Unbroken': {
-        displayName: 'Unbowed and Unbroken',
+        name: 'Unbowed and Unbroken',
         image: 'images/abilities/clonewarschewbacca_ult.png',
         type: 'ultimate',
         ultimateCost: 3000,
-        abilityTags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
+        tags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
         desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
         use: async function (actionInfo) {
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
@@ -130,10 +130,10 @@ const infoAboutAbilities = {
         }
     },
     'Ataru': {
-        displayName: 'Ataru',
+        name: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
+        tags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
         desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
         use: async function (actionInfo) {
@@ -156,11 +156,11 @@ const infoAboutAbilities = {
         }
     },
     'Masterstroke': {
-        displayName: 'Masterstroke',
+        name: 'Masterstroke',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
+        tags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
         abilityDamage: 60.2,
         desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for ${(oldSchool ? 3 : 2)} turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
         use: async function (actionInfo) {
@@ -183,7 +183,7 @@ const infoAboutAbilities = {
                 await applyEffect(actionInfo.withSelfAsTarget(), buff.name, (oldSchool ? 3 : 2))
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
-                if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
+                if (ally.tags.includes('jedi') == true) {
                     actionInfo.battleBro.turnMeter += 100
                     return
                 }
@@ -191,11 +191,11 @@ const infoAboutAbilities = {
         }
     },
     'Unstoppable Force': {
-        displayName: 'Unstoppable Force',
+        name: 'Unstoppable Force',
         image: 'images/abilities/ability_grandmasteryoda_special02.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'debuff_gain', 'special_damage'],
+        tags: ['attack', 'debuff_gain', 'special_damage'],
         abilityDamage: 299.9,
         desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
         use: async function (actionInfo) {
@@ -208,11 +208,11 @@ const infoAboutAbilities = {
         }
     },
     'Battle Meditation': {
-        displayName: 'Battle Meditation',
+        name: 'Battle Meditation',
         image: 'images/abilities/ability_grandmasteryoda_special03.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['turnmeter_recovery', 'buff_gain'],
+        tags: ['turnmeter_recovery', 'buff_gain'],
         desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for ${(oldSchool ? '2 turns' : '1 turn')}. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -233,10 +233,10 @@ const infoAboutAbilities = {
         }
     },
     'Outwit': {
-        displayName: 'Outwit',
+        name: 'Outwit',
         image: 'images/abilities/ability_hera_s3_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'debuff_gain'],
+        tags: ['attack', 'projectile_attack', 'debuff_gain'],
         abilityDamage: 238.9,
         desc: 'Deal Physical damage to target enemy. If that enemy was the healthiest enemy, also Expose them for 1 turn.',
         use: async function (actionInfo) {
@@ -250,11 +250,11 @@ const infoAboutAbilities = {
         }
     },
     'Play to Strengths': {
-        displayName: 'Play to Strengths',
+        name: 'Play to Strengths',
         image: 'images/abilities/ability_hera_s3_special01.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['target_ally', 'assist', 'buff_gain'],
+        tags: ['target_ally', 'assist', 'buff_gain'],
         desc: 'Call another target ally to assist. That ally\'s attack has +50% Potency and deals 35% more damage. Dispel all debuffs on them, reduce their cooldowns by 1, and grant them 50% Turn Meter.',
         use: async function (actionInfo) { },
         allyUse: async function (battleBro, ally, target) {
@@ -268,11 +268,11 @@ const infoAboutAbilities = {
         }
     },
     'Backup Plan': {
-        displayName: 'Backup Plan',
+        name: 'Backup Plan',
         image: 'images/abilities/ability_hera_s3_special02.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['target_ally', 'buff_gain'],
+        tags: ['target_ally', 'buff_gain'],
         desc: 'Target other ally gains locked Backup Plan for 3 turns. Backup Plan: Recover 10% Health per turn, revive with 80% Health and 30% Turn Meter when defeated',
         use: async function (actionInfo) { },
         allyUse: async function (battleBro, ally, target) {
@@ -281,10 +281,10 @@ const infoAboutAbilities = {
         }
     },
     'Invincible Assault': {
-        displayName: 'Invincible Assault',
+        name: 'Invincible Assault',
         image: 'images/abilities/ability_macewindu_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'special_damage'],
+        tags: ['attack', 'special_damage'],
         abilityDamage: 154.3,
         desc: "Meal Special damage to target enemy and inflict Ability Block for 1 turn. This attack deals bonus damage equal to 5% of Mace's Max Health. If Mace is above 50% Health, he gains 15% Turn Meter. If Mace is below 50% Health, he recovers Health equal to 100% of the damage dealt.",
         use: async function (actionInfo) {
@@ -302,11 +302,11 @@ const infoAboutAbilities = {
         }
     },
     'Smite': {
-        displayName: 'Smite',
+        name: 'Smite',
         image: 'images/abilities/ability_macewindu_special01.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'special_damage'],
+        tags: ['attack', 'special_damage'],
         abilityDamage: 184,
         desc: "Mace Windu deals Special damage to target enemy and dispels all buffs on them. If target enemy had Shatterpoint, Stun them for 1 turn and remove 50% Turn Meter, then Mace gains 50% Turn Meter.",
         use: async function (actionInfo) {
@@ -322,11 +322,11 @@ const infoAboutAbilities = {
         }
     },
     "This Party's Over": {
-        displayName: "This Party's Over",
+        name: "This Party's Over",
         image: 'images/abilities/ability_macewindu_special02.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['target_ally', 'attack', 'special_damage'],
+        tags: ['target_ally', 'attack', 'special_damage'],
         abilityDamage: 184,
         desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection.",
         use: async function (actionInfo) {
@@ -349,17 +349,17 @@ const infoAboutAbilities = {
         }
     },
     'Rattling Uppercut': {
-        displayName: 'Rattling Uppercut',
+        name: 'Rattling Uppercut',
         image: 'images/abilities/ability_sm33_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 380,
         desc: "Deal physical damage to target enemy and stagger them for 2 turns. If the target is a challenger, remove 100% turn meter and inflict ability block and daze for 1 turn.",
         use: async function (actionInfo) {
             let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             if (hit[0] > 0) {
                 await applyEffect(actionInfo, 'stagger', 2)
-                if (actionInfo.target.buffs.find(effect => effect.effectTags.includes('challenger'))) {
+                if (actionInfo.target.buffs.find(effect => effect.tags.includes('challenger'))) {
                     await TMchange(actionInfo, -100)
                     await applyEffect(actionInfo, 'abilityBlock', 1)
                     await applyEffect(actionInfo, 'daze', 1)
@@ -368,11 +368,11 @@ const infoAboutAbilities = {
         }
     },
     'Limb From Limb': {
-        displayName: 'Limb From Limb',
+        name: 'Limb From Limb',
         image: 'images/abilities/ability_sm33_special01.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 210,
         desc: "Deal Physical damage 6 times to target enemy. This attack has +1000% Health Steal and deals 20% more damage for each 20% Health SM-33 is missing. If the target is a challenger, SM-33 deals 50% more damage. Omicron: If this attack defeats an enemy, they can't be revived. For each instance of damage done from this ability while SM-33 has 100% Health, he gains 20% bonus Protection for 2 turns. If the target is a challenger, reduce their max protection by 50%.",
         use: async function (actionInfo) {
@@ -380,7 +380,7 @@ const infoAboutAbilities = {
             let target = actionInfo.target
             const chunkNum = Math.floor((battleBro.maxHealth - battleBro.health) / (battleBro.maxHealth * 0.2)) // missing health divided by chunk size (20%)
             let dmgPercent = 100 + (20 * chunkNum)
-            let isChallenger = target.buffs.find(effect => effect.effectTags.includes('challenger'))
+            let isChallenger = target.buffs.find(effect => effect.tags.includes('challenger'))
             if (isChallenger) dmgPercent += 50
             battleBro.healthSteal += 1000
             for (let i = 0; i < 6; i++) {
@@ -398,11 +398,11 @@ const infoAboutAbilities = {
         }
     },
     'Forearm Bucklers': {
-        displayName: 'Forearm Bucklers',
+        name: 'Forearm Bucklers',
         image: 'images/abilities/ability_sm33_special02.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'dispel', 'buff_gain', 'debuff_gain'],
+        tags: ['attack', 'dispel', 'buff_gain', 'debuff_gain'],
         desc: "Dispel all buffs on target enemy then inflict buff immunity and burning for 2 turns. SM-33 gains defence up for 2 turns. If SM-33 was burning, recover 50% health and protection and inflict 5 stacks of damage over time. Omicron: SM-33 dispels all debuffs on himself and gains locked retribution for 1 turn. All Pirate allies gain 25% bonus Protection for 2 turns. If the target is a challenger, SM-33 gains burning for the rest of the battle.",
         use: async function (actionInfo) {
             let battleBro = actionInfo.battleBro
@@ -411,7 +411,7 @@ const infoAboutAbilities = {
             await applyEffect(actionInfo, 'buffImmunity', 2)
             await applyEffect(actionInfo, 'burning', 2)
             await applyEffect(actionInfo.withSelfAsTarget(), 'defenceUp', 2)
-            if (battleBro.buffs.find(effect => effect.effectTags.includes('burning'))) {
+            if (battleBro.buffs.find(effect => effect.tags.includes('burning'))) {
                 await heal(actionInfo.withSelfAsTarget(), battleBro.maxHealth * 0.5)
                 await heal(actionInfo.withSelfAsTarget(), battleBro.maxProtection * 0.5, 'protection')
                 await applyEffect(actionInfo, 'damageOverTime', 2, 5)
@@ -420,17 +420,17 @@ const infoAboutAbilities = {
                 await dispel(actionInfo.withSelfAsTarget(), 'debuff')
                 await applyEffect(actionInfo.withSelfAsTarget(), 'retribution', 1, 1, false, true)
                 // add bonus prot
-                if (target.buffs.find(effect => effect.effectTags.includes('challenger'))) {
+                if (target.buffs.find(effect => effect.tags.includes('challenger'))) {
                     await applyEffect(actionInfo.withSelfAsTarget(), 'burning', 999)
                 }
             }
         }
     },
     'Draining Strike': {
-        displayName: 'Draining Strike',
+        name: 'Draining Strike',
         image: 'images/abilities/ability_talia_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 154.3,
         desc: "Deal Physical damage to target enemy, dealing +50% damage if Talia is below full Health. Allies recover Health equal to the damage dealt.",
         use: async function (actionInfo) {
@@ -446,11 +446,11 @@ const infoAboutAbilities = {
         }
     },
     'Water of Life': {
-        displayName: 'Water of Life',
+        name: 'Water of Life',
         image: 'images/abilities/ability_talia_special01.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['dispel', 'heal', 'turnmeter_recovery'],
+        tags: ['dispel', 'heal', 'turnmeter_recovery'],
         desc: "Dispel all debuffs on allies. Talia consumes 20% of her Max Health and gains 15% Turn Meter for each active ally. Allies recover 50% Health and gain 30% Turn Meter.",
         use: async function (actionInfo) {
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
@@ -465,11 +465,11 @@ const infoAboutAbilities = {
         }
     },
     'Harrowing Assault': {
-        displayName: 'Harrowing Assault',
+        name: 'Harrowing Assault',
         image: 'images/abilities/ability_talia_special02.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'special_damage', 'damageOverTime', 'stagger'],
+        tags: ['attack', 'special_damage', 'damageOverTime', 'stagger'],
         abilityDamage: 165.3,
         desc: "Deal Special damage to target enemy and inflict Damage Over Time and Stagger for 2 turns. If Talia has full Health, consume 10% of her Max Health to deal double damage, otherwise she immediately uses Draining Strike.",
         use: async function (actionInfo) {
@@ -488,11 +488,11 @@ const infoAboutAbilities = {
         }
     },
     'Blood Moon Ritual': {
-        displayName: 'Blood Moon Ritual',
+        name: 'Blood Moon Ritual',
         image: 'images/abilities/ability_talia_ult.png',
         type: 'ultimate',
         ultimateCost: 3000,
-        abilityTags: ['revive', 'equalize', 'health_recovery', 'buff_gain', 'cleanse'],
+        tags: ['revive', 'equalize', 'health_recovery', 'buff_gain', 'cleanse'],
         desc: "Talia performs a forbidden Nightsister ritual, sacrificing her own vitality to defy death. She consumes 50% of her Max Health to revive all defeated allies at 50% Health and cleanse all debuffs from them. All allies gain Offense Up, Speed Up, and Foresight for 2 turns. Talia then equalizes her remaining Health among all allies and recovers Protection equal to 50% of the total Health sacrificed. If Talia would be defeated by this ability, she is reduced to 1% Health instead and gains Damage Immunity for 1 turn.",
         use: async function (actionInfo) {
             const savedHealth = actionInfo.battleBro.health
@@ -518,10 +518,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------SAVI'S CHARACTERS
     'Slipper Slam': {
-        displayName: 'Slipper Slam',
+        name: 'Slipper Slam',
         image: 'images/abilities/johnWok1.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'projectile_attack', 'physical_damage', 'debuff_gain'],
         projectile: 'slipper',
         abilityDamage: 68,
         desc: "Deals physical damage to target enemy then deals physical damage to all other enemies which can't be countered, inflicting knockback for 1 turn on all of them.",
@@ -530,7 +530,7 @@ const infoAboutAbilities = {
             for (let enemy of enemies) {
                 const isTarget = (enemy == actionInfo.target) ? 2 : 1
                 const counterable = (enemy == actionInfo.target) ? true : false
-                let hit = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage * isTarget, 'physical', true, false, false, this.displayName, counterable)
+                let hit = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage * isTarget, 'physical', true, false, false, this.name, counterable)
                 if (hit[0] > 0) {
                     await applyEffect(actionInfo.withTarget(enemy), 'knockback', 1)
                 }
@@ -538,17 +538,17 @@ const infoAboutAbilities = {
         }
     },
     'Belt Flashbang': {
-        displayName: 'Belt Flashbang',
+        name: 'Belt Flashbang',
         image: 'images/abilities/johnWok2.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['debuff_gain'],
+        tags: ['debuff_gain'],
         abilityDamage: 48,
         desc: "Deals low special damage to all enemies, which can't be countered. Enemies over 100% health are stunned for 1 turn, and other enemies are blinded for 1 turn. Debuffed enemies are staggered for 1 turn and buffed enemies are dazed for 1 turn.",
         use: async function (actionInfo) {
             const enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
             for (let enemy of enemies) {
-                let hit = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'special', true, false, false, this.displayName, false)
+                let hit = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'special', true, false, false, this.name, false)
                 if (hit[0] > 0) {
                     if (enemy.buffs.find(effect => effect.type == 'debuff')) {
                         await applyEffect(actionInfo.withTarget(enemy), 'stagger', 1)
@@ -566,11 +566,11 @@ const infoAboutAbilities = {
         }
     },
     'Belt Nunchuck': {
-        displayName: 'Belt Nunchuck',
+        name: 'Belt Nunchuck',
         image: 'images/abilities/johnWok3.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 120,
         desc: "Deals physical damage to target enemy and the two other weakest enemies and inflicts disarm for 1 turn on them. Inflict accuracy down on them for an amount of turns equal to the number of debuffed enemies hit and John gains chain attack for an amount of turns equal to the number of buffed enemies hit.",
         use: async function (actionInfo) {
@@ -609,11 +609,11 @@ const infoAboutAbilities = {
         }
     },
     'Minute Rice in 59 Seconds': {
-        displayName: 'Minute Rice in 59 Seconds',
+        name: 'Minute Rice in 59 Seconds',
         image: 'images/abilities/johnWok4.png',
         type: 'ultimate',
         ultimateCost: 3500,
-        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 150,
         desc: "Deals physical damage to target enemy three times, inflicting locked Emotional Damage for 1 turn. Dispel all debuffs on allies, then they gain locked Minute Rice for 2 turns.",
         use: async function (actionInfo) {
@@ -624,10 +624,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------SUPERPIG'S BRAVADO
     'Thwart the Plan': {
-        displayName: 'Thwart the Plan',
+        name: 'Thwart the Plan',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        tags: ['attack', 'projectile_attack', 'physical_damage'],
         projectile: 'redLaser',
         abilityDamage: 63,
         desc: "Business pig's hoof gloves shoot out a little capsule that folds out into two miniature stun-guns. Deals 2x low damage to target enemy. Each amount of damage has a 25% chance to be physical damage, a 50% chance to be special damage and a 25% chance to be ultra damage. If an attack deals physical damage, double Business Pig's critical hit chance and penetrate defence by 25%.",
@@ -650,11 +650,11 @@ const infoAboutAbilities = {
         }
     },
     'Important Meeting': {
-        displayName: 'Important Meeting',
+        name: 'Important Meeting',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['debuff_gain', 'buff_gain'],
+        tags: ['debuff_gain', 'buff_gain'],
         desc: "Business Pig must interrupt the battle for an important meeting. Inflicts Locked Stun on all enemies that can't be resisted and sets the turn meter of all Superpig's Bravado allies to 0. Business Pig's speed is set to 0 until all enemies have come out of stun. Then Business Pig activates his jetpack and gains Aerial Advantage for 2 turns. During this Aerial Advantage he can use all other abilities except for Important Meeting and Oinks of Approval.",
         use: async function (actionInfo) {
             for (let enemy of actionInfo.enemies) {
@@ -672,10 +672,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------OLIV'S CHARACTERS
     'Lethal Swing': {
-        displayName: "Lethal Swing",
+        name: "Lethal Swing",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 117.8,
         desc: 'Deals physical damage and inflicts Tenacity Down and Potency Down, this ability ignores defence and can\'t be evaded. If this ability scores a critical hit, inflict Ability Block on a random enemy.',
         use: async function (actionInfo) {
@@ -699,11 +699,11 @@ const infoAboutAbilities = {
         }
     },
     'Piercing Edge': {
-        displayName: "Piercing Edge",
+        name: "Piercing Edge",
         image: 'images/abilities/superStriker2.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns. Target Lock: Inflict Vulnerable to target enemy.",
         abilityDamage: 130,
         use: async function (actionInfo) {
@@ -721,17 +721,17 @@ const infoAboutAbilities = {
         }
     },
     'Disruptor Blade': {
-        displayName: "Disruptor Blade",
+        name: "Disruptor Blade",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         desc: "Deal special damage to the target enemy and dispel all buffs. This ability has +30% Critical Chance and Critical Damage when used against tanks. Target Lock: This attack deals +50% damage and inflicts Daze and Buff Immunity for 2 turns.",
         abilityDamage: 135,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             let locked = false
-            if (actionInfo.target.buffs.find(effect => effect.effectTags.includes('targetLock'))) {
+            if (actionInfo.target.buffs.find(effect => effect.tags.includes('targetLock'))) {
                 actionInfo.battleBro.flatDamageDealt += 50
                 locked = true
             }
@@ -752,11 +752,11 @@ const infoAboutAbilities = {
         }
     },
     'Super Strike': {
-        displayName: "Super Strike",
+        name: "Super Strike",
         image: 'images/abilities/superStrike.png',
         type: 'ultimate',
         ultimateCost: 3000,
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 10000,
         desc: 'Deal true damage to target enemy, inflict Doomed, Fear and Bleed for 3 turns to target enemy. If this ability scores a critical hit, use this ability again. If this ability defeats an enemy, inflict Fear to all enemies for 1 turn.',
         use: async function (actionInfo) {
@@ -783,10 +783,10 @@ const infoAboutAbilities = {
         }
     },
     'Focused Blast': {
-        displayName: "Focused Blast",
+        name: "Focused Blast",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'special_damage', 'shadow_damage', 'debuff_gain'],
+        tags: ['attack', 'projectile_attack', 'special_damage', 'shadow_damage', 'debuff_gain'],
         abilityDamage: 70,
         desc: 'Deal special damage and shadow damage and inflict Shock for 3 turns.',
         use: async function (actionInfo) {
@@ -798,11 +798,11 @@ const infoAboutAbilities = {
         }
     },
     'Cybernetic Overload': {
-        displayName: "Cybernetic Overload",
+        name: "Cybernetic Overload",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 2,
-        abilityTags: ['attack', 'special_damage', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'special_damage', 'physical_damage', 'debuff_gain'],
         abilityDamage: 150,
         desc: "Deal high physical damage to target enemy and inflict Scam to all enemies for 1 turn. If this ability scores a critical hit, deal high special damage again and increase the cooldown by 2.",
         use: async function (actionInfo) {
@@ -817,11 +817,11 @@ const infoAboutAbilities = {
         }
     },
     'Crippling Slice': {
-        displayName: "Crippling Slice",
+        name: "Crippling Slice",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'physical_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
         abilityDamage: 145,
         desc: "Deal physical damage and inflict Bleed and Decay to target enemy for 3 turns. These effects cannot be resisted. This attack cannot be evaded.",
         use: async function (actionInfo) {
@@ -836,11 +836,11 @@ const infoAboutAbilities = {
         }
     },
     'Atomic Detonation': {
-        displayName: "Atomic Detonation",
+        name: "Atomic Detonation",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['attack', 'mines', 'debuff_gain'],
+        tags: ['attack', 'mines', 'debuff_gain'],
         desc: "Inflict 5 stacks of Concussion Mine to all enemies and decrease the cooldown by 4. Use this ability again to explode all Concussion Mines. When this ability detonates, inflict radiation on all enemies for 1 turn.",
         use: async function (actionInfo) {
             if (!actionInfo.battleBro.customData.atomicDetonation) {
@@ -856,7 +856,7 @@ const infoAboutAbilities = {
                 return [-4] // decreases cooldowns of Atomic Detonation by 4
             } else {
                 for (let enemy of actionInfo.enemies) {
-                    let concussionMines = enemy.buffs.filter(effect => effect.effectTags.includes('mine') && effect.caster == actionInfo.battleBro)
+                    let concussionMines = enemy.buffs.filter(effect => effect.tags.includes('mine') && effect.caster == actionInfo.battleBro)
                     for (let mine of concussionMines) {
                         await expireEffect(actionInfo.withTarget(enemy), enemy, mine, 'detonated')
                     }
@@ -867,11 +867,11 @@ const infoAboutAbilities = {
         }
     },
     'Quantum Surge': {
-        displayName: "Quantum Surge",
+        name: "Quantum Surge",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'ultimate',
         ultimateCost: 2400,
-        abilityTags: ['attack', 'physical_damage', 'special_damage', 'ultra_damage', 'debuff_gain'],
+        tags: ['attack', 'physical_damage', 'special_damage', 'ultra_damage', 'debuff_gain'],
         abilityDamage: 80,
         desc: "Deal special damage, ultra damage and physical damage and inflict EMP Device to all enemies for 3 turns. EMP Device: Zero speed until the end of 2 turns. When an EMP Device expires, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
         use: async function (actionInfo) {
@@ -887,10 +887,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------JAMES' CHARACTERS
     'Cloning Strike': {
-        displayName: "Cloning Strike",
+        name: "Cloning Strike",
         image: 'images/abilities/shadowMenaceOriginal1.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage', 'healthSteal'],
+        tags: ['attack', 'physical_damage', 'healthSteal'],
         abilityDamage: 45,
         desc: 'Deal physical damage 5 times to target enemy and recover health equal to the damage dealt. On 3 or more critical hits inflict offense down for 3 turns.',
         use: async function (actionInfo) {
@@ -907,11 +907,11 @@ const infoAboutAbilities = {
         },
     },
     'Sabre Storm': {
-        displayName: "Sabre Storm",
+        name: "Sabre Storm",
         image: 'images/abilities/shadowMenaceOriginal2.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'ultra_damage'],
+        tags: ['attack', 'ultra_damage'],
         abilityDamage: 22,
         desc: 'Deal ultra damage 4 times to target enemy and 2 times to all other enemies and inflict 3 damage over time for 3 turns. All shadow menace allies recover 20% of the total damage dealt.',
         use: async function (actionInfo) {
@@ -935,11 +935,11 @@ const infoAboutAbilities = {
         }
     },
     'Rotating Blades': {
-        displayName: "Rotating Blades",
+        name: "Rotating Blades",
         image: 'images/abilities/shadowMenaceOriginal3.png',
         type: 'special',
         cooldown: 7,
-        abilityTags: ['buffGain'],
+        tags: ['buffGain'],
         desc: 'Gain the Rotation effect and defense up for 4 turns, and recover 35% protection. Rotating: Reflect projectile attacks such as blaster shots, absorb force/magic attacks, and reduce melee attacks by 50%.',
         use: async function (actionInfo) {
             await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxProtection * 0.35, 'protection')
@@ -948,11 +948,11 @@ const infoAboutAbilities = {
         }
     },
     'Cut it short': {
-        displayName: "Cut it short",
+        name: "Cut it short",
         image: 'images/abilities/shadowMenaceOriginal4.png',
         type: 'ultimate',
         ultimateCost: 2200,
-        abilityTags: ['buffGain'],
+        tags: ['buffGain'],
         desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each fallen ally. Shadow menace gains 1 stack of fallen ally for each fallen ally. Fallen ally When attacking an enemy revive a random fallen ally with 1 health who assists dealing 10% damage for each stack. Then defeat these allies.',
         use: async function (actionInfo) {
             actionInfo.battleBro.turnMeter += 100 // bonus turn
@@ -965,10 +965,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------ERIK'S CHARACTERS
     'Sword Slash': {
-        displayName: "Sword Slash",
+        name: "Sword Slash",
         image: 'images/abilities/ninja1.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 200,
         desc: 'Deals physical damage and inflicts healing immunity for 3 turns.',
         use: async function (actionInfo) {
@@ -979,11 +979,11 @@ const infoAboutAbilities = {
         },
     },
     'Sneak Attack': {
-        displayName: "Sneak Attack",
+        name: "Sneak Attack",
         image: 'images/abilities/ninja2.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['attack', 'special_damage'],
+        tags: ['attack', 'special_damage'],
         abilityDamage: 260,
         desc: 'Deals special damage and stealths for 2 turns.',
         use: async function (actionInfo) {
@@ -992,11 +992,11 @@ const infoAboutAbilities = {
         },
     },
     'Dread Slash': {
-        displayName: "Dread Slash",
+        name: "Dread Slash",
         image: 'images/abilities/ninja3.png',
         type: 'ultimate',
         ultimateCost: 3500,
-        abilityTags: ['attack', 'shadow_damage'],
+        tags: ['attack', 'shadow_damage'],
         abilityDamage: 18000,
         desc: 'Deals shadow damage. Buffs ninja with offence up and stealth for 3 turns this can\'t be dispelled while the opponents will gain blind and defence down for 2 turns can\'t be dispelled.',
         use: async function (actionInfo) {
@@ -1011,10 +1011,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------OUR CHARACTERS
     'Gooseballs': {
-        displayName: "Gooseballs",
+        name: "Gooseballs",
         image: 'images/abilities/ability_jediconsular_special01.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        tags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 100,
         projectile: 'gooseball',
         desc: 'Deals physical damage to target enemy and another random enemy with a bonus attack on critical hits. Can not bonus attack out of turn',
@@ -1027,11 +1027,11 @@ const infoAboutAbilities = {
         },
     },
     'Honk of Approval': {
-        displayName: "Honk of Approval",
+        name: "Honk of Approval",
         image: 'images/abilities/KraytDragonSkill4.png',
         type: 'special',
         cooldown: 5,
-        abilityTags: ['target_ally', 'buff_gain'],
+        tags: ['target_ally', 'buff_gain'],
         abilityDamage: 100,
         desc: 'Target ally gains Resilience and Goosey gains Call to Action for 1 turn. For every ally with a buff, the duration of these buffs are increased by 1.',
         use: async function (actionInfo) {
@@ -1044,11 +1044,11 @@ const infoAboutAbilities = {
         }
     },
     'Belly Bounce': {
-        displayName: "Belly Bounce",
+        name: "Belly Bounce",
         image: 'images/abilities/KraytDragonSkill3.png',
         type: 'special',
         cooldown: 4,
-        abilityTags: ['attack', 'debuff_gain'],
+        tags: ['attack', 'debuff_gain'],
         abilityDamage: 600,
         desc: 'dealing physical damage to it. He then bounces onto 2 more targets, reducing the damage by 50% per bounce (e.g. enemy 1 takes 100 damage, enemy 2 takes 50 damage and enemy 3 takes 25 damage). The target enemy is inflicted with Flatten for 1 turn.',
         use: async function (actionInfo) {
@@ -1065,11 +1065,11 @@ const infoAboutAbilities = {
         },
     },
     'Gooseball Barrage': {
-        displayName: "Gooseball Barrage",
+        name: "Gooseball Barrage",
         image: 'images/abilities/ability_dathcha_basic.png',
         type: 'ultimate',
         ultimateCost: 2700,
-        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        tags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 100,
         projectile: 'gooseball',
         desc: 'Goosey channels 30 gooseballs all in one turn, dealing physical damage to random enemies. Enemies can be struck more than once.',
@@ -1082,10 +1082,10 @@ const infoAboutAbilities = {
         },
     },
     'Bob Bash': {
-        displayName: "Bob Bash",
+        name: "Bob Bash",
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 200,
         desc: 'Deals physical damage and inflicts a random locked debuff for 4 turns.',
         use: async function (actionInfo) {
@@ -1098,11 +1098,11 @@ const infoAboutAbilities = {
         },
     },
     'Bob Force': {
-        displayName: 'Bob Force',
+        name: 'Bob Force',
         image: 'images/abilities/ability_jediconsular_special01.png',
         type: 'special',
         cooldown: 3,
-        abilityTags: ['target_ally', 'health_recovery'],
+        tags: ['target_ally', 'health_recovery'],
         desc: 'Heal target ally, with extra healing passing into protection, and give them a random locked buff for 4 turns.',
         use: async function (actionInfo) {
         },
@@ -1120,11 +1120,11 @@ const infoAboutAbilities = {
         }
     },
     'Bob Blast': {
-        displayName: "Bob Blast",
+        name: "Bob Blast",
         image: 'images/abilities/ability_jediconsular_special02.png',
         type: 'ultimate',
         ultimateCost: 4300,
-        abilityTags: ['buff_gain', 'debuff'],
+        tags: ['buff_gain', 'debuff'],
         desc: 'Inflicts 5 locked debuffs on all enemies for 3 turns and 5 locked buffs on all allies for 3 turns.',
         use: async function (actionInfo) {
             const effects = Object.entries(infoAboutEffects)
@@ -1146,10 +1146,10 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------ANGRY BIRDS EPIC CHARACTERS
     'Dragon Strike': {
-        displayName: "Dragon Strike",
+        name: "Dragon Strike",
         image: 'images/abilities/dragonStrike.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 50,
         desc: 'Deals physical damage thrice.',
         use: async function (actionInfo) {
@@ -1159,11 +1159,11 @@ const infoAboutAbilities = {
         },
     },
     'Defensive Formation': {
-        displayName: "Defensive Formation",
+        name: "Defensive Formation",
         image: 'images/abilities/defensiveFormation.png',
         type: 'special',
         cooldown: 1,
-        abilityTags: ['target_ally', 'buffGain'],
+        tags: ['target_ally', 'buffGain'],
         desc: 'Target gains locked defence up for 2 turns and all other allies gain regular defence up.',
         use: async function (actionInfo) {
         },
@@ -1176,11 +1176,11 @@ const infoAboutAbilities = {
         }
     },
     'Heroic Strike': {
-        displayName: "Heroic Strike",
+        name: "Heroic Strike",
         image: 'images/abilities/rageChili.png',
         type: 'ultimate',
         ultimateCost: 2500,
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 500,
         desc: 'Deals physical damage to the enemy with the most health.',
         use: async function (actionInfo) {
@@ -1192,10 +1192,10 @@ const infoAboutAbilities = {
         },
     },
     'Acid Rain': {
-        displayName: "Acid Rain",
+        name: "Acid Rain",
         image: 'images/abilities/acidRain.png',
         type: 'basic',
-        abilityTags: ['attack', 'projectile_attack', 'physical_damage'],
+        tags: ['attack', 'projectile_attack', 'physical_damage'],
         abilityDamage: 20,
         desc: 'Deals physical damage to all enemies and inflict damage over time for 3 turns.',
         use: async function (actionInfo) {
@@ -1209,11 +1209,11 @@ const infoAboutAbilities = {
         },
     },
     'Healing Rain': {
-        displayName: "Healing Rain",
+        name: "Healing Rain",
         image: 'images/abilities/healingRain.png',
         type: 'special',
         cooldown: 1,
-        abilityTags: ['target_ally', 'heal', 'dispel'],
+        tags: ['target_ally', 'heal', 'dispel'],
         desc: 'Dispels all debuffs from target ally and heals all allies for 20% of Chuck\'s max health',
         use: async function (actionInfo) {
         },
@@ -1226,11 +1226,11 @@ const infoAboutAbilities = {
         }
     },
     'Speed of Light': {
-        displayName: "Speed of Light",
+        name: "Speed of Light",
         image: 'images/abilities/rageChili.png',
         type: 'ultimate',
         ultimateCost: 3200,
-        abilityTags: ['assist'],
+        tags: ['assist'],
         desc: 'Unleash five attacks from allies.',
         use: async function (actionInfo) {
             for (let i = 0; i < 5; i++) {
@@ -1240,10 +1240,10 @@ const infoAboutAbilities = {
         },
     },
     'Thorny Vine': {
-        displayName: "Thorny Vine",
+        name: "Thorny Vine",
         image: 'images/abilities/thornyVine.png',
         type: 'basic',
-        abilityTags: ['attack', 'physical_damage'],
+        tags: ['attack', 'physical_damage'],
         abilityDamage: 35,
         desc: 'Deals physical damage to target enemy and inflicts 3 stacks of damage over time for 3 turns.',
         use: async function (actionInfo) {
@@ -1252,11 +1252,11 @@ const infoAboutAbilities = {
         },
     },
     'Regrowth': {
-        displayName: "Regrowth",
+        name: "Regrowth",
         image: 'images/abilities/regrowth.png',
         type: 'special',
         cooldown: 1,
-        abilityTags: ['target_ally', 'heal'],
+        tags: ['target_ally', 'heal'],
         desc: 'Heals target ally for 22% of their max health and all other allies by 10%.',
         use: async function (actionInfo) {
         },
@@ -1272,11 +1272,11 @@ const infoAboutAbilities = {
         }
     },
     'Matildas Medicine': {
-        displayName: "Matildas Medicine",
+        name: "Matildas Medicine",
         image: 'images/abilities/rageChili.png',
         type: 'ultimate',
         ultimateCost: 2000,
-        abilityTags: ['heal', 'dispel'],
+        tags: ['heal', 'dispel'],
         desc: 'Dispels all debuffs from all allies and heals them for 35% of their max health, which ignores any heal-blocking effects.',
         use: async function (actionInfo) {
             for (let friend of aliveBattleBros[actionInfo.battleBro.team]) {
@@ -1287,7 +1287,7 @@ const infoAboutAbilities = {
     },
     // --------------------------------------------------------KRAYT RAID
     'jangoUnscrupulousGunfire': {
-        displayName: "Unscrupulous Gunfire",
+        name: "Unscrupulous Gunfire",
         image: 'images/abilities/ability_jangofett_basic.png',
         desc: "Deal Physical damage to target enemy and gain 15% Offense for each enemy suffering a debuff during this attack. If the target enemy was suffering a debuff, Jango Fett attacks again.",
         abilityDamage: (6823 + 7541) / 2, // "6823 - 7541"
@@ -1296,7 +1296,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
     },
     'dathchaHitAndRun': {
-        displayName: "HitAndRun",
+        name: "HitAndRun",
         image: 'images/abilities/ability_dathcha_basic.png',
         desc: "",
         abilityDamage: (5921 + 6543) / 2,
@@ -1305,7 +1305,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
     },
     'bobaEE3Carbine': {
-        displayName: "EE-3 Carbine",
+        name: "EE-3 Carbine",
         image: 'images/abilities/ability_bobafett_basic.png',
         desc: "",
         abilityDamage: (6813 + 7529) / 2,
@@ -1314,7 +1314,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
     },
     'cadBaneGunSlinger': {
-        displayName: "Gun Slinger",
+        name: "Gun Slinger",
         image: 'images/abilities/ability_cadbane_basic.png',
         desc: "",
         abilityDamage: (5898 + 6518) / 2,
@@ -1323,7 +1323,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
     },
     'mandoSwiftShot': {
-        displayName: "Swift Shot",
+        name: "Swift Shot",
         image: 'images/abilities/ability_mandalorian_basic.png',
         desc: "",
         abilityDamage: (6622 + 7318) / 2,
@@ -1332,7 +1332,7 @@ const infoAboutAbilities = {
         needsEnemyTarget: 1,
     },
     'kraytBasicAttack': {
-        displayName: "Krayt 1",
+        name: "Krayt 1",
         image: 'images/abilities/KraytDragonSkill1.png',
         desc: "",
         abilityDamage: 10000,
@@ -1346,7 +1346,7 @@ const infoAboutAbilities = {
         },
     },
     'kraytAcidPuke': {
-        displayName: "Acid Puke",
+        name: "Acid Puke",
         image: 'images/abilities/KraytDragonSkill2.png',
         desc: "",
         abilityDamage: 20000,
@@ -1361,7 +1361,7 @@ const infoAboutAbilities = {
         },
     },
     'kraytEatEnemy': {
-        displayName: "Eat Enemy",
+        name: "Eat Enemy",
         image: 'images/abilities/KraytDragonSkill3.png',
         desc: "",
         abilityDamage: 30000,
@@ -1376,7 +1376,7 @@ const infoAboutAbilities = {
         },
     },
     'kraytBurrow': {
-        displayName: "Burrow",
+        name: "Burrow",
         image: 'images/abilities/KraytDragonSkill4.png',
         desc: "",
         abilityDamage: 40000,
@@ -1395,7 +1395,7 @@ const infoAboutAbilities = {
         },
     },
     'kraytUnburrow': {
-        displayName: "Unburrow",
+        name: "Unburrow",
         image: 'images/abilities/KraytDragonSkill4.png',
         desc: "",
         abilityDamage: 40000,
@@ -1413,11 +1413,11 @@ const infoAboutAbilities = {
 
 const infoAboutPassives = {
     'test3': {
-        displayName: 'test3',
+        name: 'test3',
         image: 'images/abilities/ability_grandmasteryoda_special01.png',
         desc: 'jabba\'s blubber grants him 50% counter chance',
         type: 'unique',
-        abilityTags: [],
+        tags: [],
         endedAbility: async function (actionInfo) {
             await logFunctionCall('method: attacked (', ...arguments,)
 
@@ -1443,12 +1443,12 @@ const infoAboutPassives = {
         }
     },
     'Wookie Resolve': {
-        displayName: 'Wookie Resolve',
+        name: 'Wookie Resolve',
         image: 'images/abilities/abilityui_passive_def.png',
         desc: 'All allies have +50 Defense, and a 50% chance to gain Defense Up for 3 turns whenever they are damaged.',
         omicron_desc: 'At the start of battle, if no allies are galactic legends, allied light side tanks gain Max Health and Protection equal to 50% of Chewbacca\'s Max Health and Protection and Chewbacca gains bonus Max Health and Protection equal to 20% of every allied light side tank\'s max health and protection.',
         type: 'leader',
-        abilityTags: ['buff_gain', 'grand_arena_omicron'],
+        tags: ['buff_gain', 'grand_arena_omicron'],
         start: async function (actionInfo) {
             await logFunctionCall('method: start (', ...arguments,)
             let owner = actionInfo?.battleBro
@@ -1484,11 +1484,11 @@ const infoAboutPassives = {
         }
     },
     'Grand Master\'s Guidance': {
-        displayName: 'Grand Master\'s Guidance',
+        name: 'Grand Master\'s Guidance',
         image: 'images/abilities/abilityui_passive_removeharmful.png',
         desc: 'Allies have +30% Tenacity. Whenever an ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock. Omicron: The leadership abilities of all other allies are active until the end of battle.',
         type: 'leader',
-        abilityTags: ['buff_gain', 'grand_arena_omicron'],
+        tags: ['buff_gain', 'grand_arena_omicron'],
         start: async function (actionInfo, owner) {
             for (let ally of aliveBattleBros[owner.team]) {
                 ally.tenacity += 30
@@ -1510,7 +1510,7 @@ const infoAboutPassives = {
                 }
                 target.customData.grandmastersGuidance.gainedDebuffThisTurn = true
             }
-            if (effect.effectTags.includes('shock') && target === owner) {
+            if (effect.tags.includes('shock') && target === owner) {
                 // Yoda is immune to shock
                 await removeEffect(actionInfo.withTarget(target), owner, 'shock')
             }
@@ -1525,11 +1525,11 @@ const infoAboutPassives = {
         }
     },
     'Take A Seat': {
-        displayName: 'Take A Seat',
+        name: 'Take A Seat',
         image: 'images/abilities/abilityui_passive_takeaseat.png',
         desc: 'Jedi allies gain 20% Max Health and Offense, and recover 10% of their Health when they score a critical hit.',
         type: 'leader',
-        abilityTags: ['health_recovery'],
+        tags: ['health_recovery'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
 
@@ -1567,11 +1567,11 @@ const infoAboutPassives = {
         }
     },
     'Vaapad': {
-        displayName: 'Vaapad',
+        name: 'Vaapad',
         image: 'images/abilities/abilityui_passive_def.png',
         desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
         type: 'unique',
-        abilityTags: ['dispel', 'buff_gain'],
+        tags: ['dispel', 'buff_gain'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
             owner.maxHealth *= 1.3
@@ -1651,12 +1651,12 @@ const infoAboutPassives = {
         }
     },
     'Sense Weakness': {
-        displayName: 'Sense Weakness',
+        name: 'Sense Weakness',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         type: 'unique',
-        abilityTags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
+        tags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
         start: async function (actionInfo, owner) {
             owner.offence *= 1.3
         },
@@ -1688,11 +1688,11 @@ const infoAboutPassives = {
         }
     },
     'First Mate of the Onyx Cinder': {
-        displayName: 'First Mate of the Onyx Cinder',
+        name: 'First Mate of the Onyx Cinder',
         image: 'images/abilities/abilityui_passive_firstmateoftheonyxcinder.png',
         desc: 'At the start of the battle, SM-33 gains locked Defence Up for 2 turns. If no enemies are challengers, whenever an enemy damages the leader, they gain challenger. Whenever an enemy damages the leader, SM-33 gains 15% Turn Meter and 10% Critical Damage (stacking) for 1 turn. Whenever SM-33 is damaged, he gains burning for 2 turns. Attacked enemies and attackers take all the damage SM-33 would sustain from burning. While in Territory Wars: Allied leaders gain 10% Max Health and Offense, and 10 Speed, doubled if they\'re also a Pirate. The first active enemy that damaged the Pirate in the Leader slot (excluding SM-33) deals 30% less damage and has -50% Potency to all allies aside from SM-33, and SM-33 and the allied Pirate in the Leader slot can ignore Taunt effects to target them. Whenever the allied Pirate in the Leader slot attacks, SM-33 is called to assist. Challenger: Can\'t call allies to assist and can\'t be called to assist. Can ignore taunt to target the enemy leader.',
         type: 'unique',
-        abilityTags: ['buff_gain', 'damage_effect'],
+        tags: ['buff_gain', 'damage_effect'],
         start: async function (actionInfo, owner) {
             let battleBro = owner
             await applyEffect(actionInfo.withSelfAsTarget(), 'defenceUp', 2, 1, false, true)
@@ -1704,7 +1704,7 @@ const infoAboutPassives = {
             let newActionInfo = new ActionInfo({ battleBro: owner, target: attacker })
             if (attacker.team !== owner.team && aliveBattleBros[owner.team].filter(guy => guy.isLeader == true).includes(target)) {
                 const enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
-                if (enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('challenger'))).length <= 0) {
+                if (enemies.filter(enemy => enemy.buffs.find(effect => effect.tags.includes('challenger'))).length <= 0) {
                     await applyEffect(newActionInfo, 'challenger', 999)
                 }
                 await TMchange(newActionInfo.withSelfAsTarget(), 15)
@@ -1715,7 +1715,7 @@ const infoAboutPassives = {
             }
             if (attacker.team !== owner.team && target == owner) {
                 await applyEffect(newActionInfo.withSelfAsTarget(), 'burning', 2, 1, false)
-                const count = owner.buffs.filter(effect => effect.effectTags.includes('burning')).length
+                const count = owner.buffs.filter(effect => effect.tags.includes('burning')).length
                 for (let i = 0; i < count; i++) {
                     await dealDmg(newActionInfo, owner.maxHealth * 0.075, 'true', false)
                 }
@@ -1725,7 +1725,7 @@ const infoAboutPassives = {
             let hitEnemies = actionInfo?.parentActionInfo?.hitEnemies
             if (hitEnemies.includes(target) && owner == battleBro) {
                 let newActionInfo = new ActionInfo({ battleBro: owner, target: target })
-                const count = owner.buffs.filter(effect => effect.effectTags.includes('burning')).length
+                const count = owner.buffs.filter(effect => effect.tags.includes('burning')).length
                 for (let i = 0; i < count; i++) {
                     await dealDmg(newActionInfo, owner.maxHealth * 0.15, 'true', false)
                 }
@@ -1733,11 +1733,11 @@ const infoAboutPassives = {
         },
     },
     'Nightsister Nimbleness': {
-        displayName: 'Nightsister Nimbleness',
+        name: 'Nightsister Nimbleness',
         image: 'images/abilities/abilityui_passive_dodge.png',
         desc: 'Allies gain 16% Evasion. When an ally evades they recover 15% of their Max Health.',
         type: 'leader',
-        abilityTags: ['health_recovery', 'evasion'],
+        tags: ['health_recovery', 'evasion'],
         start: async function (actionInfo, ownerOld) {
 
             // Checking new actionInfo values
@@ -1759,11 +1759,11 @@ const infoAboutPassives = {
     // --------------------------------------------------------SAVI'S CHARACTERS
     // --------------------------------------------------------SUPERPIG'S BRAVADO
     'Very Important Pig': {
-        displayName: 'Very Important Pig',
+        name: 'Very Important Pig',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: "Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can't be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle. Targeted enemies damaged during Aerial Advantage also gain 2 stacks of locked Inevitable Failure for 10 turns which can't be resisted. +Contain Detect Important Meeting Stun Removal Trigger",
         type: 'unique',
-        abilityTags: ['debuff_gain', 'revive'],
+        tags: ['debuff_gain', 'revive'],
         start: async function (actionInfo, owner) {
             await applyEffect(actionInfo.withTarget(owner), 'VIP', Infinity, 1, false, false, "Superpig's Bravado")
         },
@@ -1789,7 +1789,7 @@ const infoAboutPassives = {
             }
         },
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
-            if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.effectTags.includes('stun') && effect.caster == owner)).length <= 0) {
+            if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.tags.includes('stun') && effect.caster == owner)).length <= 0) {
                 owner.speed += owner.customData.importantMeeting.savedSpeed
                 await applyEffect(actionInfo.withTarget(owner), 'aerialAdvantage', 2, 1, false)
                 owner.customData.importantMeeting.enemiesStunned = false
@@ -1798,11 +1798,11 @@ const infoAboutPassives = {
     },
     // --------------------------------------------------------OLIV'S CHARACTERS
     'Elimination Protocol': {
-        displayName: 'Elimination Protocol',
+        name: 'Elimination Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Super Striker has +25% Critical Chance and +30% Defense Penetration. Whenever he attacks an enemy with Target Lock, he gains +10% Offense (stacking, max 50%) for the rest of the encounter. If Super Striker defeats an enemy, he gains Stealth for 1 turn and resets the cooldown of Super Strike. While Stealthed, Super Striker gains +100% Accuracy and his attacks deal +20% damage.',
         type: 'unique',
-        abilityTags: ['cooldownReset'],
+        tags: ['cooldownReset'],
         start: async function (actionInfo, owner) {
             await logFunctionCall('method: start (', ...arguments,)
             owner.critChance += 25
@@ -1835,18 +1835,18 @@ const infoAboutPassives = {
             }
         },
         attacked: async function (actionInfo, owner, target, attacker) {
-            if (owner === attacker && target.buffs.find(effect => effect.effectTags.includes('targetLock')) && owner.customData?.eliminationProtocol?.offenceStacks < 5) {
+            if (owner === attacker && target.buffs.find(effect => effect.tags.includes('targetLock')) && owner.customData?.eliminationProtocol?.offenceStacks < 5) {
                 await modifyStat(actionInfo.withTarget(owner), 'offence', 10)
                 owner.customData.eliminationProtocol.offenceStacks++
             }
         }
     },
     'Unchained Arsenal': {
-        displayName: 'Unchained Arsenal',
+        name: 'Unchained Arsenal',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'Super Striker gains +10% Special Damage and +5 Speed for each debuffed enemy (max 5 stacks). At the start of his turn, he inflicts Target Lock on a random non-Stealthed Droid enemy for 2 turns (limit once per turn). When Super Striker damages an enemy suffering from Shock, EMP Device, or Radiation, he gains +20% Offense (stacking, max 100%, resets on defeat) and 10% Turn Meter.',
         type: 'unique',
-        abilityTags: ['speed'],
+        tags: ['speed'],
         start: async function (actionInfo, owner) {
             owner.customData.unchainedArsenal = {
                 debuffedEnemies: [],
@@ -1869,7 +1869,7 @@ const infoAboutPassives = {
         },
         startedTurn: async function (actionInfo, owner, selectedBro) {
             if (owner == selectedBro) {
-                const NotStealthedDroidEnemies = actionInfo.enemies.filter(enemy => infoAboutCharacters[enemy.character].tags.includes('droid') == true && enemy.buffs.filter(effect => effect.effectTags.includes('stealth')).length <= 0)
+                const NotStealthedDroidEnemies = actionInfo.enemies.filter(enemy => infoAboutCharacters[enemy.character].tags.includes('droid') == true && enemy.buffs.filter(effect => effect.tags.includes('stealth')).length <= 0)
                 if (NotStealthedDroidEnemies.length > 0) {
                     const randomEnemy = NotStealthedDroidEnemies[Math.floor(Math.random() * NotStealthedDroidEnemies.length)]
                     if (randomEnemy) {
@@ -1896,13 +1896,13 @@ const infoAboutPassives = {
         }
     },
     'Unrelenting Protocol': {
-        displayName: 'Unrelenting Protocol',
+        name: 'Unrelenting Protocol',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
         desc: 'If Super Striker is the last active ally, he is immune to Stun and Healing Immunity effects and at the start of his turns, he recovers 15% Protection and dispels one random debuff.',
         type: 'unique',
-        abilityTags: ['protection_recovery'],
+        tags: ['protection_recovery'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
-            if (aliveBattleBros[owner.team].length == 1 && (effect.effectTags.includes('stun') || effect.effectTags.includes('healingImmunity'))) {
+            if (aliveBattleBros[owner.team].length == 1 && (effect.tags.includes('stun') || effect.tags.includes('healingImmunity'))) {
                 await removeEffect(actionInfo, owner, null, null, null, false, effect)
             }
         },
@@ -1919,12 +1919,12 @@ const infoAboutPassives = {
     },
     // --------------------------------------------------------JAMES' CHARACTERS
     'Prime Era': {
-        displayName: 'Prime Era',
+        name: 'Prime Era',
         image: 'images/abilities/shadowMenaceOriginal5.png',
         desc: 'Shadow menace grants a random ally heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time, and half that much whenever an ally gains heal over time. Heal over times last for 3 turns.',
         oldSchoolDesc: 'Shadow menace grants his allies heal over time whenever he critically hits an enemy. He gains +0.5% max health every time he gains a stack of heal over time. Whenever an ally with heal over time hits an enemy, they gain another stack of it. These heal over times recover 5% health each turn for 3 turns.',
         type: 'unique',
-        abilityTags: ['health_recovery'],
+        tags: ['health_recovery'],
         damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
             if (oldSchool == true) { // Old school version
                 if (owner === attacker && crit === true) {
@@ -1952,11 +1952,11 @@ const infoAboutPassives = {
         }
     },
     'Reign of Mandalore': {
-        displayName: 'Reign of Mandalore',
+        name: 'Reign of Mandalore',
         image: 'images/abilities/shadowMenaceOriginal6.png',
         desc: 'All mandalorian allies have the Power of Mandalore buff at the start of the battle for 1 turn. Power of Mandalore: When an ability is used then gain all up buffs for 3 turns. If these buffs are dispelled, gain 5% turn metre for each buff dispelled.',
         type: 'unique',
-        abilityTags: ['buffGain', 'mandalorian'],
+        tags: ['buffGain', 'mandalorian'],
         start: async function (actionInfo, owner) {
             for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('mandalorian'))) {
                 await applyEffect(actionInfo.withTarget(ally), 'powerOfMandalore', 4)
@@ -1965,11 +1965,11 @@ const infoAboutPassives = {
     },
     // --------------------------------------------------------ERIK'S CHARACTERS
     'Trust is Key to Victory': {
-        displayName: 'Trust is Key to Victory',
+        name: 'Trust is Key to Victory',
         image: 'images/abilities/ninja4.png',
         desc: 'If the character is a sith ninja will give the buffs to them.',
         type: 'unique',
-        abilityTags: ['buffGain', 'sith'],
+        tags: ['buffGain', 'sith'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
             if (owner === target && effect.type == 'buff' && effect.name !== 'stealth') {
                 for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('sith'))) {
@@ -1981,18 +1981,18 @@ const infoAboutPassives = {
         }
     },
     'A Ninja Way is Stealth': {
-        displayName: 'A Ninja Way is Stealth',
+        name: 'A Ninja Way is Stealth',
         image: 'images/abilities/abilityui_passive_stealth.png',
         desc: 'While in stealth he gains critical damage up when stealth wears off gain one more turn of stealth.',
         type: 'unique',
-        abilityTags: ['buffGain', 'sith'],
+        tags: ['buffGain', 'sith'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
-            if (owner === target && effect.effectTags.includes('stealth')) {
+            if (owner === target && effect.tags.includes('stealth')) {
                 await applyEffect(actionInfo.withTarget(owner), 'criticalDamageUp', effect.duration, 1)
             }
         },
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
-            if (owner === target && effect.effectTags.includes('stealth') && removalType == 'expired') {
+            if (owner === target && effect.tags.includes('stealth') && removalType == 'expired') {
                 await applyEffect(actionInfo.withTarget(owner), 'stealth', 1) // gain one more turn of stealth
             }
         }
@@ -2004,7 +2004,7 @@ const infoAboutEffects = {
         name: 'accuracyUp',
         image: 'images/effects/accuracyUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'accuracy'],
+        tags: ['stack', 'up', 'accuracy'],
         desc: "+100% Accuracy",
         opposite: 'accuracyDown',
         apply: async function (actionInfo, unit) {
@@ -2018,7 +2018,7 @@ const infoAboutEffects = {
         name: 'backupPlan',
         image: 'images/effects/backupPlan.png',
         type: 'buff',
-        effectTags: ['stack', 'revive'],
+        tags: ['stack', 'revive'],
         desc: "Recover 10% Health per turn, Revive with 80% Health and 30% Turn Meter when defeated.",
         opposite: 'inevitableFailure',
         remove: async function (actionInfo, unit, effect, type) {
@@ -2038,7 +2038,7 @@ const infoAboutEffects = {
         name: 'callToAction',
         image: 'images/effects/callToAction.png',
         type: 'buff',
-        effectTags: ['accuracy', 'critChance', 'critDamage', 'target'],
+        tags: ['accuracy', 'critChance', 'critDamage', 'target'],
         desc: "+50% Accuracy, +50% Critical Chance, + 50% Critical Damage, and ignores taunts during this character's turn.",
         opposite: 'criticalChanceDown',
         apply: async function (actionInfo, unit) {
@@ -2068,7 +2068,7 @@ const infoAboutEffects = {
         endedTurn: async function (actionInfo, unit, effect, guyWhoStartedTheirTurn) {
             if (unit.customData?.callToAction?.ignoringTaunts == true) {
                 for (let enemy in unit.customData.callToAction?.enemiesNotTaunting) {
-                    if (!enemy?.buffs?.find(e => e.effectTags.includes('taunt'))) enemy.taunting == false
+                    if (!enemy?.buffs?.find(e => e.tags.includes('taunt'))) enemy.taunting == false
                 }
                 unit.customData.callToAction.enemiesNotTaunting = []
                 unit.customData.callToAction.ignoringTaunts = false
@@ -2079,7 +2079,7 @@ const infoAboutEffects = {
         name: 'chainAttack',
         image: 'images/effects/chainAttack.png',
         type: 'buff',
-        effectTags: ['stack', 'damage'],
+        tags: ['stack', 'damage'],
         desc: "Upon damaging the targeted enemy, deal damage to a random enemy equal to 50% of the damage dealt.",
         opposite: 'breach',
         damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg) {
@@ -2096,7 +2096,7 @@ const infoAboutEffects = {
         name: 'criticalChanceUp',
         image: 'images/effects/criticalChanceUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'critChance'],
+        tags: ['stack', 'up', 'critChance'],
         desc: "+25% Critical Chance",
         opposite: 'criticalChanceDown',
         apply: async function (actionInfo, unit) {
@@ -2110,7 +2110,7 @@ const infoAboutEffects = {
         name: 'criticalDamageUp',
         image: 'images/effects/criticalDamageUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'critDamage'],
+        tags: ['stack', 'up', 'critDamage'],
         desc: "+50% Critical Damage",
         opposite: 'criticalDamageDown',
         apply: async function (actionInfo, unit) {
@@ -2124,7 +2124,7 @@ const infoAboutEffects = {
         name: 'damageImmunity',
         image: 'images/effects/damageImmunity.png',
         type: 'buff',
-        effectTags: ['absorb', 'damageImmunity'],
+        tags: ['absorb', 'damageImmunity'],
         desc: "-100% damage received",
         opposite: 'deathmark',
         apply: async function (actionInfo, unit) {
@@ -2143,7 +2143,7 @@ const infoAboutEffects = {
         name: 'defenceUp',
         image: 'images/effects/defenceUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'defence'],
+        tags: ['stack', 'up', 'defence'],
         desc: "+50% Armour and Resistance",
         opposite: 'defenceDown',
         apply: async function (actionInfo, unit) {
@@ -2159,7 +2159,7 @@ const infoAboutEffects = {
         name: 'defencePenetrationUp',
         image: 'images/effects/defencePenetrationUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'defence'],
+        tags: ['stack', 'up', 'defence'],
         desc: "+50% Defence Penetration",
         opposite: 'defencePenetrationDown',
         apply: async function (actionInfo, unit) {
@@ -2173,7 +2173,7 @@ const infoAboutEffects = {
         name: 'evasionUp',
         image: 'images/effects/evasionUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'evasion'],
+        tags: ['stack', 'up', 'evasion'],
         desc: "+15% Evasion",
         opposite: 'evasionDown',
         apply: async function (actionInfo, unit) {
@@ -2189,7 +2189,7 @@ const infoAboutEffects = {
         name: 'fallenAlly',
         image: 'images/effects/fallenAlly.png',
         type: 'buff',
-        effectTags: ['stack', 'fallenAlly'],
+        tags: ['stack', 'fallenAlly'],
         desc: "When attacking an enemy, call a defeated ally to assist, dealing 20% of their regular damage for each stack of fallen ally.",
         apply: async function (actionInfo, unit) {
             // create memory space
@@ -2202,7 +2202,7 @@ const infoAboutEffects = {
             unit.customData.fallenAlly = null // clear the memory space
         },
         usedAbility: async function (actionInfo, unit, effect, abilityName, user, target, type, dmgPercent) {
-            if (unit == user && infoAboutAbilities[abilityName].abilityTags.includes('attack')) {
+            if (unit == user && infoAboutAbilities[abilityName].tags.includes('attack')) {
                 let fallenAllies = battleBros.filter(bro => bro.team === unit.team && bro.isDead === true)
                 let selectedFallenAllies = fallenAllies.filter(bro => !unit.customData.fallenAlly?.alliesAlreadySummoned?.includes(bro))
                 if (selectedFallenAllies.length == 0) return // no fallen allies left to summon
@@ -2225,7 +2225,7 @@ const infoAboutEffects = {
         name: 'foresight',
         image: 'images/effects/foresight.png',
         type: 'buff',
-        effectTags: ['stack', 'singleUse', 'loseOnDodge', 'evasion'],
+        tags: ['stack', 'singleUse', 'loseOnDodge', 'evasion'],
         desc: "Evades the next attack.",
         opposite: 'blind',
         apply: async function (actionInfo, unit) {
@@ -2241,7 +2241,7 @@ const infoAboutEffects = {
         name: 'healOverTime',
         image: 'images/effects/healOverTime.png',
         type: 'buff',
-        effectTags: ['stack', 'healOverTime'],
+        tags: ['stack', 'healOverTime'],
         desc: "Heal 5% of health each turn.",
         opposite: 'damageOverTime',
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
@@ -2255,7 +2255,7 @@ const infoAboutEffects = {
         name: 'healthStealUp',
         image: 'images/effects/healthStealUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'healthSteal'],
+        tags: ['stack', 'up', 'healthSteal'],
         desc: "Heal health equal to +50% of damage dealt.",
         opposite: 'healthStealDown',
         apply: async function (actionInfo, unit) {
@@ -2271,7 +2271,7 @@ const infoAboutEffects = {
         name: 'healthUp',
         image: 'images/effects/healthUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'maxHealth', 'heal'],
+        tags: ['stack', 'up', 'maxHealth', 'heal'],
         desc: "+15% Max Health",
         opposite: 'healthDown',
         apply: async function (actionInfo, unit) {
@@ -2290,7 +2290,7 @@ const infoAboutEffects = {
         name: 'offenceUp',
         image: 'images/effects/offenceUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'offence'],
+        tags: ['stack', 'up', 'offence'],
         desc: "+50% Offence (Damage Dealt)",
         opposite: 'offenceDown',
         apply: async function (actionInfo, unit) {
@@ -2306,7 +2306,7 @@ const infoAboutEffects = {
         name: 'potencyUp',
         image: 'images/effects/potencyUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'potency'],
+        tags: ['stack', 'up', 'potency'],
         desc: "+100% Potency (Chance to apply debuffs)",
         opposite: 'potencyDown',
         apply: async function (actionInfo, unit) {
@@ -2322,7 +2322,7 @@ const infoAboutEffects = {
         name: 'powerOfMandalore',
         image: 'images/effects/powerOfMandalore.png',
         type: 'buff',
-        effectTags: ['stack', 'buffGain'],
+        tags: ['stack', 'buffGain'],
         desc: "When an ability is used then gain Power Up (all Up Buffs) for 3 turns. If these buffs are dispelled, go up to 100% turn meter.",
         opposite: 'powerDown',
         usedAbility: async function (actionInfo, unit, effect, abilityName, user, target, type, dmgPercent) {
@@ -2342,7 +2342,7 @@ const infoAboutEffects = {
         name: 'powerUp',
         image: 'images/effects/powerUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
+        tags: ['stack', 'up', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
         desc: "All Up-Type buffs.",
         opposite: 'powerDown',
         apply: async function (actionInfo, unit) {
@@ -2387,7 +2387,7 @@ const infoAboutEffects = {
         name: 'protectionUp',
         image: 'images/effects/protectionUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'protection', 'protectionHeal'],
+        tags: ['stack', 'up', 'protection', 'protectionHeal'],
         desc: "+15% Max Protection",
         opposite: 'protectionDown',
         apply: async function (actionInfo, unit) {
@@ -2406,7 +2406,7 @@ const infoAboutEffects = {
         name: 'resilience',
         image: 'images/effects/resilience.png',
         type: 'buff',
-        effectTags: ['ally', 'damageReduce'],
+        tags: ['ally', 'damageReduce'],
         desc: "Take 10% less damage for each living ally.",
         opposite: 'discourage',
         apply: async function (actionInfo, unit) {
@@ -2427,7 +2427,7 @@ const infoAboutEffects = {
         name: 'resilientDefence',
         image: 'images/effects/resilientDefence.png',
         type: 'buff',
-        effectTags: ['stack', 'taunt', 'target', 'loseOnHit'],
+        tags: ['stack', 'taunt', 'target', 'loseOnHit'],
         desc: "Taunt and lose one stack of Resilient Defence when damaged by an attack.",
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2437,7 +2437,7 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
-            if (!(unit.buffs.find(e => e.effectTags.includes('taunt')))) {
+            if (!(unit.buffs.find(e => e.tags.includes('taunt')))) {
                 unit.taunting = false
                 if (unit.isTarget == true) { // check if this taunter is the target
                     let unitTeam = battleBros.filter(battleBro => battleBro.team == unit.team)
@@ -2452,7 +2452,7 @@ const infoAboutEffects = {
         name: 'retribution',
         image: 'images/effects/retribution.png',
         type: 'buff',
-        effectTags: ['counter', 'attackOutOfTurn'],
+        tags: ['counter', 'attackOutOfTurn'],
         desc: "Counters attacks with their basic ability.",
         opposite: 'daze',
         apply: async function (actionInfo, unit) {
@@ -2471,7 +2471,7 @@ const infoAboutEffects = {
         name: 'revival',
         image: 'images/effects/revival.png',
         type: 'buff',
-        effectTags: ['stack', 'revive'],
+        tags: ['stack', 'revive'],
         desc: "When defeated this character revives and recovers 50% of max health and protection then gains 100% turn meter and Bonus Protection (75%) for 2 turns.",
         opposite: 'doomed',
         remove: async function (actionInfo, unit, effect, type) {
@@ -2486,7 +2486,7 @@ const infoAboutEffects = {
         name: 'rotating',
         image: 'images/effects/rotating.png',
         type: 'buff',
-        effectTags: ['deflection'],
+        tags: ['deflection'],
         desc: "Reflect projectile attacks and mitigate other attacks by 50%.",
         opposite: 'outmaneuvered',
         apply: async function (actionInfo, unit) {
@@ -2501,11 +2501,11 @@ const infoAboutEffects = {
             unit.customData.rotating = null // clear the memory space
         },
         attacked: async function (actionInfo, unit, effect, target, attacker) {
-            if (infoAboutAbilities[actionInfo?.abilityName]?.abilityTags?.includes('projectile_attack')) {
+            if (infoAboutAbilities[actionInfo?.abilityName]?.tags?.includes('projectile_attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
                 unit.flatDamageReceived = 0 // deflects all projectile attacks
-            } else if (infoAboutAbilities[actionInfo?.abilityName]?.abilityTags?.includes('attack')) {
+            } else if (infoAboutAbilities[actionInfo?.abilityName]?.tags?.includes('attack')) {
                 unit.customData.rotating.wasTriggered = true // mark that this effect was triggered
                 unit.customData.rotating.savedFlatDamageReceived = unit.flatDamageReceived // save the flat damage received before it is set to 0
                 unit.flatDamageReceived /= 2 // reduces other attacks by 50%
@@ -2522,7 +2522,7 @@ const infoAboutEffects = {
         name: 'shields',
         image: 'images/effects/shields.png',
         type: 'buff',
-        effectTags: ['stack', 'shields'],
+        tags: ['stack', 'shields'],
         desc: "Adds {{bonusData}}% of bonus protection on top of regular protection.",
         opposite: 'protectionDisruption',
         apply: async function (actionInfo, unit, effect) {
@@ -2554,7 +2554,7 @@ const infoAboutEffects = {
         name: 'speedUp',
         image: 'images/effects/speedUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'speed'],
+        tags: ['stack', 'up', 'speed'],
         desc: "+25% Speed",
         opposite: 'speedDown',
         apply: async function (actionInfo, unit) {
@@ -2570,7 +2570,7 @@ const infoAboutEffects = {
         name: 'stealth',
         image: 'images/effects/stealth.png',
         type: 'buff',
-        effectTags: ['stealth', 'target', 'counterImmunity'],
+        tags: ['stealth', 'target', 'counterImmunity'],
         desc: "Can't be targeted or countered.",
         opposite: 'marked',
         apply: async function (actionInfo, unit) {
@@ -2584,7 +2584,7 @@ const infoAboutEffects = {
         name: 'taunt',
         image: 'images/effects/taunt.png',
         type: 'buff',
-        effectTags: ['taunt', 'target'],
+        tags: ['taunt', 'target'],
         desc: "Enemies will target this character.",
         opposite: 'tauntImmunity',
         apply: async function (actionInfo, unit) {
@@ -2607,7 +2607,7 @@ const infoAboutEffects = {
         name: 'tenacityUp',
         image: 'images/effects/tenacityUp.png',
         type: 'buff',
-        effectTags: ['stack', 'up', 'tenacity'],
+        tags: ['stack', 'up', 'tenacity'],
         desc: "+100% Tenacity (Chance to resist debuffs)",
         opposite: 'tenacityDown',
         apply: async function (actionInfo, unit) {
@@ -2623,7 +2623,7 @@ const infoAboutEffects = {
         name: 'unbreakable',
         image: 'images/effects/unbreakable.png',
         type: 'buff',
-        effectTags: ['absorb', 'limit1health'],
+        tags: ['absorb', 'limit1health'],
         opposite: 'breakingPoint',
         desc: "This unit can't go below 1 health.",
         damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg, type, crit, HPremaining) {
@@ -2639,7 +2639,7 @@ const infoAboutEffects = {
         name: 'abilityBlock',
         image: 'images/effects/abilityBlock.png',
         type: 'debuff',
-        effectTags: ['stifle', 'abilityBlock'],
+        tags: ['stifle', 'abilityBlock'],
         desc: "Can't use special abilities.",
         opposite: 'tacticalGenius',
         apply: async function (actionInfo, unit) {
@@ -2656,7 +2656,7 @@ const infoAboutEffects = {
         name: 'accuracyDown',
         image: 'images/effects/accuracyDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'accuracy'],
+        tags: ['stack', 'down', 'accuracy'],
         desc: "-15% Accuracy",
         opposite: 'accuracyUp',
         apply: async function (actionInfo, unit) {
@@ -2672,7 +2672,7 @@ const infoAboutEffects = {
         name: 'bleed',
         image: 'images/effects/bleed.png',
         type: 'debuff',
-        effectTags: ['stack', 'speed', 'tenacity', 'maxHealth', 'loseOnHeal'],
+        tags: ['stack', 'speed', 'tenacity', 'maxHealth', 'loseOnHeal'],
         desc: "-5% speed and tenacity, 5% max health removed each turn. 1 stack of bleed is removed when healed. Max health regained upon losing bleed.",
         opposite: 'healOverTime',
         apply: async function (actionInfo, unit, effect) {
@@ -2703,7 +2703,7 @@ const infoAboutEffects = {
         name: 'blind',
         image: 'images/effects/blind.png',
         type: 'debuff',
-        effectTags: ['stack', 'singleUse', 'accuracy', 'blind'],
+        tags: ['stack', 'singleUse', 'accuracy', 'blind'],
         desc: "Miss the next attack.",
         opposite: 'foresight',
         apply: async function (actionInfo, unit) {
@@ -2724,7 +2724,7 @@ const infoAboutEffects = {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
         type: 'debuff',
-        effectTags: ['buffImmunity'],
+        tags: ['buffImmunity'],
         desc: "Can't gain buffs.",
         opposite: 'debuffImmunity',
     },
@@ -2732,7 +2732,7 @@ const infoAboutEffects = {
         name: 'burning',
         image: 'images/effects/burning.png',
         type: 'debuff',
-        effectTags: ['stack', 'speed', 'damageOverTime', 'evasion', 'burning'],
+        tags: ['stack', 'speed', 'damageOverTime', 'evasion', 'burning'],
         desc: "Take damage equal to 15% of max health per turn, can't dodge attacks.",
         opposite: 'healOverTime',
         apply: async function (actionInfo, unit, effect) {
@@ -2752,7 +2752,7 @@ const infoAboutEffects = {
         name: 'concussionMine',
         image: 'images/effects/concussionMine.png',
         type: 'debuff',
-        effectTags: ['stack', 'mine'],
+        tags: ['stack', 'mine'],
         desc: "Deals damage equal to 10% of target's max health and dazes them for 1 turn when it explodes.",
         opposite: 'healOverTime',
         remove: async function (actionInfo, unit, effect, removalType) {
@@ -2767,7 +2767,7 @@ const infoAboutEffects = {
         name: 'criticalChanceDown',
         image: 'images/effects/criticalChanceDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'critChance'],
+        tags: ['stack', 'down', 'critChance'],
         desc: "-25% Critical Chance",
         opposite: 'criticalChanceUp',
         apply: async function (actionInfo, unit) {
@@ -2783,7 +2783,7 @@ const infoAboutEffects = {
         name: 'criticalDamageDown',
         image: 'images/effects/criticalDamageDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'critDamage'],
+        tags: ['stack', 'down', 'critDamage'],
         desc: "-50% Critical Damage",
         opposite: 'criticalDamageUp',
         apply: async function (actionInfo, unit) {
@@ -2799,7 +2799,7 @@ const infoAboutEffects = {
         name: 'damageOverTime',
         image: 'images/effects/damageOverTime.png',
         type: 'debuff',
-        effectTags: ['stack', 'damageOverTime'],
+        tags: ['stack', 'damageOverTime'],
         desc: "Take damage equal to 5% max health each turn.",
         opposite: 'healOverTime',
         startedTurn: async function (actionInfo, unit, effect, selectedBro) {
@@ -2813,7 +2813,7 @@ const infoAboutEffects = {
         name: 'daze',
         image: 'images/effects/daze.png',
         type: 'debuff',
-        effectTags: ['stopAssist', 'stopCounter', 'stopTMgain'],
+        tags: ['stopAssist', 'stopCounter', 'stopTMgain'],
         desc: "Can't assist, counter or gain turn meter.",
         opposite: 'retribution',
     },
@@ -2821,7 +2821,7 @@ const infoAboutEffects = {
         name: 'decay',
         image: 'images/effects/decay.png',
         type: 'debuff',
-        effectTags: ['stack', 'maxHealth', 'healthSteal'],
+        tags: ['stack', 'maxHealth', 'healthSteal'],
         desc: "-10% max health per stack. 0% health steal.",
         opposite: 'vampire',
         apply: async function (actionInfo, unit) {
@@ -2841,7 +2841,7 @@ const infoAboutEffects = {
         name: 'defenceDown',
         image: 'images/effects/defenceDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'defence'],
+        tags: ['stack', 'down', 'defence'],
         desc: "-50% Armour and Resistance",
         opposite: 'defenceUp',
         apply: async function (actionInfo, unit) {
@@ -2859,7 +2859,7 @@ const infoAboutEffects = {
         name: 'disarm',
         image: 'images/effects/disarm.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'critDamage', 'offence', 'debuff_gain'],
+        tags: ['stack', 'down', 'critDamage', 'offence', 'debuff_gain'],
         desc: "-50% Critical Damage and Offense. Whenever this character uses a Basic ability, they gain Damage Over Time for 2 turns.",
         opposite: 'advancedTechnology',
         apply: async function (actionInfo, unit) {
@@ -2883,7 +2883,7 @@ const infoAboutEffects = {
         name: 'doomed',
         image: 'images/effects/doomed.png',
         type: 'debuff',
-        effectTags: ['stopRevive', 'conditional'],
+        tags: ['stopRevive', 'conditional'],
         desc: "Can't be revived if this character is defeated.",
         opposite: 'instantDefeatImmunity',
         remove: async function (actionInfo, unit) {
@@ -2895,7 +2895,7 @@ const infoAboutEffects = {
         name: 'EMPDevice',
         image: 'images/effects/EMPDevice.png',
         type: 'debuff',
-        effectTags: ['stack', 'mine'],
+        tags: ['stack', 'mine'],
         desc: "Zero speed until the end of 2 turns. When an EMP Device explodes or is dispelled, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
         opposite: 'overcharge',
         apply: async function (actionInfo, unit, effect) {
@@ -2930,7 +2930,7 @@ const infoAboutEffects = {
         name: 'evasionDown',
         image: 'images/effects/evasionDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'evasion'],
+        tags: ['stack', 'down', 'evasion'],
         desc: "-100% Evasion",
         opposite: 'evasionUp',
         apply: async function (actionInfo, unit) {
@@ -2946,7 +2946,7 @@ const infoAboutEffects = {
         name: 'expose',
         image: 'images/effects/expose.png',
         type: 'debuff',
-        effectTags: ['stack', 'singleUse', 'loseOnHit', 'percentageDamage'],
+        tags: ['stack', 'singleUse', 'loseOnHit', 'percentageDamage'],
         desc: "Take damage equal -20% of max health if damaged by attack, then Expose is removed.",
         apply: async function (actionInfo, unit) {
         },
@@ -2961,7 +2961,7 @@ const infoAboutEffects = {
         name: 'fear',
         image: 'images/effects/fear.png',
         type: 'debuff',
-        effectTags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
+        tags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
         desc: "Miss the next turn, but Fear is removed upon taking damage. If it is, increase cooldowns by 1.",
         apply: async function (actionInfo, unit) {
             await logFunctionCall('method: apply (', ...arguments,)
@@ -2979,7 +2979,7 @@ const infoAboutEffects = {
         name: 'healingImmunity',
         image: 'images/effects/healingImmunity.png',
         type: 'debuff',
-        effectTags: ['healingImmunity', 'protectionHealingImmunity'],
+        tags: ['healingImmunity', 'protectionHealingImmunity'],
         desc: "Can't recover health or protection.",
         opposite: 'lifeMark',
     },
@@ -2987,7 +2987,7 @@ const infoAboutEffects = {
         name: 'healthDown',
         image: 'images/effects/healthDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'maxHealth'],
+        tags: ['stack', 'down', 'maxHealth'],
         desc: "-15% Max Health",
         opposite: 'healthUp',
         apply: async function (actionInfo, unit) {
@@ -3005,7 +3005,7 @@ const infoAboutEffects = {
         name: 'healthStealDown',
         image: 'images/effects/healthStealDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'healthSteal'],
+        tags: ['stack', 'down', 'healthSteal'],
         desc: "-50% Health Steal",
         opposite: 'healthStealUp',
         apply: async function (actionInfo, unit) {
@@ -3021,7 +3021,7 @@ const infoAboutEffects = {
         name: 'knockback',
         image: 'images/effects/knockback.png',
         type: 'debuff',
-        effectTags: ['stack', 'defence'],
+        tags: ['stack', 'defence'],
         desc: "-10% defence. Lose 5% defence whenever damaged or inflicted with a debuff.",
         opposite: 'defenceUp',
         apply: async function (actionInfo, unit, effect) {
@@ -3058,7 +3058,7 @@ const infoAboutEffects = {
         name: 'offenceDown',
         image: 'images/effects/offenceDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'offence'],
+        tags: ['stack', 'down', 'offence'],
         desc: "-50% Offence (Damage Dealt)",
         opposite: 'offenceUp',
         apply: async function (actionInfo, unit) {
@@ -3074,7 +3074,7 @@ const infoAboutEffects = {
         name: 'potencyDown',
         image: 'images/effects/potencyDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'potency'],
+        tags: ['stack', 'down', 'potency'],
         desc: "-100% Potency (Chance to inflict debuffs)",
         opposite: 'potencyUp',
         apply: async function (actionInfo, unit) {
@@ -3090,7 +3090,7 @@ const infoAboutEffects = {
         name: 'powerDown',
         image: 'images/effects/powerDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
+        tags: ['stack', 'down', 'accuracy', 'critChance', 'critDamage', 'defencePenetration', 'defence', 'evasion', 'healthSteal', 'maxHealth', 'offence', 'potency', 'maxProtection', 'protection', 'speed', 'tenacity'],
         desc: "All Down-Type debuffs.",
         opposite: 'powerUp',
         apply: async function (actionInfo, unit) {
@@ -3134,7 +3134,7 @@ const infoAboutEffects = {
         name: 'protectionDisruption',
         image: 'images/effects/protectionDisruption.png',
         type: 'debuff',
-        effectTags: ['maxProtection', 'protectionDisruption'],
+        tags: ['maxProtection', 'protectionDisruption'],
         desc: "Protection is disabled, immune to Protection Up and Shields.",
         opposite: 'protectionUp',
         apply: async function (actionInfo, unit) {
@@ -3162,7 +3162,7 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
-            if (!unit.buffs.find(effect => effect.effectTags.includes('protectionDisruption'))) {
+            if (!unit.buffs.find(effect => effect.tags.includes('protectionDisruption'))) {
                 unit.protection = unit.customData.protectionDisruption.savedProtection
                 unit.maxProtection = unit.customData.protectionDisruption.savedMaxProtection
                 unit.shields = unit.customData.protectionDisruption.savedShields
@@ -3178,7 +3178,7 @@ const infoAboutEffects = {
         name: 'protectionDown',
         image: 'images/effects/protectionDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'maxProtection'],
+        tags: ['stack', 'down', 'maxProtection'],
         desc: "-15% Max Protection",
         opposite: 'protectionUp',
         apply: async function (actionInfo, unit) {
@@ -3196,7 +3196,7 @@ const infoAboutEffects = {
         name: 'radiation',
         image: 'images/effects/radiation.png',
         type: 'debuff',
-        effectTags: ['lockDebuffs'],
+        tags: ['lockDebuffs'],
         desc: "Attackers ignore protection and defensive effects. Debuffs on this character can't be dispelled.",
         opposite: 'determined',
         apply: async function (actionInfo, unit) {
@@ -3219,7 +3219,7 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
-            if (!unit.buffs.find(effect => effect.effectTags.includes('lockDebuffs'))) {
+            if (!unit.buffs.find(effect => effect.tags.includes('lockDebuffs'))) {
                 for (let debuff of unit.customData.radiation.otherDebuffs) {
                     debuff.isLocked = false // unlock all other debuffs
                 }
@@ -3231,7 +3231,7 @@ const infoAboutEffects = {
         name: 'scam',
         image: 'images/effects/scam.png',
         type: 'debuff',
-        effectTags: ['stack', 'offence', 'critChance'],
+        tags: ['stack', 'offence', 'critChance'],
         desc: "1 Stack: -50% Offence and Crit Chance. Lose a random buff every turn.<br>2 Stacks: Attackers will bonus attack and gain Retribution for 1 turn.<br>3 Stacks: Attackers will bonus attack for each buff they have, dealing 50% damage without inflicting status effects.",
         opposite: 'translation',
         apply: async function (actionInfo, unit, effect) {
@@ -3283,7 +3283,7 @@ const infoAboutEffects = {
         name: 'shatterpoint',
         image: 'images/effects/shatterpoint.png',
         type: 'debuff',
-        effectTags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
+        tags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
         desc: "Receiving damage removes Shatterpoint and reduces Defense, Max Health, and Offense by 10%. Enemies can ignore Taunt effects to target this unit.",
         opposite: 'barrier',
         apply: async function (actionInfo, unit) { },
@@ -3301,7 +3301,7 @@ const infoAboutEffects = {
         name: 'shock',
         image: 'images/effects/shock.png',
         type: 'debuff',
-        effectTags: ['healingImmunity', 'stopTMgain', 'buffImmunity'],
+        tags: ['healingImmunity', 'stopTMgain', 'buffImmunity'],
         desc: "Can't heal, gain buffs or bonus turn meter.",
         opposite: 'overcharge',
     },
@@ -3309,7 +3309,7 @@ const infoAboutEffects = {
         name: 'speedDown',
         image: 'images/effects/speedDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'speed'],
+        tags: ['stack', 'down', 'speed'],
         desc: "-25% Speed",
         opposite: 'speedUp',
         apply: async function (actionInfo, unit) {
@@ -3325,7 +3325,7 @@ const infoAboutEffects = {
         name: 'stagger',
         image: 'images/effects/stagger.png',
         type: 'debuff',
-        effectTags: ['turnMeterRemoval', 'loseOnHit'],
+        tags: ['turnMeterRemoval', 'loseOnHit'],
         desc: "Lose 100% Turn Meter if damaged by attack, then remove Stagger.",
         opposite: 'frenzy',
         remove: async function (actionInfo, unit, effect, removalType, dispeller) {
@@ -3339,7 +3339,7 @@ const infoAboutEffects = {
         name: 'stun',
         image: 'images/effects/stun.png',
         type: 'debuff',
-        effectTags: ['stun', 'evasion'],
+        tags: ['stun', 'evasion'],
         desc: "Can't use abilities.",
         opposite: 'lockdown',
         apply: async function (actionInfo, unit) {
@@ -3355,7 +3355,7 @@ const infoAboutEffects = {
         name: 'targetLock',
         image: 'images/effects/targetLock.png',
         type: 'debuff',
-        effectTags: ['targetLock'],
+        tags: ['targetLock'],
         desc: "Some abilities have extra effects against target-locked characters.",
         opposite: 'chaff',
     },
@@ -3363,7 +3363,7 @@ const infoAboutEffects = {
         name: 'tenacityDown',
         image: 'images/effects/tenacityDown.png',
         type: 'debuff',
-        effectTags: ['stack', 'down', 'potency'],
+        tags: ['stack', 'down', 'potency'],
         desc: "-100% Tenacity (Chance to resist debuffs)",
         opposite: 'tenacityUp',
         apply: async function (actionInfo, unit) {
@@ -3380,7 +3380,7 @@ const infoAboutEffects = {
         name: 'challenger',
         image: 'images/effects/challenger.png',
         type: 'misc',
-        effectTags: ['assist', 'stopAssist', 'targetIgnore', 'stopCallAssist', 'challenger'],
+        tags: ['assist', 'stopAssist', 'targetIgnore', 'stopCallAssist', 'challenger'],
         desc: "Can't assist or be assisted. The Pirate Code demands single combat.",
         apply: async function (actionInfo, unit) {
 
@@ -3393,7 +3393,7 @@ const infoAboutEffects = {
         name: 'VIP',
         image: 'images/effects/VIP.png',
         type: 'misc',
-        effectTags: ['health_recovery', 'protectionRecovery', 'stealth', 'bonusData'],
+        tags: ['health_recovery', 'protectionRecovery', 'stealth', 'bonusData'],
         desc: "When receiving damage, stealth for 1 turn and {{caster}} recovers 5% health and protection. Whenever {{caster}} is damaged, this character recovers health and protection equal to 5% of {{caster}}'s max health and protection. If all allies are {{bonusData}}, {{caster}} and this character are immune to Turn Meter reduction.",
         apply: async function (actionInfo, unit) {
 
@@ -3654,7 +3654,7 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.cooldowns = {}
     for (let abilityName of infoAboutCharacters[battleBro.character].abilities) {
         const ability = infoAboutAbilities[abilityName]
-        battleBro.cooldowns[abilityName] = ability?.abilityTags?.includes('initialCooldown') ? ability?.cooldown : 0
+        battleBro.cooldowns[abilityName] = ability?.tags?.includes('initialCooldown') ? ability?.cooldown : 0
     }
     // Initialise skill cooldowns
     battleBro.skillsData = []
@@ -3748,7 +3748,7 @@ async function updateCurrentBattleBroSkillImages() {
             }).on("contextmenu", function (e) {
                 if (!e.shiftKey) {
                     e.preventDefault(); // Stop the browser right-click menu
-                    showStats(battleBro, e.pageX, e.pageY, 'ability', processedAbility.skill.displayName); // Show your custom stat box
+                    showStats(battleBro, e.pageX, e.pageY, 'ability', processedAbility.skill.name); // Show your custom stat box
                 }
             })
             abilityImageDiv.css({ 'display': 'block' });
@@ -3914,7 +3914,7 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         await endTurn(actionInfo, battleBros[closestAvatar])
         return
     }
-    if (battleBros[closestAvatar].buffs.find(e => e.effectTags.includes('stun'))) {
+    if (battleBros[closestAvatar].buffs.find(e => e.tags.includes('stun'))) {
         let actionInfo = new ActionInfo({ battleBro: battleBros[closestAvatar] })
         await endTurn(actionInfo, battleBros[closestAvatar])
         return
@@ -3970,10 +3970,10 @@ async function changeTarget(target) {
     await logFunctionCall('changeTarget', ...arguments)
     let targetTeam = aliveBattleBros[target.team]
     if (targetTeam.filter(unit => unit.taunting).length == 0) {
-        if (!(target.buffs.find(effect => effect.effectTags.includes('stealth')) || target.isDead == true)) {
+        if (!(target.buffs.find(effect => effect.tags.includes('stealth')) || target.isDead == true)) {
             await changingTarget(target)
         }
-    } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
+    } else if (target.buffs.find(e => e.tags.includes('taunt'))) {
         await changingTarget(target)
     } else {
         return
@@ -4024,7 +4024,7 @@ async function abilityClicked(clickedElement) {
     let battleBro = battleBros[battleBroNumber]
     let characterAbilities = battleBro.abilities
     let abilityName = characterAbilities[abilityNumber]
-    let tags = infoAboutAbilities[abilityName].abilityTags
+    let tags = infoAboutAbilities[abilityName].tags
     // abort if the ability is on cooldown
     if (battleBro.cooldowns[abilityName] > 0) {
         console.log("Ability on cooldown!")
@@ -4106,7 +4106,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
     }
     let ability = infoAboutAbilities[abilityName]
     let animation = null
-    if (ability.abilityTags.includes("projectile_attack")) {
+    if (ability.tags.includes("projectile_attack")) {
         animation = 'projectile'
         let taskDone = false
         await playProjectileAttackAnimation(
@@ -4118,7 +4118,7 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
             "#00FFFF"
         )
 
-    } else if (ability.abilityTags.includes("attack")) {
+    } else if (ability.tags.includes("attack")) {
         animation = 'melee'
         await playMeleeAttackAnimation(
             actionInfo.battleBro,
@@ -4237,15 +4237,15 @@ async function assist(actionInfo, caller, dmgPercent = 100, abilityIndex = 0) {
         dmgPercent: dmgPercent,
         abilityIndex: abilityIndex,
     }
-    if (actionInfo.battleBro.buffs.find(effect => effect.effectTags.includes('stopAssist'))) return
+    if (actionInfo.battleBro.buffs.find(effect => effect.tags.includes('stopAssist'))) return
     actionInfo.battleBro.queuedAttacks.unshift([actionInfo.target, 'assist', dmgPercent, abilityIndex])
 }
 
 async function addAttackToQueue(actionInfo, dmgPercent = 100, abilityIndex = 0) {
-    if (actionInfo.battleBro.buffs.find(e => e.effectTags.includes('stun'))) return
+    if (actionInfo.battleBro.buffs.find(e => e.tags.includes('stun'))) return
     await logFunctionCall('addAttackToQueue', ...arguments)
     if (battleBros[selectedBattleBroNumber].team !== actionInfo.battleBro.team) {
-        if (actionInfo.battleBro.buffs.find(effect => effect.effectTags.includes('stopCounter')) || actionInfo.target.buffs.find(effect => effect.effectTags.includes('counterImmunity'))) return
+        if (actionInfo.battleBro.buffs.find(effect => effect.tags.includes('stopCounter')) || actionInfo.target.buffs.find(effect => effect.tags.includes('counterImmunity'))) return
         console.log('counter attack logged')
         let currentTarget = battleBros.find(enemy => enemy.isTarget && enemy.team !== actionInfo.battleBro.team)
         currentTarget = (currentTarget.taunting == true) ? currentTarget : actionInfo.target
@@ -4523,7 +4523,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         bonusData: bonusData,
         identifier: identifier,
     }
-    if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.effectTags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
+    if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.tags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
     for (let i = 0; i < stacks; i++) {
@@ -4543,7 +4543,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
             return
         }
         actionInfo.target.buffs.push(effect)
-        if (!(effect.effectTags.includes('stack') == false && actionInfo.target.buffs.filter(e => e.name == effectName).length > 1)) {
+        if (!(effect.tags.includes('stack') == false && actionInfo.target.buffs.filter(e => e.name == effectName).length > 1)) {
             if (effect?.apply) await effect.apply(actionInfo, actionInfo.target, effect) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
             await eventHandle('gainedEffect', actionInfo, actionInfo.target, effect)
             await playStatusEffectGlow(actionInfo.target.avatarHtmlElement, effectName)
@@ -4599,7 +4599,7 @@ async function updateEffectIcons(battleBro) {
     for (let effectName in groupedEffects) {
         let { instances, effectInfo, isLocked } = groupedEffects[effectName]; // copy instances and effectInfo from the effect
 
-        if (!effectInfo.effectTags.includes("stack")) {
+        if (!effectInfo.tags.includes("stack")) {
             // Find the instance with the longest duration
             let longest = instances.reduce((prev, current) => {
                 return (prev.duration > current.duration) ? prev : current;
@@ -4620,7 +4620,7 @@ async function updateEffectIcons(battleBro) {
     for (let effectName in groupedEffects) {
         let { instances, effectInfo, isLocked } = groupedEffects[effectName];
 
-        if (effectInfo.effectTags.includes("stack")) {
+        if (effectInfo.tags.includes("stack")) {
             // STACKABLE: Show one icon with a counter
             displayEffects.push({
                 name: effectName,
@@ -4727,7 +4727,7 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
         dispelledEffects = dispelledEffects.filter(effect => effect.type === type && (effect.isLocked !== true || dispelLocked == true))
     }
     if (tag) { // otherwise we might be dispelling a tag (e.g. defensive effects)
-        dispelledEffects = dispelledEffects.filter(effect => infoAboutEffects[effect.name].effectTags.includes(tag) == true && (effect.isLocked !== true || dispelLocked == true))
+        dispelledEffects = dispelledEffects.filter(effect => infoAboutEffects[effect.name].tags.includes(tag) == true && (effect.isLocked !== true || dispelLocked == true))
     } else if (name) { // otherwise we might be dispelling an effect with a specific name
         dispelledEffects = dispelledEffects.filter(effect => effect.name === name && (effect.isLocked !== true || dispelLocked == true))
     } else if (!type) { // dispel all effects if all of the above is null
@@ -4757,7 +4757,7 @@ async function removeEffect(actionInfo, target, bufftag = null, name = null, typ
         filteredEffects = filteredEffects.filter(effect => effect.type === type)
     }
     if (bufftag) {
-        filteredEffects = filteredEffects.filter(effect => infoAboutEffects[effect.name].effectTags.includes(bufftag) == true)
+        filteredEffects = filteredEffects.filter(effect => infoAboutEffects[effect.name].tags.includes(bufftag) == true)
     } else if (name) {
         filteredEffects = filteredEffects.filter(effect => effect.name === name)
     }
@@ -4814,7 +4814,7 @@ async function changeCooldowns(battleBro, amount = -1, ability = null) {
         battleBro.cooldowns[ability] += amount
         await updateAbilityCooldownUI(battleBro, ability)
         for (let skillData of battleBro.skillsData) {
-            if (skillData.skill.displayName == ability) {
+            if (skillData.skill.name == ability) {
                 skillData.cooldown += amount
                 //await updateAbilityCooldownUI(battleBro, skillData.skill.name);
             }
@@ -4838,7 +4838,7 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
     console.log(abilityName, 'cooldown:', cooldown, 'abilityIndex:', abilityIndex, 'img:', img, 'cooldownSpan:', cooldownSpan)
-    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.effectTags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].type !== 'basic')) {
+    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.tags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].type !== 'basic')) {
         //|| (infoAboutAbilities[abilityName].type === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
@@ -4952,7 +4952,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
         if (dealtdmg > 0) {
             await playSparkImpact(endX, endY, colour, secondaryColour, Math.ceil(dealtdmg / 625))
-            // } else if (target.buffs.find(e => e.effectTags.includes('taunt'))) {
+            // } else if (target.buffs.find(e => e.tags.includes('taunt'))) {
             if (type !== 'shadow' && triggerEventHandlers == true) {
                 if (effectDmg == false && counterable == true) {
                     if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
@@ -4963,7 +4963,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                     dealtdmg = returnedValue
                 }
             } // passive effects upon damage that isn't shadow damage
-            if (target.buffs.find(e => e.effectTags.includes('loseOnHit'))) await removeEffect(actionInfo, target, 'loseOnHit')
+            if (target.buffs.find(e => e.tags.includes('loseOnHit'))) await removeEffect(actionInfo, target, 'loseOnHit')
         }
 
 
@@ -5024,7 +5024,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
 async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false, triggerEventHandlers = true) {
     await logFunctionCall('heal', ...arguments)
-    if (ignoreHealImmunity == false && ((actionInfo.target.buffs.find(effect => effect.effectTags.includes('healingImmunity')) && type == 'health') || (actionInfo.target.buffs.find(effect => effect.effectTags.includes('protectionHealingImmunity')) && type == 'protection'))) return
+    if (ignoreHealImmunity == false && ((actionInfo.target.buffs.find(effect => effect.tags.includes('healingImmunity')) && type == 'health') || (actionInfo.target.buffs.find(effect => effect.tags.includes('protectionHealingImmunity')) && type == 'protection'))) return
     actionInfo.actionDetails = {
         category: 'heal',
         type: type,
@@ -5034,7 +5034,7 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false,
     let user = actionInfo.battleBro
     let target = actionInfo.target
     const logElement = target.avatarHtmlElement.children()[7].firstElementChild
-    if (isHealthSteal == false && target.buffs.find(e => e.effectTags.includes('loseOnHeal'))) await removeEffect(actionInfo, target, 'loseOnHeal')
+    if (isHealthSteal == false && target.buffs.find(e => e.tags.includes('loseOnHeal'))) await removeEffect(actionInfo, target, 'loseOnHeal')
     if (type == 'health') {
         await addFloatingText(logElement, `+${Math.ceil(Math.min(target.maxHealth - target.health, healing))}`, 'green');
         target.health = Math.min(target.health + healing, target.maxHealth)
@@ -5049,7 +5049,7 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false,
 async function TMchange(actionInfo, change, resistable = true) {
     let user = actionInfo.battleBro // get the user from the actionInfo
     let target = actionInfo.target // get the target from the actionInfo
-    if (target.buffs.find(effect => effect.effectTags.includes('stopTMgain') && change > 0)) return
+    if (target.buffs.find(effect => effect.tags.includes('stopTMgain') && change > 0)) return
     if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
         await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
         await eventHandle('resisted', actionInfo, target, user, 'turnMeter', change)
@@ -5567,7 +5567,7 @@ async function runOnAuto(runForever = true) {
 
 async function attack(inputs) {
     await logFunctionCall('attack', ...arguments)
-    console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.displayName + (inputs.targetedEnemy ? ' on ' + inputs.targetedEnemy.character : ''))
+    console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.name + (inputs.targetedEnemy ? ' on ' + inputs.targetedEnemy.character : ''))
     if (inputs.skill.attackFct) {
         await inputs.skill.attackFct(inputs)
     } else {
