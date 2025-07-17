@@ -242,7 +242,7 @@ export const infoAboutCharacters = {
         resistance: 32.34,
         healthSteal: 20,
         tags: ['neutral', 'attacker', 'mercenary', 'oliv', 'unalignedForceUser'],
-        abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Blade', 'Super Strike'],
+        abilities: ['Lethal Swing', 'Piercing Edge', 'Disruptor Shot', 'Super Strike'],
         passiveAbilities: ['Elimination Protocol'],
         charDesc: 'Powerful foe who crushes enemies with repeated target locks and combos down upon killing an enemy.',
     },

@@ -225,7 +225,7 @@ const infoAboutAbilities = {
                 for (let buff of copiedEffects) {
                     await applyEffect(actionInfo.withTarget(ally), buff.name, (oldSchool ? 2 : 1))
                 }
-                if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
+                if (ally.tags.includes('jedi') == true) {
                     bonusTurnMeter += 10
                 }
             }
@@ -704,7 +704,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 3,
         tags: ['attack', 'physical_damage'],
-        desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns. Target Lock: Inflict Vulnerable to target enemy.",
+        desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns.<br>Target Lock: Inflict Vulnerable to target enemy.",
         abilityDamage: 130,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -720,13 +720,13 @@ const infoAboutAbilities = {
             }
         }
     },
-    'Disruptor Blade': {
-        name: "Disruptor Blade",
+    'Disruptor Shot': {
+        name: "Disruptor Shot",
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'special',
         cooldown: 4,
-        tags: ['attack', 'physical_damage'],
-        desc: "Deal special damage to the target enemy and dispel all buffs. This ability has +30% Critical Chance and Critical Damage when used against tanks. Target Lock: This attack deals +50% damage and inflicts Daze and Buff Immunity for 2 turns.",
+        tags: ['attack', 'projectile_attack', 'physical_damage'],
+        desc: "Deal special damage to the target enemy and dispel all buffs. This ability has +30% Critical Chance and Critical Damage when used against tanks.<br>Target Lock: This attack deals +50% damage and inflicts Daze and Buff Immunity for 2 turns.",
         abilityDamage: 135,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -735,7 +735,7 @@ const infoAboutAbilities = {
                 actionInfo.battleBro.flatDamageDealt += 50
                 locked = true
             }
-            if (infoAboutCharacters[actionInfo.target.character].tags.includes('tank') == true) {
+            if (actionInfo.target.tags.includes('tank') == true) {
                 actionInfo.battleBro.critChance += 30
                 actionInfo.battleBro.critDamage += 30
                 await dealDmg(actionInfo, this.abilityDamage, 'physical')
@@ -929,7 +929,7 @@ const infoAboutAbilities = {
                 }
                 await applyEffect(actionInfo.withTarget(enemy), 'damageOverTime', 3, 3)
             }
-            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('shadowMenace'))) {
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(unit => unit.tags.includes('shadowMenace'))) {
                 await heal(actionInfo.withTarget(ally), damageDealt * 0.2)
             }
         }
@@ -1486,7 +1486,7 @@ const infoAboutPassives = {
     'Grand Master\'s Guidance': {
         name: 'Grand Master\'s Guidance',
         image: 'images/abilities/abilityui_passive_removeharmful.png',
-        desc: 'Allies have +30% Tenacity. Whenever an ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns. Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn. Grand Master Yoda is immune to Shock. Omicron: The leadership abilities of all other allies are active until the end of battle.',
+        desc: `Allies have +30% Tenacity.<br>Whenever an ally Resists a debuff, they gain the following: 30% Turn Meter, Critical Chance Up for 2 turns, and Critical Damage Up for 2 turns.<br>Whenever they suffer a debuff, they gain Tenacity Up for 1 turn at the end of that turn.<br>Grand Master Yoda is immune to Shock. ${(omicron ? `<br>The leadership abilities of all other allies are active until the end of battle.` : '')}`,
         type: 'leader',
         tags: ['buff_gain', 'grand_arena_omicron'],
         start: async function (actionInfo, owner) {
@@ -1569,7 +1569,7 @@ const infoAboutPassives = {
     'Vaapad': {
         name: 'Vaapad',
         image: 'images/abilities/abilityui_passive_def.png',
-        desc: 'Mace gains 30% Max Health. At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn. While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance. Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.\n Resilient Defense: Enemies will target this unit; lose one stack when damaged by an attack',
+        desc: "Mace gains 30% Max Health.<br>At the end of each turn, if another ally with Protection was damaged by an attack that turn, Mace gains 3 stacks of Resilient Defense (max 8) for the rest of the encounter if he has not gained Resilient Defense this way since his last turn.<br>While Mace has Resilient Defense, he has +10% Offense per stack and 100% counter chance.<br>Whenever Mace gains Taunt, he dispels it and gains 2 stacks of Resilient Defense.",
         type: 'unique',
         tags: ['dispel', 'buff_gain'],
         start: async function (actionInfo, owner) {
@@ -1653,7 +1653,7 @@ const infoAboutPassives = {
     'Sense Weakness': {
         name: 'Sense Weakness',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        desc: 'Mace gains 30% Offense. At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. Shatterpoint is dispelled at the end of each ally\'s turn. When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn. \n Shatterpoint: Receiving damage dispels Shatterpoint and reduces Defense, Max Health, and Offense by 10% for the rest of the encounter; enemies can ignore Taunt to target this unit',
+        desc: 'Mace gains 30% Offense.<br>At the start of Mace\'s turn, dispel Stealth on all enemies and a random enemy (excluding raid bosses and Galactic Legends) is inflicted with Speed Down and Shatterpoint for 1 turn, which can\'t be evaded or resisted.<br>When an ally damages an enemy with Shatterpoint, all allies recover 10% Protection, and all Jedi allies gain Foresight for 1 turn.<br>',
         omicron_desc: 'At the start of each other Light Side ally\'s turn, a random enemy (excluding Galactic Legends) is inflicted with Speed Down for 1 turn and Shatterpoint, which can\'t be evaded or resisted. When an ally damages an enemy with Shatterpoint, all allies gain 5% Turn Meter.',
         type: 'unique',
         tags: ['territory_war_omicron', 'dispel', 'debuff_gain', 'protection_recovery', 'turnmeter_recovery'],
@@ -1678,7 +1678,7 @@ const infoAboutPassives = {
                 if (target.buffs.find(e => e.name == 'shatterpoint')) {
                     for (let ally of aliveBattleBros[owner.team]) {
                         await heal({ battleBro: owner, target: ally }, ally.maxProtection * 0.1, 'protection')
-                        if (infoAboutCharacters[ally.character].tags.includes('jedi') == true) {
+                        if (ally.tags.includes('jedi') == true) {
                             let actionInfo = new ActionInfo({ battleBro: owner, target: ally })
                             await applyEffect(actionInfo, 'foresight', 1)
                         }
@@ -1958,7 +1958,7 @@ const infoAboutPassives = {
         type: 'unique',
         tags: ['buffGain', 'mandalorian'],
         start: async function (actionInfo, owner) {
-            for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('mandalorian'))) {
+            for (let ally of aliveBattleBros[owner.team].filter(unit => unit.tags.includes('mandalorian'))) {
                 await applyEffect(actionInfo.withTarget(ally), 'powerOfMandalore', 4)
             }
         },
@@ -1972,7 +1972,7 @@ const infoAboutPassives = {
         tags: ['buffGain', 'sith'],
         gainedEffect: async function (actionInfo, owner, target, effect) {
             if (owner === target && effect.type == 'buff' && effect.name !== 'stealth') {
-                for (let ally of aliveBattleBros[owner.team].filter(unit => infoAboutCharacters[unit.character].tags.includes('sith'))) {
+                for (let ally of aliveBattleBros[owner.team].filter(unit => unit.tags.includes('sith'))) {
                     if (ally !== owner && !ally.buffs.find(e => e.name === effect.name)) {
                         await applyEffect(actionInfo.withTarget(ally), effect.name, effect.duration, effect.stacks || 1, false, effect.isLocked || false)
                     }
@@ -2898,6 +2898,7 @@ const infoAboutEffects = {
         tags: ['stack', 'mine'],
         desc: "Zero speed until the end of 2 turns. When an EMP Device explodes or is dispelled, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
         opposite: 'overcharge',
+        regularName: 'EMP Device',
         apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
             effect.turnsPassed = 0
@@ -2920,7 +2921,7 @@ const infoAboutEffects = {
                 await dealDmg(actionInfo, 100, 'special', true, true, false, 'EMPDevice', false, false)
                 await applyEffect(actionInfo, 'expose', 2)
                 await applyEffect(actionInfo, 'protectionDisruption', 2)
-                if (infoAboutCharacters[unit.character].tags.includes('droid')) {
+                if (unit.tags.includes('droid')) {
                     await applyEffect(actionInfo, 'stun', 1)
                 }
             }
@@ -5264,7 +5265,7 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
             statBox = $('<div id="statBox"></div>').appendTo('body');
         }
 
-        const regularName = effect.name
+        const regularName = (infoAboutEffects[effect.name].regularName) ? infoAboutEffects[effect.name].regularName : effect.name
             .replace(/([A-Z])/g, ' $1') // insert space before capital letters
             .replace(/^./, str => str.toUpperCase()) // capitalize first letter
             .trim(); // remove leading/trailing space
@@ -5388,7 +5389,9 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
 }
 
 async function highlightKeywords(text) {
-    let newText = text
+    let newText = text;
+
+    // Highlight keywords like damage types
     const highlights = {
         'physical damage': 'orange',
         'special damage': 'cornflowerblue',
@@ -5400,13 +5403,71 @@ async function highlightKeywords(text) {
         'instantly defeat': 'red'
     };
 
-    for (let word in highlights) {
-        const regex = new RegExp(`\\b(${word})\\b`, 'gi') // match whole words
-        const color = highlights[word]
-        newText = newText.replace(regex, `<span style="color:${color}">$1</span>`)
+    // --- Step 1: Prepare effect names ---
+    const nameToEffectKey = {};
+    for (let key in infoAboutEffects) {
+        const effect = infoAboutEffects[key];
+        const regularName = effect.regularName || key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+        nameToEffectKey[regularName] = key;
     }
 
-    return newText
+    const sortedEffectNames = Object.keys(nameToEffectKey).sort((a, b) => b.length - a.length);
+
+    // --- Step 2: Split around HTML tags ---
+    const parts = newText.split(/(<[^>]+>)/g); // keeps the tags in the array
+
+    // --- Step 3: Prepare tooltip replacement tokens ---
+    let tooltipMap = {};
+    let tooltipCounter = 0;
+
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i].startsWith('<')) continue; // skip HTML tags
+
+        let part = parts[i];
+
+        // --- Apply static highlights ---
+        for (let word in highlights) {
+            const regex = new RegExp(`\\b(${word})\\b`, 'gi');
+            const color = highlights[word];
+            part = part.replace(regex, `<span style="color:${color}">$1</span>`);
+        }
+
+        // --- Apply effect highlighting ---
+        for (let name of sortedEffectNames) {
+            const key = nameToEffectKey[name];
+            const effect = infoAboutEffects[key];
+            const type = effect.type;
+            const correctName = effect.regularName || name;
+
+            let color = 'cornflowerblue';
+            if (type === 'buff') color = 'limegreen';
+            else if (type === 'debuff') color = 'red';
+
+            const safeDesc = effect.desc.replace(/"/g, '&quot;');
+
+            // Generate tooltip span and replace with token
+            const span = `<span class="effect-hover" style="color: ${color}; cursor: help;" title="${safeDesc}">${correctName}</span>`;
+            const token = `__TOOLTIP${tooltipCounter}__`;
+            tooltipMap[token] = span;
+
+            const regex = new RegExp(`\\b(${correctName})\\b`, 'gi');
+            part = part.replace(regex, token);
+            tooltipCounter++;
+        }
+
+        parts[i] = part;
+    }
+
+    // --- Step 4: Rejoin text and replace tooltip tokens ---
+    newText = parts.join('');
+    for (let token in tooltipMap) {
+        newText = newText.replaceAll(token, tooltipMap[token]);
+    }
+
+    return newText;
 }
 
 /////////////////////// KRAYT RAID stuff ///////////////////////////////////
