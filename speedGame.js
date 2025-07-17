@@ -2520,7 +2520,7 @@ const infoAboutEffects = {
     },
     'shields': {
         name: 'shields',
-        image: 'images/effects/bonusProtection.png',
+        image: 'images/effects/shields.png',
         type: 'buff',
         effectTags: ['stack', 'shields'],
         desc: "Adds {{bonusData}}% of bonus protection on top of regular protection.",
