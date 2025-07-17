@@ -96,7 +96,7 @@ export var battleBros = [
     },
     {
         id: "14",
-        character: 'Yoda',
+        character: 'Commander Luke Skywalker',
         x: 1400,
         y: 700,
         team: 1,

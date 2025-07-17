@@ -115,7 +115,7 @@ const infoAboutAbilities = {
         type: 'ultimate',
         ultimateCost: 3000,
         tags: ['dispel', 'health_recovery', 'buff_gain', 'taunt'],
-        desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable: they cannot fall below 1% Health from damage (but can be defeated by other abilities that defeat outright). Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
+        desc: 'Chewbacca lets out a defiant roar, rallying his allies to stand their ground. He dispels all debuffs on himself and all allies, recovers 50% Health and Protection, and Taunts for 3 turns. For 2 turns, all other allies gain Unbreakable. Chewbacca gains Damage Immunity, Revival and Retribution for 2 turns.',
         use: async function (actionInfo) {
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
                 await dispel(actionInfo.withTarget(ally), 'debuff')
@@ -129,13 +129,97 @@ const infoAboutAbilities = {
             await applyEffect(actionInfo.withSelfAsTarget(), 'retribution', 2);
         }
     },
+    'Destined Strike': {
+        name: 'Destined Strike',
+        image: 'images/abilities/ability_commanderluke_basic.png',
+        type: 'basic',
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 178.1,
+        desc: 'Deal Physical damage to target enemy and inflict Speed Down and Defence Down for 2 turns. If the target already had Speed Down, remove 30% Turn Meter. If the target already had Defence Down, inflict Stun for 1 turn.',
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                if (actionInfo.target.buffs.find(effect => effect.name == 'speedDown')) {
+                    await TMchange(actionInfo, -30)
+                }
+                if (actionInfo.target.buffs.find(effect => effect.name == 'defenceDown')) {
+                    await applyEffect(actionInfo, 'stun', 1)
+                }
+                await applyEffect(actionInfo, 'speedDown', 2)
+                await applyEffect(actionInfo, 'defenceDown', 2)
+            }
+        }
+    },
+    'Use the Force': {
+        name: 'Use the Force',
+        image: 'images/abilities/ability_commanderluke_special01.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['attack', 'physical_damage', 'debuff_gain', 'dispel'],
+        abilityDamage: 297.8,
+        desc: "Deal Physical damage to target enemy, Dispel all buffs on them, remove 100% Turn Meter, and inflict Buff Immunity and Tenacity Down for 2 turns. Reduce the cooldown of this ability by 1 if the target didn't have full Health.",
+        use: async function (actionInfo) {
+            await dispel(actionInfo, 'buff')
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await TMchange(actionInfo, -100)
+                await applyEffect(actionInfo, 'buffImmunity', 2)
+                await applyEffect(actionInfo, 'tenacityDown', 2)
+            }
+            if (actionInfo.target.health < actionInfo.target.maxHealth) {
+                return [-1] // reduces cooldown by 1
+            }
+        }
+    },
+    'Call to Action': {
+        name: 'Call to Action',
+        image: 'images/abilities/ability_commanderluke_special02.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['buff_gain', 'cleanse'],
+        desc: "Dispel all debuffs on Luke. Luke gains 100% Turn Meter and recovers 40% Health and Protection. If Luke doesn't have Call to Action, he gains it (locked) until the next time this ability is used. If Luke already had Call to Action, he removes it.",
+        use: async function (actionInfo) {
+            await dispel(actionInfo.withSelfAsTarget(), 'debuff')
+            await TMchange(actionInfo.withSelfAsTarget(), 100)
+            await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxHealth * 0.4)
+            await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxProtection * 0.4, 'protection')
+            if (actionInfo.battleBro.buffs.find(effect => effect.name == 'callToAction')) {
+                await removeEffect(actionInfo.withSelfAsTarget(), actionInfo.battleBro, null, 'callToAction')
+            } else {
+                await applyEffect(actionInfo.withSelfAsTarget(), 'callToAction', Infinity, 1, false, true)
+            }
+        }
+    },
+    'Like My Father Before Me': {
+        name: 'Like My Father Before Me',
+        image: 'images/abilities/ability_commanderluke_ult.png',
+        type: 'ultimate',
+        ultimateCost: 4500,
+        tags: ['buff_gain', 'cleanse'],
+        desc: "Luke taps into the calm strength of the Jedi, shedding aggression for perfect clarity. Luke loses Call to Action and all allies cleanse 2 random debuffs, recover 35% Health and Protection, and gain Tenacity Up and Critical Hit Immunity for 2 turns. Luke gains locked Jedi's Will for 3 turns. While he has Jedi's Will, he has +100% defence penetration and gains 50% turn meter whenever an enemy resists a debuff. When it expires, he automatically uses Use the Force on the healthiest enemy.",
+        use: async function (actionInfo) {
+            await removeEffect(actionInfo.withSelfAsTarget(), actionInfo.battleBro, null, 'callToAction')
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                for (let i = 0; i < 2; i++) {
+                    const debuffs = ally.buffs.filter(effect => effect.type == 'debuff' && effect.isLocked == false)
+                    const randomDebuff = debuffs[Math.floor(Math.random() * debuffs.length)]
+                    if (randomDebuff) await dispel(actionInfo.withTarget(ally), null, null, null, false, debuffs[randomDebuff])
+                }
+                await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.35)
+                await heal(actionInfo.withTarget(ally), ally.maxProtection * 0.35, 'protection')
+                await applyEffect(actionInfo.withTarget(ally), 'tenacityUp', 2)
+                await applyEffect(actionInfo.withTarget(ally), 'criticalHitImmunity', 2)
+            }
+            await applyEffect(actionInfo.withSelfAsTarget(), "jedi'sWill", 3, 1, false, true)
+        }
+    },
     'Ataru': {
         name: 'Ataru',
         image: 'images/abilities/ability_grandmasteryoda_basic.png',
         type: 'basic',
         tags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
         abilityDamage: 208,
-        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn. If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
+        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn.If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
         use: async function (actionInfo) {
             let hits = await dealDmg(actionInfo, this.abilityDamage, 'special')
             let hit = hits[0]
@@ -328,7 +412,7 @@ const infoAboutAbilities = {
         cooldown: 3,
         tags: ['target_ally', 'attack', 'special_damage'],
         abilityDamage: 184,
-        desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally. If target enemy had Shatterpoint and target ally is Jedi, Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection.",
+        desc: "Deal Special damage to target enemy and call target other ally to assist. If target enemy had Shatterpoint and target ally is Galactic Republic, swap Turn Meter with target ally, then Mace gains 2 stacks of Resilient Defense (max 8) for the rest of the encounter. Both Mace and target ally recover 30% Protection.",
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             let hit = await dealDmg(actionInfo, this.abilityDamage, 'special')
@@ -704,17 +788,18 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 3,
         tags: ['attack', 'physical_damage'],
-        desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns.<br>Target Lock: Inflict Vulnerable to target enemy.",
+        desc: "Deals physical damage to target enemy. If it scores a critical hit, deal special damage to target enemy. Inflict Target Lock to the enemy leader for 3 turns.<br>Target Lock: Inflict Vulnerable to target enemy for 2 turns.",
         abilityDamage: 130,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
-            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
-            if (hit[0] > 0) {
-                let enemyLeaders = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat().filter(guy => guy.isLeader == true)
-                for (let enemyLeader of enemyLeaders) {
-                    await applyEffect(actionInfo.withTarget(enemyLeader), 'targetLock', 3)
-                }
+            let enemyLeaders = actionInfo.enemies.filter(guy => guy.isLeader == true)
+            for (let enemyLeader of enemyLeaders) {
+                await applyEffect(actionInfo.withTarget(enemyLeader), 'targetLock', 3)
             }
+            if (actionInfo.target.buffs.find(effect => effect.tags.includes('targetLock'))) {
+                await applyEffect(actionInfo, 'vulnerable', 2)
+            }
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             if (hit[1] == true) {
                 await dealDmg(actionInfo, this.abilityDamage * 0.5, 'special', false)
             }
@@ -841,7 +926,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 5,
         tags: ['attack', 'mines', 'debuff_gain'],
-        desc: "Inflict 5 stacks of Concussion Mine to all enemies and decrease the cooldown by 4. Use this ability again to explode all Concussion Mines. When this ability detonates, inflict radiation on all enemies for 1 turn.",
+        desc: "Inflict 5 stacks of Concussion Mine to all enemies and decrease the cooldown by 4. Use this ability again to detonate all mines. When this ability detonates, inflict radiation on all enemies for 1 turn.",
         use: async function (actionInfo) {
             if (!actionInfo.battleBro.customData.atomicDetonation) {
                 actionInfo.battleBro.customData.atomicDetonation = {
@@ -856,7 +941,7 @@ const infoAboutAbilities = {
                 return [-4] // decreases cooldowns of Atomic Detonation by 4
             } else {
                 for (let enemy of actionInfo.enemies) {
-                    let concussionMines = enemy.buffs.filter(effect => effect.tags.includes('mine') && effect.caster == actionInfo.battleBro)
+                    let concussionMines = enemy.buffs.filter(effect => effect.tags.includes('mine'))
                     for (let mine of concussionMines) {
                         await expireEffect(actionInfo.withTarget(enemy), enemy, mine, 'detonated')
                     }
@@ -873,7 +958,7 @@ const infoAboutAbilities = {
         ultimateCost: 2400,
         tags: ['attack', 'physical_damage', 'special_damage', 'ultra_damage', 'debuff_gain'],
         abilityDamage: 80,
-        desc: "Deal special damage, ultra damage and physical damage and inflict EMP Device to all enemies for 3 turns. EMP Device: Zero speed until the end of 2 turns. When an EMP Device expires, take special damage, gain Expose and Protection Disruption for 2 turns and become stunned if this character is a droid.",
+        desc: "Deal special damage, ultra damage and physical damage and inflict EMP Device to all enemies for 3 turns.",
         use: async function (actionInfo) {
             for (let enemy of actionInfo.enemies) {
                 let hit1 = await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'special')
@@ -940,7 +1025,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 7,
         tags: ['buffGain'],
-        desc: 'Gain the Rotation effect and defense up for 4 turns, and recover 35% protection. Rotating: Reflect projectile attacks such as blaster shots, absorb force/magic attacks, and reduce melee attacks by 50%.',
+        desc: 'Gain Rotating and defense up for 4 turns, and recover 35% protection.',
         use: async function (actionInfo) {
             await heal(actionInfo.withSelfAsTarget(), actionInfo.battleBro.maxProtection * 0.35, 'protection')
             await applyEffect(actionInfo.withSelfAsTarget(), 'rotating', 4)
@@ -953,7 +1038,7 @@ const infoAboutAbilities = {
         type: 'ultimate',
         ultimateCost: 2200,
         tags: ['buffGain'],
-        desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each fallen ally. Shadow menace gains 1 stack of fallen ally for each fallen ally. Fallen ally When attacking an enemy revive a random fallen ally with 1 health who assists dealing 10% damage for each stack. Then defeat these allies.',
+        desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each dead ally. Shadow menace gains 1 stack of fallen ally for each dead ally.',
         use: async function (actionInfo) {
             actionInfo.battleBro.turnMeter += 100 // bonus turn
             let fallenAllies = battleBros.filter(bro => bro.team === actionInfo.battleBro.team && bro.isDead === true)
@@ -1483,6 +1568,113 @@ const infoAboutPassives = {
             }
         }
     },
+    'Rebel Maneuvers': {
+        name: 'Rebel Maneuvers',
+        image: 'images/abilities/abilityui_passive_rebel.png',
+        desc: 'Allies have +50% Counter Chance, +50% Defense, and +15% Offense. Whenever an enemy resists a debuff, allies gain 5% Turn Meter.',
+        type: 'leader',
+        tags: ['TM_gain', 'counter_chance'],
+        start: async function (actionInfo, owner) {
+            for (let ally of aliveBattleBros[owner.team]) {
+                ally.counterChance += 50
+                ally.armour += 50
+                ally.resistance += 50
+                ally.offence += 15
+            }
+        },
+        resisted: async function (actionInfo, owner, target, user, type, effect) {
+            if (target.team !== owner.team && type == "effect") {
+                for (let ally of aliveBattleBros[owner.team]) {
+                    let newActionInfo = new ActionInfo({ battleBro: owner, target: ally })
+                    await TMchange(newActionInfo, 5)
+                }
+            }
+        },
+    },
+    'Learn Control': {
+        name: 'Learn Control',
+        image: 'images/abilities/abilityui_passive_counterattack.png',
+        desc: "While Luke doesn't have Call to Action, he has +50% Counter Chance, +50% Critical Avoidance, +50% Defense, +100% Tenacity, and gains 10% Turn Meter whenever another ally takes damage.",
+        type: 'unique',
+        tags: ['TM_gain', 'counter_chance'],
+        start: async function (actionInfo, owner) {
+            owner.customData.learnControl = {
+                hasCallToAction: false,
+            }
+            owner.counterChance += 50
+            owner.critAvoidance += 50
+            owner.armour += 50
+            owner.resistance += 50
+            owner.tenacity += 100
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner == target && effect.name == 'callToAction' && owner.customData.learnControl.hasCallToAction == false) {
+                owner.customData.learnControl.hasCallToAction = true
+                owner.counterChance -= 50
+                owner.critAvoidance -= 50
+                owner.armour -= 50
+                owner.resistance -= 50
+                owner.tenacity -= 100
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect) {
+            if (owner == target && effect.name == 'callToAction' && owner.customData.learnControl.hasCallToAction == true) {
+                owner.customData.learnControl.hasCallToAction = false
+                owner.counterChance += 50
+                owner.critAvoidance += 50
+                owner.armour += 50
+                owner.resistance += 50
+                owner.tenacity += 100
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (owner.team == target.team && owner.customData.learnControl.hasCallToAction == false) {
+                await TMchange(new ActionInfo({ battleBro: owner, target: owner }), 10)
+            }
+        }
+    },
+    'It Binds All Things': {
+        name: 'It Binds All Things',
+        image: 'images/abilities/abilityui_passive_extraturn.png',
+        desc: "Luke has +40% Potency. Whenever Luke Resists a debuff he recovers 5% Health and 5% Protection. Whenever Luke inflicts a debuff he gains 10% Turn Meter and other allies gain half that amount.",
+        contains: "Ult Jedi's Will bonus effects",
+        type: 'unique',
+        tags: ['TM_gain'],
+        start: async function (actionInfo, owner) {
+            owner.potency += 40
+        },
+        resisted: async function (actionInfo, owner, target, user, type, effect) {
+            if (target == owner && type == "effect") {
+                let healInfo = new ActionInfo({ battleBro: owner, target: owner })
+                await heal(healInfo, owner.maxHealth * 0.05)
+                await heal(healInfo, owner.maxProtection * 0.05, 'protection')
+            }
+            // ULT BONUS EFFECTS
+            if (owner.team !== target.team && owner.buffs.includes("jedi'sWill")) {
+                await TMchange(new ActionInfo({ battleBro: owner, target: owner }), 50)
+            }
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner == effect.caster && effect.type == 'debuff') {
+                for (let ally of aliveBattleBros[owner.team]) {
+                    await TMchange(new ActionInfo({ battleBro: owner, target: ally }), ((owner == ally) ? 10 : 5))
+                }
+            }
+            // ULT BONUS EFFECT
+            if (owner == target && effect.name == "jedi'sWill") {
+                owner.defencePenetration += 100
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect) {
+            // ULT BONUS EFFECT
+            if (owner == target && effect.name == "jedi'sWill") {
+                owner.defencePenetration -= 100
+                const enemyHealths = actionInfo.enemies.map(guy => guy.health)
+                const healthiestEnemy = actionInfo.enemies[enemyHealths.indexOf(Math.max(...enemyHealths))]
+                await addAttackToQueue(new ActionInfo({ battleBro: owner, target: healthiestEnemy }), 100, 1)
+            }
+        },
+    },
     'Grand Master\'s Guidance': {
         name: 'Grand Master\'s Guidance',
         image: 'images/abilities/abilityui_passive_removeharmful.png',
@@ -1690,7 +1882,7 @@ const infoAboutPassives = {
     'First Mate of the Onyx Cinder': {
         name: 'First Mate of the Onyx Cinder',
         image: 'images/abilities/abilityui_passive_firstmateoftheonyxcinder.png',
-        desc: 'At the start of the battle, SM-33 gains locked Defence Up for 2 turns. If no enemies are challengers, whenever an enemy damages the leader, they gain challenger. Whenever an enemy damages the leader, SM-33 gains 15% Turn Meter and 10% Critical Damage (stacking) for 1 turn. Whenever SM-33 is damaged, he gains burning for 2 turns. Attacked enemies and attackers take all the damage SM-33 would sustain from burning. While in Territory Wars: Allied leaders gain 10% Max Health and Offense, and 10 Speed, doubled if they\'re also a Pirate. The first active enemy that damaged the Pirate in the Leader slot (excluding SM-33) deals 30% less damage and has -50% Potency to all allies aside from SM-33, and SM-33 and the allied Pirate in the Leader slot can ignore Taunt effects to target them. Whenever the allied Pirate in the Leader slot attacks, SM-33 is called to assist. Challenger: Can\'t call allies to assist and can\'t be called to assist. Can ignore taunt to target the enemy leader.',
+        desc: 'At the start of the battle, SM-33 gains locked Defence Up for 2 turns. If no enemies are challengers, whenever an enemy damages the leader, they gain challenger. Whenever an enemy damages the leader, SM-33 gains 15% Turn Meter and 10% Critical Damage (stacking) for 1 turn. Whenever SM-33 is damaged, he gains burning for 2 turns. Attacked enemies and attackers take all the damage SM-33 would sustain from burning. While in Territory Wars: Allied leaders gain 10% Max Health and Offense, and 10 Speed, doubled if they\'re also a Pirate. The first active enemy that damaged the Pirate in the Leader slot (excluding SM-33) deals 30% less damage and has -50% Potency to all allies aside from SM-33, and SM-33 and the allied Pirate in the Leader slot can ignore Taunt effects to target them. Whenever the allied Pirate in the Leader slot attacks, SM-33 is called to assist.',
         type: 'unique',
         tags: ['buff_gain', 'damage_effect'],
         start: async function (actionInfo, owner) {
@@ -1799,7 +1991,7 @@ const infoAboutPassives = {
     // --------------------------------------------------------OLIV'S CHARACTERS
     'Elimination Protocol': {
         name: 'Elimination Protocol',
-        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        image: 'images/abilities/abilityui_passive_criticalintel.png',
         desc: 'Super Striker has +25% Critical Chance and +30% Defense Penetration. Whenever he attacks an enemy with Target Lock, he gains +10% Offense (stacking, max 50%) for the rest of the encounter. If Super Striker defeats an enemy, he gains Stealth for 1 turn and resets the cooldown of Super Strike. While Stealthed, Super Striker gains +100% Accuracy and his attacks deal +20% damage.',
         type: 'unique',
         tags: ['cooldownReset'],
@@ -1897,7 +2089,7 @@ const infoAboutPassives = {
     },
     'Unrelenting Protocol': {
         name: 'Unrelenting Protocol',
-        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        image: 'images/abilities/abilityui_passive_convergence.png',
         desc: 'If Super Striker is the last active ally, he is immune to Stun and Healing Immunity effects and at the start of his turns, he recovers 15% Protection and dispels one random debuff.',
         type: 'unique',
         tags: ['protection_recovery'],
@@ -1954,7 +2146,7 @@ const infoAboutPassives = {
     'Reign of Mandalore': {
         name: 'Reign of Mandalore',
         image: 'images/abilities/shadowMenaceOriginal6.png',
-        desc: 'All mandalorian allies have the Power of Mandalore buff at the start of the battle for 1 turn. Power of Mandalore: When an ability is used then gain all up buffs for 3 turns. If these buffs are dispelled, gain 5% turn metre for each buff dispelled.',
+        desc: 'All mandalorian allies have the Power of Mandalore buff at the start of the battle for 1 turn.',
         type: 'unique',
         tags: ['buffGain', 'mandalorian'],
         start: async function (actionInfo, owner) {
@@ -2045,7 +2237,7 @@ const infoAboutEffects = {
             unit.accuracy += 50
             unit.critChance += 50
             unit.critDamage += 50
-            unit.customData.callToAction = {
+            if (!unit.customData.ignoreTaunts) unit.customData.ignoreTaunts = {
                 enemiesNotTaunting: [],
                 ignoringTaunts: false
             }
@@ -2057,21 +2249,22 @@ const infoAboutEffects = {
         },
         startedTurn: async function (actionInfo, unit, effect, guyWhoStartedTheirTurn) {
             if (unit == guyWhoStartedTheirTurn) {
-                let enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
-                unit.customData.callToAction.enemiesNotTaunting = enemies.filter(unit => unit.taunting == false)
-                for (let enemy in unit.customData.callToAction.enemiesNotTaunting) {
-                    enemy.taunting == true
+                let enemies = actionInfo.enemies
+                unit.customData.ignoreTaunts.enemiesNotTaunting = enemies.filter(unit => unit.taunting == false)
+                for (let enemy of unit.customData.ignoreTaunts.enemiesNotTaunting) {
+                    enemy.taunting = true
                 }
-                unit.customData.callToAction.ignoringTaunts = true
+                unit.customData.ignoreTaunts.ignoringTaunts = true
             }
         },
         endedTurn: async function (actionInfo, unit, effect, guyWhoStartedTheirTurn) {
-            if (unit.customData?.callToAction?.ignoringTaunts == true) {
-                for (let enemy in unit.customData.callToAction?.enemiesNotTaunting) {
-                    if (!enemy?.buffs?.find(e => e.tags.includes('taunt'))) enemy.taunting == false
+            if (unit.customData?.ignoreTaunts?.ignoringTaunts == true) {
+                for (let enemy of unit.customData.ignoreTaunts.enemiesNotTaunting) {
+                    if (!enemy?.buffs?.find(e => e.tags.includes('taunt'))) enemy.taunting = false
                 }
-                unit.customData.callToAction.enemiesNotTaunting = []
-                unit.customData.callToAction.ignoringTaunts = false
+                unit.customData.ignoreTaunts.enemiesNotTaunting = []
+                unit.customData.ignoreTaunts.ignoringTaunts = false
+                if (actionInfo.enemies.filter(unit => unit.taunting == true)[0]) await changeTarget(actionInfo.enemies.filter(unit => unit.taunting == true)[0])
             }
         }
     },
@@ -2118,6 +2311,22 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             unit.critDamage -= 50
+        }
+    },
+    'criticalHitImmunity': {
+        name: 'criticalHitImmunity',
+        image: 'images/effects/criticalHitImmunity.png',
+        type: 'buff',
+        tags: ['criticalAvoidance'],
+        desc: "Can't be critically hit.",
+        opposite: 'vulnerable',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.critAvoidance += 1000
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.critAvoidance -= 1000
         }
     },
     'damageImmunity': {
@@ -2284,6 +2493,31 @@ const infoAboutEffects = {
             await logFunctionCall('method: remove (', ...arguments,)
             unit.maxHealth /= 1.15;
             unit.health = Math.min(unit.health, unit.maxHealth) // Make sure health doesn't surpass max health when max health is lowered
+        }
+    },
+    "jedi'sWill": {
+        name: "jedi'sWill",
+        image: 'images/effects/jedisWill.png',
+        type: 'buff',
+        tags: ['stack', 'offence', 'counterChance', 'speed'],
+        desc: "+100% Counter Chance, +25% Offence, and +25% Speed. This character becomes a Jedi in addition to its other types.",
+        opposite: 'forceInfluence',
+        apply: async function (actionInfo, unit, effect) {
+            unit.offence += 25
+            unit.speedPercent += 25
+            unit.counterChance += 100
+            if (!unit.tags.includes("jedi")) {
+                effect.notJedi = true
+                unit.tags.push("jedi")
+            }
+        },
+        remove: async function (actionInfo, unit, effect) {
+            unit.offence -= 25
+            unit.speedPercent -= 25
+            unit.counterChance -= 100
+            if (effect?.notJedi) {
+                unit.tags.splice(unit.tags.indexOf("jedi"), 1)
+            }
         }
     },
     'offenceUp': {
@@ -3376,6 +3610,22 @@ const infoAboutEffects = {
             unit.tenacity += 100
         }
     },
+    'vulnerable': {
+        name: 'vulnerable',
+        image: 'images/effects/vulnerable.png',
+        type: 'debuff',
+        tags: ['criticalAvoidance'],
+        desc: "Attackers always crit if able to.",
+        opposite: 'criticalHitImmunity',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.critAvoidance -= 1000
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.critAvoidance += 1000
+        }
+    },
     // ----------------------------------------------------------------- MISC EFFECTS -----------------------------------------------------------------
     'challenger': { // unfinished
         name: 'challenger',
@@ -3621,6 +3871,7 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.offence = 100
     battleBro.maxHealth = battleBro.health
     battleBro.maxProtection = battleBro.protection
+    battleBro.counterChance = 0
     battleBro.shields = 0 // used for abilities that give bonus protection
     battleBro.speedPercent = 100 // using this to manipulate speed via buffs etc
     battleBro.flatDamageDealt = 100
@@ -3631,14 +3882,14 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.taunting = false
     battleBro.buffs = []
     battleBro.effects = []
-    battleBro.customData = {} // stores ability data
-    battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
-    battleBro.passives = battleBro.passives.filter(passive => {
-        return !(infoAboutPassives[passive].type === 'leader' && !battleBro.isLeader);
-    }) // remove leader passives of characters that aren't leaders
-    battleBro.abilityImageDivs = []
-    //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
     if (!skipUI) {
+        battleBro.customData = {} // stores ability data
+        battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
+        battleBro.passives = battleBro.passives.filter(passive => {
+            return !(infoAboutPassives[passive].type === 'leader' && !battleBro.isLeader);
+        }) // remove leader passives of characters that aren't leaders
+        battleBro.abilityImageDivs = []
+        //const abilities = infoAboutCharacters[battleBro.character].abilities || [];
         const abilities = (infoAboutCharacters[battleBro.character].abilities || []).filter(a => infoAboutAbilities[a]?.type !== 'ultimate')
         for (let i = 0; i < abilities.length; i++) {
             let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
@@ -3974,7 +4225,7 @@ async function changeTarget(target) {
         if (!(target.buffs.find(effect => effect.tags.includes('stealth')) || target.isDead == true)) {
             await changingTarget(target)
         }
-    } else if (target.buffs.find(e => e.tags.includes('taunt'))) {
+    } else if (target.taunting == true) {
         await changingTarget(target)
     } else {
         return
@@ -4957,7 +5208,13 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
             if (type !== 'shadow' && triggerEventHandlers == true) {
                 if (effectDmg == false && counterable == true) {
                     if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
-                    actionInfo.hitEnemies.push(target)
+                    if (!actionInfo.hitEnemies.includes(target)) {
+                        actionInfo.hitEnemies.push(target)
+                        if (Math.random() < target.counterChance * 0.01 && !target.buffs.find(e => e.tags.includes('stun'))) {
+                            let counterActionInfo = new ActionInfo({ battleBro: actionInfo.target, target: actionInfo.battleBro })
+                            await addAttackToQueue(counterActionInfo)
+                        }
+                    }
                 }
                 let returnedValue = await eventHandle('damaged', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection + target.shields - dealtdmg)
                 if (typeof returnedValue === 'number') {
