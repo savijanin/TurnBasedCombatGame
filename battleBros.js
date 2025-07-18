@@ -14,11 +14,11 @@ export var battleBros = [
     },
     {
         id: "02",
-        character: 'Mace Windu',
+        character: 'Clone Wars Chewbacca',
         x: 400,
         y: 300,
         team: 0,
-        isLeader: false,
+        isLeader: true,
     },
     {
         id: "03",
@@ -120,7 +120,7 @@ export var battleBros = [
     },
     {
         id: "17",
-        character: 'SM-33',
+        character: 'Han Solo',
         x: 1550,
         y: 600,
         team: 1,

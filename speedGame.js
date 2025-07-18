@@ -278,13 +278,90 @@ const infoAboutAbilities = {
         type: 'ultimate',
         ultimateCost: 2500,
         tags: ['many_turns'],
-        desc: "All enemies gain Merciless Target, then Darth Vader takes a bonus turn and gains Merciless until enemies no longer have Merciless Target.",
+        desc: "All enemies gain Merciless Target and lose Stealth, then Darth Vader takes a bonus turn and gains locked Merciless until enemies no longer have Merciless Target.",
         use: async function (actionInfo) {
             for (let enemy of actionInfo.enemies) {
+                await dispel(actionInfo.withTarget(enemy), null, 'stealth')
                 await applyEffect(actionInfo.withTarget(enemy), 'mercilessTarget', 1)
             }
-            await applyEffect(actionInfo.withSelfAsTarget(), 'merciless', Infinity)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'merciless', Infinity, 1, false, true)
             await bonusTurn(actionInfo.withSelfAsTarget())
+        }
+    },
+    'Quick Draw': {
+        name: 'Quick Draw',
+        image: 'images/abilities/ability_han_basic.png',
+        type: 'basic',
+        tags: ['attack', 'projectile_attack'],
+        abilityDamage: 185,
+        desc: "Deal Physical damage to target enemy. If the target has less than 50% Turn Meter, deal 75% more damage. Otherwise, remove 35% Turn Meter. This attack can't be Evaded.",
+        use: async function (actionInfo) {
+            const savedEvasion = actionInfo.target.evasion
+            actionInfo.target.evasion -= savedEvasion
+            let hit = await dealDmg(actionInfo, this.abilityDamage * ((actionInfo.target.turnMeter < 50) ? 1.5 : 1), 'physical')
+            if (hit[0] > 0) {
+                if (actionInfo.target.turnMeter >= 50) {
+                    await TMchange(actionInfo, -35)
+                }
+                if (actionInfo.battleBro.customData.shootsFirst.shootingFirst == true) {
+                    await applyEffect(actionInfo, 'stun', 1, 1, false)
+                    actionInfo.battleBro.statuses.ignoreTauntEffects.splice(actionInfo.battleBro.statuses.ignoreTauntEffects.indexOf("Shoots First"), 1)
+                }
+            }
+            actionInfo.target.evasion += savedEvasion
+        }
+    },
+    'Deadeye': {
+        name: 'Deadeye',
+        image: 'images/abilities/ability_han_special02.png',
+        type: 'special',
+        cooldown: 5,
+        tags: ['attack', 'projectile_attack'],
+        abilityDamage: 369.9,
+        desc: "Deal Physical damage to target enemy and Stun them for 1 turn. Gain Turn Meter equal to Han's Critical Chance.",
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'stun', 1)
+            }
+            await TMchange(actionInfo.withSelfAsTarget(), actionInfo.battleBro.critChance)
+        }
+    },
+    'Never Tell Me The Odds': {
+        name: 'Never Tell Me The Odds',
+        image: 'images/abilities/ability_han_special01.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['buff_gain'],
+        desc: "All allies gain Critical Chance Up and Evasion Up for 2 turns. Han gains 50% Turn Meter and Critical Damage Up for 2 turns.",
+        use: async function (actionInfo) {
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await applyEffect(actionInfo.withTarget(ally), 'criticalChanceUp', 2)
+                await applyEffect(actionInfo.withTarget(ally), 'evasionUp', 2)
+            }
+            await applyEffect(actionInfo.withSelfAsTarget(), 'criticalDamageUp', 2)
+            await TMchange(actionInfo.withSelfAsTarget(), 50)
+        }
+    },
+    'Fastest Gun in the Galaxy': {
+        name: 'Fastest Gun in the Galaxy',
+        image: 'images/abilities/ability_han_ult.png',
+        type: 'ultimate',
+        ultimateCost: 2500,
+        tags: ['buff_gain'],
+        desc: `Han Solo dives headlong into the fray, trusting luck, instinct, and the element of surprise. Han gains 100% Critical Damage this turn, then he uses Deadeye on the weakest enemy, then gives all allies Call to Action for 1 turn and calls them to assist (dealing 50% less damage).<br>If Han defeats an enemy with this ability, he uses Deadeye again on the next weakest enemy.`,
+        use: async function (actionInfo) {
+            actionInfo.battleBro.critDamage += 100
+            let enemyHealths = actionInfo.enemies.map(guy => guy.health)
+            let weakestEnemy = actionInfo.enemies[enemyHealths.indexOf(Math.min(...enemyHealths))]
+            let newActionInfo = actionInfo.withTarget(weakestEnemy)
+            newActionInfo.bonusData = 'Fastest Gun in the Galaxy'
+            await useAbility('Deadeye', newActionInfo, false, 'chained')
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await applyEffect(actionInfo.withTarget(ally), 'callToAction', 1)
+                await addAttackToQueue(new ActionInfo({ battleBro: ally, target: actionInfo.target }), 50)
+            }
+            actionInfo.battleBro.critDamage -= 100
         }
     },
     'Outwit': {
@@ -775,9 +852,33 @@ const infoAboutAbilities = {
         abilityDamage: 150,
         desc: "Deals physical damage to target enemy three times, inflicting locked Emotional Damage for 1 turn. Dispel all debuffs on allies, then they gain locked Minute Rice for 2 turns.",
         use: async function (actionInfo) {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 10; i++) {
                 let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             }
+        }
+    },
+    'Massive Crush': {
+        name: 'Massive Crush',
+        image: 'images/abilities/theFallen1.png',
+        type: 'basic',
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 75,
+        desc: "The Fallen stomps on the enemy. Deals low physical damage to target enemy and high true damage after. Every time this attack is used, it deals 1 extra true damage. True damage can only deal damage to protection health. When used on regular health it makes a random ally assist, dealing 200% of their regular basic ability's damage.",
+        use: async function (actionInfo) {
+            if (!actionInfo.battleBro.customData.massiveCrush) actionInfo.battleBro.customData.massiveCrush = {
+                timesUsed: 0,
+            }
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            await dealDmg(actionInfo, Math.min(160 * Math.max(actionInfo.battleBro.offence, 30), actionInfo.target.protection), 'true')
+            for (let i = 0; i < actionInfo.battleBro.customData.massiveCrush.timesUsed; i++) {
+                if (actionInfo.target.protection <= 0) break
+                await dealDmg(actionInfo, 1, 'true')
+            }
+            if (actionInfo.target.health < actionInfo.target.maxHealth) {
+                let randomAlly = aliveBattleBros[actionInfo.battleBro.team][Math.floor(Math.random() * aliveBattleBros[actionInfo.battleBro.team].length)]
+                await addAttackToQueue(new ActionInfo({ battleBro: randomAlly, target: actionInfo.target }))
+            }
+            actionInfo.battleBro.customData.massiveCrush.timesUsed++
         }
     },
     // --------------------------------------------------------SUPERPIG'S BRAVADO
@@ -1283,7 +1384,7 @@ const infoAboutAbilities = {
         name: "Bob Blast",
         image: 'images/abilities/ability_jediconsular_special02.png',
         type: 'ultimate',
-        ultimateCost: 4300,
+        ultimateCost: 6000,
         tags: ['buff_gain', 'debuff'],
         desc: 'Inflicts 5 locked debuffs on all enemies for 3 turns and 5 locked buffs on all allies for 3 turns.',
         use: async function (actionInfo) {
@@ -1749,6 +1850,92 @@ const infoAboutPassives = {
                 await addAttackToQueue(new ActionInfo({ battleBro: owner, target: healthiestEnemy }), 100, 1)
             }
         },
+    },
+    'Inspiring Through Fear': {
+        name: 'Inspiring Through Fear',
+        image: 'images/abilities/abilityui_passive_bondsofweakness.png',
+        desc: `Allies have +30% Offense and have a 50% chance to remove 20% Turn Meter when they damage an enemy. This Turn Meter removal can't be Resisted.<br>Enemies immediately regain Damage Over Time for 2 turns whenever they lose Damage Over Time.`,
+        type: 'leader',
+        tags: ['debuff_gain'],
+        start: async function (actionInfo, owner) {
+            for (let ally of aliveBattleBros[owner.team]) {
+                ally.offence += 30
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type, crit, hitPointsRemaining) {
+            if (attacker.team == owner.team && Math.random() < 0.5) {
+                await TMchange(actionInfo, -20, false)
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
+            if (effect.name == 'damageOverTime' && owner.team !== target.team) {
+                await applyEffect(new ActionInfo({ battleBro: owner, target: target }), 'damageOverTime', 2)
+            }
+        }
+    },
+    'No Escape': {
+        name: 'No Escape',
+        image: 'images/abilities/abilityui_passive_darthvader.png',
+        desc: `At the start of each encounter, Darth Vader gains 8 Speed until the end of the encounter for each of the following: Empire ally, Sith ally, Jedi enemy, and Rebel enemy.<br>Darth Vader is immune to Turn Meter reduction and recovers 5% Health and 2% Protection whenever a Damage Over Time effect on an enemy expires.`,
+        type: 'unique',
+        tags: ['health_recovery'],
+        start: async function (actionInfo, owner) {
+            for (let guy of aliveBattleBros.flat()) {
+                if (guy.team == owner.team && guy.tags.includes("empire")) {
+                    owner.speed += 8
+                }
+                if (guy.team == owner.team && guy.tags.includes("sith")) {
+                    owner.speed += 8
+                }
+                if (guy.team !== owner.team && guy.tags.includes("jedi")) {
+                    owner.speed += 8
+                }
+                if (guy.team !== owner.team && guy.tags.includes("rebel")) {
+                    owner.speed += 8
+                }
+            }
+            owner.statuses.immuneTMloss.push("No Escape")
+        },
+        lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
+            if (effect.name == 'damageOverTime' && owner.team !== target.team && removalType == 'expired') {
+                await heal(new ActionInfo({ battleBro: owner, target: owner }), owner.maxHealth * 0.05)
+                await heal(new ActionInfo({ battleBro: owner, target: owner }), owner.maxProtection * 0.02, 'protection')
+            } else if (effect.name == 'mercilessTarget' && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.name == 'mercilessTarget')).length <= 0) {
+                await removeEffect(new ActionInfo({ battleBro: owner, target: owner }), owner, null, 'merciless')
+            }
+        }
+    },
+    'Shoots First': {
+        name: 'Shoots First',
+        image: 'images/abilities/abilityui_passive_speed.png',
+        desc: `Han has +35% counter chance and +20% Critical Chance. The first time each turn that Han uses his Basic ability he attacks again, dealing 50% less damage.<br>At the start of the encounter Han takes a bonus turn. During this turn he can only use his Basic ability, can ignore Taunt effects, and Stuns the target enemy for 1 turn, which can't be resisted.`,
+        type: 'unique',
+        tags: ['counter_chance'],
+        start: async function (actionInfo, owner) {
+            owner.counterChance += 35
+            owner.critChance += 20
+            owner.customData.shootsFirst = {
+                shootingFirst: true
+            }
+            owner.statuses.ignoreTauntEffects.push("Shoots First")
+            await changeCooldowns(owner, 2)
+            await bonusTurn(new ActionInfo({ battleBro: owner, target: owner }))
+        },
+        usedAbility: async function (actionInfo, owner, abilityName, user, target, type, dmgPercent) {
+            if (owner == user && abilityName == 'Quick Draw' && type !== 'bonus' && type !== 'counter') {
+                await addAttackToQueue(new ActionInfo({ battleBro: owner, target: target }), 50)
+            }
+        },
+        defeated: async function (actionInfo, owner, target, attacker, dealtdmg) { // Han Solo Ult Detection
+            if (actionInfo.parentActionInfo?.bonusData == "Fastest Gun in the Galaxy") {
+                let enemyHealths = actionInfo.enemies.map(guy => guy.health)
+                let weakestEnemy = actionInfo.enemies[enemyHealths.indexOf(Math.min(...enemyHealths))]
+                let newActionInfo = actionInfo.withTarget(weakestEnemy)
+                newActionInfo.bonusData = 'Fastest Gun in the Galaxy'
+                await useAbility('Deadeye', newActionInfo, false, 'chained')
+            }
+        }
+
     },
     'Grand Master\'s Guidance': {
         name: 'Grand Master\'s Guidance',
@@ -3839,7 +4026,7 @@ const argsMap = {
 async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6) {
     //await logFunctionCall('eventHandle', ...arguments)
     console.log("eventHandle", type, arg1, arg2, arg3, arg4, arg5, arg6)
-    if (arg1?.isDead == true || arg2?.isDead == true) return
+    if ((arg1?.isDead == true || arg2?.isDead == true) && type !== 'defeated') return
 
     let returnValue = undefined
 
@@ -4012,6 +4199,7 @@ async function createBattleBroVars(battleBro, skipUI = false) {
         immuneTMgain: [],
         immuneTMloss: [],
         tauntEffects: [],
+        targetableEffects: [],
         ignoreTauntEffects: [],
         ignoreStealthEffects: [],
     }
@@ -4292,6 +4480,7 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         }
     } else {
         closestAvatar = battleBros.indexOf(bonusTurnQueue[0])
+        bonusTurnQueue[0].turnMeter += 100
         bonusTurnQueue.splice(0, 1)
     }
     console.log('Processing avatar------------------------- ', closestAvatar)
@@ -4579,44 +4768,6 @@ async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main
     }
     //if (hasTurn==true) await endTurn(actionInfo.battleBro)
 }
-/*
-async function executeAbility(abilityName, actionInfo) {
-    const ability = infoAboutAbilities[abilityName]
-    // Provide context helpers automatically
-    const obj = {
-        battleBro: battleBro,
-        target: target,
-        abilityName: abilityName,
-        dealDmg: async function (
-            type = 'physical',
-            target = this.target,
-            dmg = ability.abilityDamage,
-            triggerEventHandlers = true,
-            ignoreProtection = false,
-            sourceName = abilityName,
-            effectDmg = false,
-            user = battleBro
-        ) {
-            await dealDmg(user, target, dmg, type, triggerEventHandlers, effectDmg, ignoreProtection, sourceName)
-        },
-        applyEffect: async function (
-            effectName,
-            target = this.target,
-            duration = 1,
-            stacks = 1,
-            resistable = true,
-            isLocked = false,
-            user = battleBro
-        ) {
-            await applyEffect({battleBro: user, target: target}, effectName, duration, stacks, resistable, isLocked)
-        },
-        // Add any other shortcut helpers here as needed...
-    }
-    if (ability.use) {
-        //return await ability.use.call(obj, actionInfo)
-        return await ability.use(actionInfo, obj)
-    }
-}*/
 
 async function endTurn(actionInfo, battleBro) {
     await logFunctionCall('endTurn', ...arguments)
@@ -5360,7 +5511,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                     if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
                     if (!actionInfo.hitEnemies.includes(target)) {
                         actionInfo.hitEnemies.push(target)
-                        if (Math.random() < target.counterChance * 0.01 && !target.buffs.find(e => e.tags.includes('stun')) && target.isDead == false) {
+                        if (Math.random() < target.counterChance * 0.01 && !target.buffs.find(e => e.tags.includes('stun')) && target.isDead == false && user.isDead == false) {
                             let counterActionInfo = new ActionInfo({ battleBro: actionInfo.target, target: actionInfo.battleBro })
                             await addAttackToQueue(counterActionInfo)
                         }
@@ -5465,6 +5616,11 @@ async function TMchange(actionInfo, change, resistable = true) {
     }
     target.turnMeter += change
     target.turnMeter = (target.turnMeter < 0) ? 0 : target.turnMeter // turn meter shouldn't be less than 0
+    if (battleBros[selectedBattleBroNumber] == user) {
+        target.turnMeter = (target.turnMeter > 200) ? 200 : target.turnMeter // if its the characters turn then their turn meter can overflow since their abilities are granting them turn meter for their next turn
+    } else {
+        target.turnMeter = (target.turnMeter > 100) ? 100 : target.turnMeter
+    }
 }
 
 async function revive(actionInfo, health = 0, protection = 0, turnMeter = 0) {
