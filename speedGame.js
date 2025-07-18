@@ -8,6 +8,7 @@ var aliveBattleBros = []
 var ultimateCharge = []
 var ultimateBeingUsed = false
 //var isAnythingElseRunningHereAtTheSameTime = 0
+var bonusTurnQueue = []
 var engagingCounters = false
 var characterDying = false
 var promises = []
@@ -15,10 +16,11 @@ var checkingPromises = null
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
 // FUNNY CONDITIONS
+var numberOfTeams = 2
 var omicron = true // activates omicron bonuses on some abilities
 var headbutt = true   // characters will headbutt enmies with melee attacks
 var oldSchool = false // characters will use old school abilities (incredibly overpowered)
-var sharePassives = false // doesn't work
+var sharePassives = false
 var protectionTurnsIntoShields = true // protection becomes shields, it can't be regenerated, but can be gained from abilities
 var startingUltCharge = 0
 
@@ -213,107 +215,76 @@ const infoAboutAbilities = {
             await applyEffect(actionInfo.withSelfAsTarget(), "jedi'sWill", 3, 1, false, true)
         }
     },
-    'Ataru': {
-        name: 'Ataru',
-        image: 'images/abilities/ability_grandmasteryoda_basic.png',
+    'Terrifying Swing': {
+        name: 'Terrifying Swing',
+        image: 'images/abilities/ability_darthvader_basic.png',
         type: 'basic',
-        tags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
-        abilityDamage: 208,
-        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn.If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 324.1,
+        desc: "Deal Physical damage to target enemy with an 80% chance to inflict Ability Block for 1 turn, increased to 100% if the target is Jedi or Rebel. This attack can't be evaded or resisted by Jedi and Rebel enemies.",
         use: async function (actionInfo) {
-            let hits = await dealDmg(actionInfo, this.abilityDamage, 'special')
-            let hit = hits[0]
-            if (hit > 0) {
-                await applyEffect(actionInfo, 'potencyDown', 1);
-            }
-            if (actionInfo.target.health >= actionInfo.target.maxHealth * 0.5) {
-                await TMchange(actionInfo.withSelfAsTarget(), 40)
-                //await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2);
-                //await applyEffect(actionInfo.copyAndChangeTargetTo(actionInfo.battleBro), 'foresight', 2);
-                //await applyEffect(actionInfo.copy().setTarget(actionInfo.battleBro), 'foresight', 2);
-                let selfActionInfo = actionInfo.withSelfAsTarget()
-                await applyEffect(selfActionInfo, 'foresight', 2);
-            } else {
-                await applyEffect(actionInfo.withSelfAsTarget(), 'offenceUp', 2);
-                await applyEffect(actionInfo.withSelfAsTarget(), 'defencePenetrationUp', 2);
-            }
-        }
-    },
-    'Masterstroke': {
-        name: 'Masterstroke',
-        image: 'images/abilities/ability_grandmasteryoda_special01.png',
-        type: 'special',
-        cooldown: 3,
-        tags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
-        abilityDamage: 60.2,
-        desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for ${(oldSchool ? 3 : 2)} turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
-        use: async function (actionInfo) {
-            await logFunctionCall('method: use (', ...arguments,)
-            const enemies = aliveBattleBros // multi-enemy-team functionality
-                .filter((_, i) => i !== actionInfo.battleBro.team) // removes this character's team from the array
-                .flat() // flattens nested arrays into just one
-            let copiedEffects = []
-            for (let enemy of enemies) {
-                let actionInfo_targetEnemy = actionInfo.setTarget(enemy)
-                await dealDmg(actionInfo_targetEnemy, this.abilityDamage, 'special')
-                for (let effect of enemy.buffs) {
-                    if (effect.type === 'buff' && effect.isLocked !== true && effect.name !== 'stealth' && effect.name !== 'taunt' && (!copiedEffects.some(e => e.name === effect.name && oldSchool === false))) {
-                        // Exclude Stealth, taunt, and already copied effects (if oldSchool is false)
-                        copiedEffects.push(effect)
-                    }
-                }
-            }
-            for (let buff of copiedEffects) {
-                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, (oldSchool ? 3 : 2))
-            }
-            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
-                if (ally.tags.includes('jedi') == true) {
-                    actionInfo.battleBro.turnMeter += 100
-                    return
-                }
-            }
-        }
-    },
-    'Unstoppable Force': {
-        name: 'Unstoppable Force',
-        image: 'images/abilities/ability_grandmasteryoda_special02.png',
-        type: 'special',
-        cooldown: 4,
-        tags: ['attack', 'debuff_gain', 'special_damage'],
-        abilityDamage: 299.9,
-        desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
-        use: async function (actionInfo) {
-            await logFunctionCall('method: use (', ...arguments,)
-            let hit = await dealDmg(actionInfo, this.abilityDamage, 'special')
+            const isJediOrRebel = actionInfo.target.tags.includes("jedi") || actionInfo.target.tags.includes("rebel")
+            const savedEvasion = actionInfo.target.evasion
+            if (isJediOrRebel) actionInfo.target.evasion -= savedEvasion
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
             if (hit[0] > 0) {
-                await TMchange(actionInfo, -70)
-                if (actionInfo.target.health < actionInfo.target.maxHealth) await applyEffect(actionInfo, 'stun', 1)
+                if (Math.random() < (isJediOrRebel ? 1 : 0.8)) {
+                    await applyEffect(actionInfo, 'abilityBlock', 1, 1, isJediOrRebel)
+                }
+            }
+            if (isJediOrRebel) actionInfo.target.evasion += savedEvasion
+        }
+    },
+    'Force Crush': {
+        name: 'Force Crush',
+        image: 'images/abilities/ability_darthvader_special01.png',
+        type: 'special',
+        cooldown: 5,
+        tags: ['physical_damage', 'debuff_gain'],
+        abilityDamage: 110.2,
+        desc: "Deal Physical damage to all enemies and inflict Speed Down and 3 Damage Over Time effects for 2 turns. This attack can't be Countered.",
+        use: async function (actionInfo) {
+            for (let enemy of actionInfo.enemies) {
+                await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'physical', true, false, false, 'Force Crush', false)
+                await applyEffect(actionInfo.withTarget(enemy), 'speedDown', 2)
+                await applyEffect(actionInfo.withTarget(enemy), 'damageOverTime', 2, 3)
             }
         }
     },
-    'Battle Meditation': {
-        name: 'Battle Meditation',
-        image: 'images/abilities/ability_grandmasteryoda_special03.png',
+    'Culling Blade': {
+        name: 'Culling Blade',
+        image: 'images/abilities/ability_darthvader_special02.png',
         type: 'special',
         cooldown: 4,
-        tags: ['turnmeter_recovery', 'buff_gain'],
-        desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for ${(oldSchool ? '2 turns' : '1 turn')}. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
+        tags: ['attack', 'projectile_attack', 'physical_damage', 'cleanse_enemy'],
+        abilityDamage: 203.2,
+        desc: "Deal Physical damage to target enemy and cleanse all debuffs on them. This attack deals 50% more damage for each effect dispelled and grants 100% Turn Meter if the target is defeated. This attack has +25% Critical Chance and can't be evaded.",
         use: async function (actionInfo) {
-            await logFunctionCall('method: use (', ...arguments,)
-            await applyEffect(actionInfo.withSelfAsTarget(), 'tenacityUp', 2)
-            await applyEffect(actionInfo.withSelfAsTarget(), 'protectionUp', 2, 2)
-            await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2)
-            const copiedEffects = actionInfo.battleBro.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
-            let bonusTurnMeter = 0
-            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
-                for (let buff of copiedEffects) {
-                    await applyEffect(actionInfo.withTarget(ally), buff.name, (oldSchool ? 2 : 1))
-                }
-                if (ally.tags.includes('jedi') == true) {
-                    bonusTurnMeter += 10
-                }
+            let dispelledEffects = await dispel(actionInfo, 'debuff')
+            const savedEvasion = actionInfo.target.evasion
+            actionInfo.target.evasion -= savedEvasion
+            actionInfo.battleBro.critChance += 25
+
+            await dealDmg(actionInfo, this.abilityDamage * (1 + dispelledEffects.length * 0.5), 'physical')
+
+            actionInfo.target.evasion += savedEvasion
+            actionInfo.battleBro.critChance -= 25
+            if (actionInfo.target.isDead == true) await TMchange(actionInfo.withSelfAsTarget(), 100)
+        }
+    },
+    'Merciless Massacre': {
+        name: 'Merciless Massacre',
+        image: 'images/abilities/ability_darthvader_special03.png',
+        type: 'ultimate',
+        ultimateCost: 2500,
+        tags: ['many_turns'],
+        desc: "All enemies gain Merciless Target, then Darth Vader takes a bonus turn and gains Merciless until enemies no longer have Merciless Target.",
+        use: async function (actionInfo) {
+            for (let enemy of actionInfo.enemies) {
+                await applyEffect(actionInfo.withTarget(enemy), 'mercilessTarget', 1)
             }
-            await TMchange(actionInfo.withSelfAsTarget(), 35 + bonusTurnMeter)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'merciless', Infinity)
+            await bonusTurn(actionInfo.withSelfAsTarget())
         }
     },
     'Outwit': {
@@ -428,7 +399,7 @@ const infoAboutAbilities = {
             if (enemyHadShatterpoint) {
                 await TMchange(assistActionInfo.withTarget(battleBro), ally.turnMeter)
                 await TMchange(actionInfo, 100 - ally.turnMeter)
-                await applyEffect(actionInfo.withSelfAsTarget(), 'resilientDefence', 999, 2) // infinite duration effects = 999 duration
+                await applyEffect(actionInfo.withSelfAsTarget(), 'resilientDefence', Infinity, 2)
             }
         }
     },
@@ -505,7 +476,7 @@ const infoAboutAbilities = {
                 await applyEffect(actionInfo.withSelfAsTarget(), 'retribution', 1, 1, false, true)
                 // add bonus prot
                 if (target.buffs.find(effect => effect.tags.includes('challenger'))) {
-                    await applyEffect(actionInfo.withSelfAsTarget(), 'burning', 999)
+                    await applyEffect(actionInfo.withSelfAsTarget(), 'burning', Infinity)
                 }
             }
         }
@@ -598,6 +569,109 @@ const infoAboutAbilities = {
             }
             await equalize(actionInfo, aliveBattleBros[actionInfo.battleBro.team], 'health')
             await heal(actionInfo.withSelfAsTarget(), (savedHealth - actionInfo.battleBro.health) * 0.5, 'protection')
+        }
+    },
+    'Ataru': {
+        name: 'Ataru',
+        image: 'images/abilities/ability_grandmasteryoda_basic.png',
+        type: 'basic',
+        tags: ['attack', 'turnmeter_recovery', 'buff_gain', 'special_damage', 'debuff_gain'],
+        abilityDamage: 208,
+        desc: 'Deal Special damage to target enemy and inflict Potency Down for 1 Turn.If that enemy has 50% or more Health, Yoda gains 40% Turn Meter and Foresight for 2 turns. If that enemy has less than 50% Health, Yoda gains Offense Up and Defense Penetration Up for 2 turns.',
+        use: async function (actionInfo) {
+            let hits = await dealDmg(actionInfo, this.abilityDamage, 'special')
+            let hit = hits[0]
+            if (hit > 0) {
+                await applyEffect(actionInfo, 'potencyDown', 1);
+            }
+            if (actionInfo.target.health >= actionInfo.target.maxHealth * 0.5) {
+                await TMchange(actionInfo.withSelfAsTarget(), 40)
+                //await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2);
+                //await applyEffect(actionInfo.copyAndChangeTargetTo(actionInfo.battleBro), 'foresight', 2);
+                //await applyEffect(actionInfo.copy().setTarget(actionInfo.battleBro), 'foresight', 2);
+                let selfActionInfo = actionInfo.withSelfAsTarget()
+                await applyEffect(selfActionInfo, 'foresight', 2);
+            } else {
+                await applyEffect(actionInfo.withSelfAsTarget(), 'offenceUp', 2);
+                await applyEffect(actionInfo.withSelfAsTarget(), 'defencePenetrationUp', 2);
+            }
+        }
+    },
+    'Masterstroke': {
+        name: 'Masterstroke',
+        image: 'images/abilities/ability_grandmasteryoda_special01.png',
+        type: 'special',
+        cooldown: 3,
+        tags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
+        abilityDamage: 60.2,
+        desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for ${(oldSchool ? 3 : 2)} turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
+        use: async function (actionInfo) {
+            await logFunctionCall('method: use (', ...arguments,)
+            const enemies = aliveBattleBros // multi-enemy-team functionality
+                .filter((_, i) => i !== actionInfo.battleBro.team) // removes this character's team from the array
+                .flat() // flattens nested arrays into just one
+            let copiedEffects = []
+            for (let enemy of enemies) {
+                let actionInfo_targetEnemy = actionInfo.setTarget(enemy)
+                await dealDmg(actionInfo_targetEnemy, this.abilityDamage, 'special')
+                for (let effect of enemy.buffs) {
+                    if (effect.type === 'buff' && effect.isLocked !== true && effect.name !== 'stealth' && effect.name !== 'taunt' && (!copiedEffects.some(e => e.name === effect.name && oldSchool === false))) {
+                        // Exclude Stealth, taunt, and already copied effects (if oldSchool is false)
+                        copiedEffects.push(effect)
+                    }
+                }
+            }
+            for (let buff of copiedEffects) {
+                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, (oldSchool ? 3 : 2))
+            }
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
+                if (ally.tags.includes('jedi') == true) {
+                    await bonusTurn(actionInfo.withSelfAsTarget())
+                    return
+                }
+            }
+        }
+    },
+    'Unstoppable Force': {
+        name: 'Unstoppable Force',
+        image: 'images/abilities/ability_grandmasteryoda_special02.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['attack', 'debuff_gain', 'special_damage'],
+        abilityDamage: 299.9,
+        desc: 'Deal Special damage to target enemy and remove 70% Turn Meter. If that enemy had less than 100% Health, they are also Stunned for 1 turn.',
+        use: async function (actionInfo) {
+            await logFunctionCall('method: use (', ...arguments,)
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'special')
+            if (hit[0] > 0) {
+                await TMchange(actionInfo, -70)
+                if (actionInfo.target.health < actionInfo.target.maxHealth) await applyEffect(actionInfo, 'stun', 1)
+            }
+        }
+    },
+    'Battle Meditation': {
+        name: 'Battle Meditation',
+        image: 'images/abilities/ability_grandmasteryoda_special03.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['turnmeter_recovery', 'buff_gain'],
+        desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for ${(oldSchool ? '2 turns' : '1 turn')}. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
+        use: async function (actionInfo) {
+            await logFunctionCall('method: use (', ...arguments,)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'tenacityUp', 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'protectionUp', 2, 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'foresight', 2)
+            const copiedEffects = actionInfo.battleBro.buffs.filter(effect => effect.type === 'buff' && effect.isLocked !== true)
+            let bonusTurnMeter = 0
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
+                for (let buff of copiedEffects) {
+                    await applyEffect(actionInfo.withTarget(ally), buff.name, (oldSchool ? 2 : 1))
+                }
+                if (ally.tags.includes('jedi') == true) {
+                    bonusTurnMeter += 10
+                }
+            }
+            await TMchange(actionInfo.withSelfAsTarget(), 35 + bonusTurnMeter)
         }
     },
     // --------------------------------------------------------SAVI'S CHARACTERS
@@ -815,6 +889,7 @@ const infoAboutAbilities = {
         abilityDamage: 135,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
+            await dispel(actionInfo, 'buff')
             let locked = false
             if (actionInfo.target.buffs.find(effect => effect.tags.includes('targetLock'))) {
                 actionInfo.battleBro.flatDamageDealt += 50
@@ -1040,12 +1115,12 @@ const infoAboutAbilities = {
         tags: ['buffGain'],
         desc: 'Shadow menace gains a bonus turn and heals all allies by 20% of their max health for each dead ally. Shadow menace gains 1 stack of fallen ally for each dead ally.',
         use: async function (actionInfo) {
-            actionInfo.battleBro.turnMeter += 100 // bonus turn
+            await bonusTurn(actionInfo.withSelfAsTarget())
             let fallenAllies = battleBros.filter(bro => bro.team === actionInfo.battleBro.team && bro.isDead === true)
             for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
                 await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.2 * fallenAllies.length)
             }
-            await applyEffect(actionInfo.withSelfAsTarget(), 'fallenAlly', 999, fallenAllies.length, false, true) // infinite duration effects = 999 duration
+            await applyEffect(actionInfo.withSelfAsTarget(), 'fallenAlly', Infinity, fallenAllies.length, false, true)
         },
     },
     // --------------------------------------------------------ERIK'S CHARACTERS
@@ -1811,7 +1886,7 @@ const infoAboutPassives = {
                     !memory.gotResilientDefenseThisCycle
                 ) {
                     let actionInfo = new ActionInfo({ target: owner })
-                    await applyEffect(actionInfo, 'resilientDefence', 999, 3)
+                    await applyEffect(actionInfo, 'resilientDefence', Infinity, 3)
 
                     memory.gotResilientDefenseThisCycle = true;
                     memory.allyWithProtectionDamaged = false;
@@ -1838,7 +1913,7 @@ const infoAboutPassives = {
 
             if (effect.name === 'taunt' && target == owner) {
                 await removeEffect(actionInfo, owner, null, 'taunt')
-                await applyEffect(new ActionInfo({ target: owner }), 'resilientDefence', 999, 2)
+                await applyEffect(new ActionInfo({ target: owner }), 'resilientDefence', Infinity, 2)
             }
         }
     },
@@ -1897,7 +1972,7 @@ const infoAboutPassives = {
             if (attacker.team !== owner.team && aliveBattleBros[owner.team].filter(guy => guy.isLeader == true).includes(target)) {
                 const enemies = aliveBattleBros.filter((_, i) => i !== actionInfo.battleBro.team).flat()
                 if (enemies.filter(enemy => enemy.buffs.find(effect => effect.tags.includes('challenger'))).length <= 0) {
-                    await applyEffect(newActionInfo, 'challenger', 999)
+                    await applyEffect(newActionInfo, 'challenger', Infinity)
                 }
                 await TMchange(newActionInfo.withSelfAsTarget(), 15)
                 if (owner.customData?.firstmateoftheonyxcinder?.critDamageStacks) {
@@ -2035,7 +2110,7 @@ const infoAboutPassives = {
     },
     'Unchained Arsenal': {
         name: 'Unchained Arsenal',
-        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        image: 'images/abilities/abilityui_passive_bundleofexplosives.png',
         desc: 'Super Striker gains +10% Special Damage and +5 Speed for each debuffed enemy (max 5 stacks). At the start of his turn, he inflicts Target Lock on a random non-Stealthed Droid enemy for 2 turns (limit once per turn). When Super Striker damages an enemy suffering from Shock, EMP Device, or Radiation, he gains +20% Offense (stacking, max 100%, resets on defeat) and 10% Turn Meter.',
         type: 'unique',
         tags: ['speed'],
@@ -2089,7 +2164,7 @@ const infoAboutPassives = {
     },
     'Unrelenting Protocol': {
         name: 'Unrelenting Protocol',
-        image: 'images/abilities/abilityui_passive_convergence.png',
+        image: 'images/abilities/abilityui_passive_standalone.png',
         desc: 'If Super Striker is the last active ally, he is immune to Stun and Healing Immunity effects and at the start of his turns, he recovers 15% Protection and dispels one random debuff.',
         type: 'unique',
         tags: ['protection_recovery'],
@@ -2517,6 +2592,35 @@ const infoAboutEffects = {
             unit.counterChance -= 100
             if (effect?.notJedi) {
                 unit.tags.splice(unit.tags.indexOf("jedi"), 1)
+            }
+        }
+    },
+    'merciless': {
+        name: 'merciless',
+        image: 'images/effects/merciless.png',
+        type: 'buff',
+        tags: ['stack', 'offence', 'critChance', 'critDamage'],
+        desc: "+50% Offence, +25% Critical Chance, and +50% Critical Damage. Immune to Fear and Turn Meter manipulation.",
+        opposite: 'offenceUp',
+        apply: async function (actionInfo, unit, effect) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.offence += 50
+            unit.critChance += 25
+            unit.critDamage += 50
+            unit.statuses.immuneTMgain.push(effect)
+            unit.statuses.immuneTMloss.push(effect)
+        },
+        remove: async function (actionInfo, unit, effect) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.offence -= 50
+            unit.critChance -= 25
+            unit.critDamage -= 50
+            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
+            unit.statuses.immuneTMloss.splice(unit.statuses.immuneTMloss.indexOf(effect), 1)
+        },
+        gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
+            if (unit == target && gainedEffect.name == 'fear') {
+                await dispel(new ActionInfo({ battleBro: unit, target: unit }), null, null, null, true, gainedEffect)
             }
         }
     },
@@ -3050,6 +3154,12 @@ const infoAboutEffects = {
         tags: ['stopAssist', 'stopCounter', 'stopTMgain'],
         desc: "Can't assist, counter or gain turn meter.",
         opposite: 'retribution',
+        apply: async function (actionInfo, unit, effect) {
+            unit.statuses.immuneTMgain.push(effect)
+        },
+        remove: async function (actionInfo, unit, effect) {
+            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
+        }
     },
     'decay': {
         name: 'decay',
@@ -3521,7 +3631,27 @@ const infoAboutEffects = {
         tags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
         desc: "Receiving damage removes Shatterpoint and reduces Defense, Max Health, and Offense by 10%. Enemies can ignore Taunt effects to target this unit.",
         opposite: 'barrier',
-        apply: async function (actionInfo, unit) { },
+        apply: async function (actionInfo, unit) {
+            unit.customData.shatterpoint = {
+                taunting: false
+            }
+            if (battleBros[selectedBattleBroNumber].team !== unit.team && aliveBattleBros[unit.team].filter(unit => unit.taunting == true).length > 0 && unit.taunting !== true) {
+                unit.taunting = true
+                unit.customData.shatterpoint.taunting = true
+            }
+        },
+        startedTurn: async function (actionInfo, unit, effect, guyWhoStartedTheirTurn) {
+            if (aliveBattleBros[unit.team].filter(unit => unit.taunting == true).length > 0 && unit.taunting !== true) {
+                unit.taunting = true
+                unit.customData.shatterpoint.taunting = true
+            }
+        },
+        endedTurn: async function (actionInfo, unit, effect, guyWhoEndedTheirTurn) {
+            if (unit.customData.shatterpoint.taunting == true) {
+                unit.taunting = false
+                unit.customData.shatterpoint.taunting = false
+            }
+        },
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
             await switchTarget(unit)
@@ -3530,6 +3660,13 @@ const infoAboutEffects = {
             unit.maxHealth /= 1.1
             unit.health /= 1.1
             unit.offence *= 0.9
+            if (unit.customData.shatterpoint.taunting == true) {
+                unit.taunting = false
+                unit.customData.shatterpoint.taunting = false
+                if (aliveBattleBros[unit.team].filter(unit => unit.taunting == true).length > 0 && unit.isTarget == true) {
+                    await switchTarget(unit)
+                }
+            }
         }
     },
     'shock': {
@@ -3539,6 +3676,12 @@ const infoAboutEffects = {
         tags: ['healingImmunity', 'stopTMgain', 'buffImmunity'],
         desc: "Can't heal, gain buffs or bonus turn meter.",
         opposite: 'overcharge',
+        apply: async function (actionInfo, unit, effect) {
+            unit.statuses.immuneTMgain.push(effect)
+        },
+        remove: async function (actionInfo, unit, effect) {
+            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
+        }
     },
     'speedDown': {
         name: 'speedDown',
@@ -3640,6 +3783,26 @@ const infoAboutEffects = {
 
         }
     },
+    'mercilessTarget': { // unfinished
+        name: 'mercilessTarget',
+        image: 'images/effects/mercilessTarget.png',
+        type: 'misc',
+        tags: [],
+        desc: "{{caster}} must target this character. Upon being attacked, lose Merciless Target and grant {{caster}} a bonus turn.",
+        apply: async function (actionInfo, unit, effect) {
+
+        },
+        remove: async function (actionInfo, unit, effect, removalType) {
+            if (removalType == 'removed') {
+                await bonusTurn(new ActionInfo({ battleBro: effect.caster, target: effect.caster }))
+            }
+        },
+        attacked: async function (actionInfo, unit, effect, target, attacker) {
+            if (unit == target && unit.isTarget == true) {
+                await removeEffect(new ActionInfo({ battleBro: attacker, target: unit }), unit, null, null, null, false, effect)
+            }
+        }
+    },
     'VIP': { // unfinished
         name: 'VIP',
         image: 'images/effects/VIP.png',
@@ -3651,48 +3814,9 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
 
-        }
+        },
     },
 }
-
-/*async function createLimitedAction({
-    limitedActions = {}, // object: { actionName: { fn: function, limit: number } }
-    unlimitedActions = [], // array of functions
-}) {
-    // Initialize counters for each limited action
-    const counters = {};
-    for (const key in limitedActions) {
-        counters[key] = 0;
-    }
-
-    return async function (...args) {
-        // Check if last arg is a valid actionName string
-        let possibleName = args[args.length - 1];
-        let actionName = (typeof possibleName === 'string' && limitedActions[possibleName])
-            ? args.pop() // remove it and use it
-            : 'action';  // default
-        //console.log(actionName)
-        // Run limited action if exists and under limit
-        if (limitedActions[actionName]) {
-            if (counters[actionName] < limitedActions[actionName].limit) {
-                const didRun = await limitedActions[actionName].fn.apply(this, args);
-                //console.log(''+didRun)
-                if (didRun) {
-                    counters[actionName]++;
-                }
-            } else {
-                console.log(`Limited action '${actionName}' reached its max count (${limitedActions[actionName].limit})`);
-            }
-        } else {
-            //console.log(`No limited action named '${actionName}' found.`);
-        }
-
-        // Run all unlimited actions every time
-        for (const unlimitedFn of unlimitedActions) {
-            await unlimitedFn.apply(this, args);
-        }
-    };
-}*/
 
 const argsMap = {
     start: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // selects the arguments needed for the function. The first (or zeroth in this case) argument is always the owner
@@ -3710,6 +3834,7 @@ const argsMap = {
     modifiedStat: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3], // stat name, value, guy Whos Stats Have Been Modified, modifier
     revived: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4, arg5], // revived guy, reviver, healthGained, protectionGained, turnMeterGained
     resisted: (arg1, arg2, arg3, arg4, arg5, arg6) => [arg1, arg2, arg3, arg4], // target, user, type, effect/change
+    bonusTurn: (arg1, arg2, arg3, arg4, arg5, arg6) => [], // target and user stored in actionInfo
 }
 async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6) {
     //await logFunctionCall('eventHandle', ...arguments)
@@ -3766,7 +3891,7 @@ async function eventHandle(type, actionInfo, arg1, arg2, arg3, arg4, arg5, arg6)
     return returnValue
 }
 //var abilityImagesDivsPerTeam =[[],[]]
-var passiveImagesPerTeam = [[], []]
+var passiveImagesPerTeam = []
 
 
 async function clearScreen() {
@@ -3809,8 +3934,9 @@ async function createBattleBroImages() {
         battleBro.avatarHtmlElement = newGuy
     }
 
-    for (let team = 0; team < 2; team++) {
-        const maxNumberOfAbilities = 8
+    for (let team = 0; team < numberOfTeams; team++) {
+        if (!passiveImagesPerTeam[team]) passiveImagesPerTeam[team] = []
+        const maxNumberOfAbilities = 10
         for (let i = 0; i < maxNumberOfAbilities; i++) {
             // Create new picture for ability
             let newAbilityImageDiv = $('#abilityTemplate').clone().removeAttr("id")
@@ -3882,9 +4008,24 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.taunting = false
     battleBro.buffs = []
     battleBro.effects = []
+    battleBro.statuses = { // Arrays contain all the sources that apply the effect so that when one expires the others don't break
+        immuneTMgain: [],
+        immuneTMloss: [],
+        tauntEffects: [],
+        ignoreTauntEffects: [],
+        ignoreStealthEffects: [],
+    }
     if (!skipUI) {
         battleBro.customData = {} // stores ability data
-        battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
+        battleBro.passives = []
+        if (sharePassives == true) {
+            for (let ally of battleBros.filter(guy => guy.team == battleBro.team)) {
+                battleBro.passives.push(infoAboutCharacters[ally.character].passiveAbilities)
+            }
+            battleBro.passives = battleBro.passives.flat()
+        } else {
+            battleBro.passives = infoAboutCharacters[battleBro.character].passiveAbilities || []
+        }
         battleBro.passives = battleBro.passives.filter(passive => {
             return !(infoAboutPassives[passive].type === 'leader' && !battleBro.isLeader);
         }) // remove leader passives of characters that aren't leaders
@@ -3966,8 +4107,8 @@ async function updateCurrentBattleBroSkillImages() {
         }
     }
 
-    // Hide ALL passive images from BOTH teams
-    for (let team = 0; team < 2; team++) {
+    // Hide ALL passive images from all teams
+    for (let team = 0; team < numberOfTeams; team++) {
         let passiveImages = passiveImagesPerTeam[team];
         for (let passiveImage of passiveImages) {
             passiveImage.css({ 'display': 'none' });
@@ -3988,7 +4129,7 @@ async function updateCurrentBattleBroSkillImages() {
             }
             let imagePngPath = processedAbility.skill.image
 
-            let index = battleBro.team === 1
+            let index = battleBro.team > 0
                 ? (battleBro.abilityImageDivs.length - uiIndex - 1)
                 : uiIndex;
             let abilityImageDiv = battleBro.abilityImageDivs[index];
@@ -4133,20 +4274,25 @@ async function calculateNextTurnFromTurnMetersAndSpeeds() {
         maxTurnMeter = Math.max(...avatarTurnMeters)
     }*/
     let closestAvatar
-    if (Math.max(...avatarTurnMeters) < 100) {
-        let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / (battleBro.speed * battleBro.speedPercent * 0.01))
-        let closestAvatarDistance = Math.min(...avatarDistances)
-        for (let battleBro of battleBros) {
-            if (battleBro.speed) {
-                battleBro.turnMeter += battleBro.speed * battleBro.speedPercent * 0.01 * closestAvatarDistance
+    if (bonusTurnQueue.length <= 0) {
+        if (Math.max(...avatarTurnMeters) < 100) {
+            let avatarDistances = battleBros.map(battleBro => (100 - battleBro.turnMeter) / (battleBro.speed * battleBro.speedPercent * 0.01))
+            let closestAvatarDistance = Math.min(...avatarDistances)
+            for (let battleBro of battleBros) {
+                if (battleBro.speed) {
+                    battleBro.turnMeter += battleBro.speed * battleBro.speedPercent * 0.01 * closestAvatarDistance
+                }
             }
+            console.log('avatar distances:', avatarDistances)
+            console.log('closest distance:', closestAvatarDistance)
+            closestAvatar = avatarDistances.indexOf(closestAvatarDistance)
+            console.log('closest avatar:', closestAvatar)
+        } else {
+            closestAvatar = avatarTurnMeters.indexOf(Math.max(...avatarTurnMeters))
         }
-        console.log('avatar distances:', avatarDistances)
-        console.log('closest distance:', closestAvatarDistance)
-        closestAvatar = avatarDistances.indexOf(closestAvatarDistance)
-        console.log('closest avatar:', closestAvatar)
     } else {
-        closestAvatar = avatarTurnMeters.indexOf(Math.max(...avatarTurnMeters))
+        closestAvatar = battleBros.indexOf(bonusTurnQueue[0])
+        bonusTurnQueue.splice(0, 1)
     }
     console.log('Processing avatar------------------------- ', closestAvatar)
     $('#myText').html('Processing avatar------------------------- ' + closestAvatar)
@@ -4658,13 +4804,13 @@ async function playMeleeAttackAnimation(attacker, target, abilityName, hasTurn, 
 
 async function playSparkImpact(x, y, primaryColour = 'yellow', secondaryColour = 'orange', numberOfSparks = 8) {
     await logFunctionCall('playSparkImpact', ...arguments)
-    for (let i = 0; i < Math.min(numberOfSparks, 250); i++) {
+    for (let i = 0; i < Math.min(numberOfSparks, 200); i++) {
         const spark = document.createElement('div');
         spark.className = 'spark';
 
         // Random angle and distance
         const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.max(20, numberOfSparks * 2.5) + Math.random() * 10;
+        const distance = Math.min(Math.max(20, numberOfSparks * 2.5), 800) + Math.random() * 10;
         const dx = Math.cos(angle) * distance;
         const dy = Math.sin(angle) * distance;
 
@@ -4990,6 +5136,8 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
         dispelledEffects = dispelledEffects.filter(effect => effect == specificEffect && (effect.isLocked !== true || dispelLocked == true))
     }
 
+    let removedEffects = []
+
     for (let i = actionInfo.target.buffs.length - 1; i >= 0; i--) {
         const effect = actionInfo.target.buffs[i];
         if (dispelledEffects.includes(effect)) {
@@ -4997,9 +5145,11 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
             if (effect?.remove) await effect.remove(actionInfo, actionInfo.target, effect, 'dispelled')
             await eventHandle('lostEffect', actionInfo, actionInfo.target, effect, 'dispelled', actionInfo.battleBro)
             await gainUltCharge(actionInfo.battleBro, 8)
+            removedEffects.push(effect)
         }
     }
     await updateEffectIcons(actionInfo.target)
+    return removedEffects
 }
 
 async function removeEffect(actionInfo, target, bufftag = null, name = null, type = null, all = false, specificEffect = null) {
@@ -5210,7 +5360,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
                     if (!actionInfo.hitEnemies) actionInfo.hitEnemies = []
                     if (!actionInfo.hitEnemies.includes(target)) {
                         actionInfo.hitEnemies.push(target)
-                        if (Math.random() < target.counterChance * 0.01 && !target.buffs.find(e => e.tags.includes('stun'))) {
+                        if (Math.random() < target.counterChance * 0.01 && !target.buffs.find(e => e.tags.includes('stun')) && target.isDead == false) {
                             let counterActionInfo = new ActionInfo({ battleBro: actionInfo.target, target: actionInfo.battleBro })
                             await addAttackToQueue(counterActionInfo)
                         }
@@ -5307,7 +5457,7 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false,
 async function TMchange(actionInfo, change, resistable = true) {
     let user = actionInfo.battleBro // get the user from the actionInfo
     let target = actionInfo.target // get the target from the actionInfo
-    if (target.buffs.find(effect => effect.tags.includes('stopTMgain') && change > 0)) return
+    if ((target.statuses.immuneTMgain.length > 0 && change > 0) || (target.statuses.immuneTMloss.length > 0 && change < 0)) return
     if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
         await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
         await eventHandle('resisted', actionInfo, target, user, 'turnMeter', change)
@@ -5367,6 +5517,11 @@ async function equalize(actionInfo, targets, type = 'health', ignoreHealImmunity
         }
     }
     return HPchangeArray
+}
+
+async function bonusTurn(actionInfo) {
+    bonusTurnQueue.push(actionInfo.target)
+    await eventHandle('bonusTurn', actionInfo)
 }
 
 async function gainUltCharge(battleBro, chargeAmount = 1) {
@@ -5703,7 +5858,9 @@ async function highlightKeywords(text) {
             if (type === 'buff') color = 'limegreen';
             else if (type === 'debuff') color = 'red';
 
-            const safeDesc = effect.desc.replace(/"/g, '&quot;');
+            let safeDesc = effect.desc.replace(/"/g, '&quot;');
+            safeDesc = safeDesc.replace(/{{caster}}/g, `${battleBros[selectedBattleBroNumber].character}`)
+            safeDesc = safeDesc.replace(/{{bonusData}}/g, `X`)
 
             // Generate tooltip span and replace with token
             const span = `<span class="effect-hover" style="color: ${color}; cursor: help;" title="${safeDesc}">${correctName}</span>`;

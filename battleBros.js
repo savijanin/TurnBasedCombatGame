@@ -2,7 +2,7 @@ export var battleBros = [
     // Team 0 (left side)
     {
         id: "01",
-        character: 'Clone Wars Chewbacca',
+        character: 'Darth Vader',
         x: 400,
         y: 100,
         team: 0,
