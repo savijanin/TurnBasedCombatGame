@@ -14,7 +14,7 @@ export var battleBros = [
     },
     {
         id: "02",
-        character: 'Clone Wars Chewbacca',
+        character: 'Yoda',
         x: 400,
         y: 300,
         team: 0,
@@ -104,7 +104,7 @@ export var battleBros = [
     },
     {
         id: "15",
-        character: 'Chuck (Rainbird)',
+        character: 'C-3P0',
         x: 1550,
         y: 200,
         team: 1,
@@ -112,7 +112,7 @@ export var battleBros = [
     },
     {
         id: "16",
-        character: 'Matilda (Druid)',
+        character: 'Chewbacca',
         x: 1550,
         y: 400,
         team: 1,

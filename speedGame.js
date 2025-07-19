@@ -64,13 +64,104 @@ const infoAboutAbilities = {
             await heal(healInfo, battleBro.physicalDamage, 'protection')
         }
     },
+    'Baffling Trick': {
+        name: 'Baffling Trick',
+        image: 'images/abilities/ability_c3p0_basic.png',
+        type: 'basic',
+        tags: ['debuff_gain'],
+        desc: "C-3PO inflicts Confuse for 3 turns. If target is already Confused, duration of their stacks resets to 3 turns. Reduce target's Turn Meter by 6% and 3% more for each stack of Translation on C-3PO.",
+        use: async function (actionInfo) {
+            if (actionInfo.target.buffs.find(effect => effect.tags.includes("confuse"))) {
+                for (let effect of actionInfo.target.buffs.filter(effect => effect.tags.includes("confuse"))) {
+                    if (effect.duration < 3) effect.duration = 3
+                }
+            }
+            await applyEffect(actionInfo, 'confuse', 3)
+            await TMchange(actionInfo, -6 - (actionInfo.battleBro.buffs.filter(effect => effect.tags.includes("translation")).length))
+        }
+    },
+    'Oh My Goodness!': {
+        name: 'Oh My Goodness!',
+        image: 'images/abilities/ability_c3p0_special01.png',
+        type: 'special',
+        cooldown: 3,
+        tags: ['debuff_gain', 'buff_gain', 'target_ally'],
+        desc: "C-3PO gains Potency Up and Stealth for 2 turns, then he and target other ally gain Translation for 3 turns. C-3PO inflicts 2 stacks of confuse on target enemy for 3 turns, then calls all other allies with Translation to assist, dealing 50% less damage.",
+        use: async function (actionInfo) {
+            await applyEffect(actionInfo.withSelfAsTarget(), 'potencyUp', 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'stealth', 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'translation', 3)
+            await applyEffect(actionInfo, 'confuse', 3, 2)
+        },
+        allyUse: async function (battleBro, ally, target) {
+            await applyEffect(new ActionInfo({ battleBro: battleBro, target: ally }), 'translation', 3)
+            for (let ally of aliveBattleBros[battleBro.team].filter(guy => guy.buffs.find(effect => effect.tags.includes("translation")))) {
+                await addAttackToQueue(new ActionInfo({ battleBro: ally, target: target }), 50)
+            }
+        }
+    },
+    'Overcharged Shot': {
+        name: 'Overcharged Shot',
+        image: 'images/abilities/ability_chewbacca_ot_basic.png',
+        type: 'basic',
+        tags: ['attack', 'physical_damage', 'projectile_attack'],
+        projectile: 'redLaser',
+        abilityDamage: 140,
+        desc: 'Deal Physical damage to target enemy and inflict Tenacity Down for 2 turns.',
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'tenacityDown', 2)
+            }
+        }
+    },
+    'Pulverize': {
+        name: 'Pulverize',
+        image: 'images/abilities/ability_chewbacca_ot_special01.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['attack', 'physical_damage', 'AOE'],
+        abilityDamage: 90,
+        desc: 'Dispel all buffs on all enemies, then deal Physical damage to all enemies. Chewbacca gains Offence Up and Critical Chance Up for 2 turns. This attack ignores Defense.',
+        use: async function (actionInfo) {
+            await applyEffect(actionInfo.withSelfAsTarget(), 'offenceUp', 2)
+            await applyEffect(actionInfo.withSelfAsTarget(), 'criticalChanceUp', 2)
+            for (let enemy of actionInfo.enemies) {
+                await dispel(actionInfo.withTarget(enemy), 'buff')
+            }
+            for (let enemy of actionInfo.enemies) {
+                const savedArmour = enemy.armour
+                enemy.armour -= savedArmour
+                await dealDmg(actionInfo.withTarget(enemy), this.abilityDamage, 'physical')
+                enemy.armour += savedArmour
+            }
+        }
+    },
+    'Furious Bowcaster': {
+        name: 'Furious Bowcaster',
+        image: 'images/abilities/ability_chewbacca_ot_special02.png',
+        type: 'special',
+        cooldown: 3,
+        tags: ['attack', 'physical_damage', 'projectile_attack'],
+        abilityDamage: 240,
+        desc: "Deal Physical damage to target enemy and Stun them for 1 turn. Then, if the target has no Protection, reset Pulverize's ability cooldown. This attack can't be evaded.",
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'stun')
+            }
+            if (actionInfo.target.protection + actionInfo.target.shields <= 0) {
+                await changeCooldowns(actionInfo.battleBro, -4, 'Pulverize')
+            }
+        }
+    },
     'Bowcaster': {
         name: 'Bowcaster',
         image: 'images/abilities/clonewarschewbacca_bowcaster.png',
         type: 'basic',
         tags: ['attack', 'physical_damage', 'projectile_attack'],
         projectile: 'redLaser',
-        abilityDamage: 117.8,
+        abilityDamage: 117.8 + 50,
         desc: 'Deal Physical damage to target enemy with a 55% chance to remove 50% Turn Meter.',
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
@@ -681,7 +772,7 @@ const infoAboutAbilities = {
         cooldown: 3,
         tags: ['attack', 'bonus_turn', 'special_damage', 'buff_gain', 'copy'],
         abilityDamage: 60.2,
-        desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for ${(oldSchool ? 3 : 2)} turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
+        desc: `Deal Special damage to all enemies. Then, for each buff an enemy has, Grand Master Yoda gains that effect for 3 turns. (Unique status effects can't be copied.) Grand Master Yoda takes a bonus turn as long as there is one other living Jedi ally.`,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             const enemies = aliveBattleBros // multi-enemy-team functionality
@@ -699,7 +790,7 @@ const infoAboutAbilities = {
                 }
             }
             for (let buff of copiedEffects) {
-                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, (oldSchool ? 3 : 2))
+                await applyEffect(actionInfo.withSelfAsTarget(), buff.name, 3)
             }
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
                 if (ally.tags.includes('jedi') == true) {
@@ -729,10 +820,10 @@ const infoAboutAbilities = {
     'Battle Meditation': {
         name: 'Battle Meditation',
         image: 'images/abilities/ability_grandmasteryoda_special03.png',
-        type: 'special',
-        cooldown: 4,
+        type: oldSchool ? 'special' : 'ultimate', // It's an ultimate as long as oldSchool isn't active
+        [oldSchool ? "cooldown" : "ultimateCost"]: oldSchool ? 4 : 2500,
         tags: ['turnmeter_recovery', 'buff_gain'],
-        desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every non-unique buff he has (excluding Stealth and Taunt) for ${(oldSchool ? '2 turns' : '1 turn')}. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
+        desc: `Yoda gains Tenacity Up, Protection Up (30%), and Foresight for 2 turns, then grants each ally every buff he has (excluding Stealth and Taunt) for 2 turns. Yoda grants himself +35% Turn Meter and an additional +10% Turn Meter for each other living Jedi ally.`,
         use: async function (actionInfo) {
             await logFunctionCall('method: use (', ...arguments,)
             await applyEffect(actionInfo.withSelfAsTarget(), 'tenacityUp', 2)
@@ -742,7 +833,7 @@ const infoAboutAbilities = {
             let bonusTurnMeter = 0
             for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(ally => ally !== actionInfo.battleBro)) {
                 for (let buff of copiedEffects) {
-                    await applyEffect(actionInfo.withTarget(ally), buff.name, (oldSchool ? 2 : 1))
+                    await applyEffect(actionInfo.withTarget(ally), buff.name, 2)
                 }
                 if (ally.tags.includes('jedi') == true) {
                     bonusTurnMeter += 10
@@ -1700,6 +1791,159 @@ const infoAboutPassives = {
                 //await useAbility(abilityName,owner,attacker)
                 let actionInfo = new ActionInfo({ battleBro: owner, target: attacker })
                 await addAttackToQueue(actionInfo)
+            }
+        }
+    },
+    'Protocol Droid': {
+        name: 'Protocol Droid',
+        image: 'images/abilities/abilityui_passive_translation.png',
+        desc: 'C-3PO has +20 Speed. While C-3PO is active, allies gain Translation for 3 turns (max 3 stacks) each time they use a Special ability. If the character already has Translation, the duration for all current stacks on that character resets to 3 turns.',
+        type: 'unique',
+        tags: [],
+        start: async function (actionInfo, owner) {
+            owner.speed += 20
+        },
+        usedAbility: async function (actionInfo, owner, abilityName, user, target, type, dmgPercent) {
+            if (user.team == owner.team && infoAboutAbilities[abilityName].type == 'special') {
+                if (user.buffs.find(effect => effect.tags.includes("translation"))) {
+                    for (let effect of user.buffs.filter(effect => effect.tags.includes("translation"))) {
+                        if (effect.duration < 3) effect.duration = 3
+                    }
+                }
+                await applyEffect(new ActionInfo({ battleBro: owner, target: user }), 'translation', 3)
+            }
+        },
+    },
+    'Wait For Me!': {
+        name: 'Wait For Me!',
+        image: 'images/abilities/abilityui_passive_stealth.png',
+        desc: 'C-3PO and R2-D2 have +10% Evasion for each of their own stacks of Translation. At the start of encounter, C-3PO and R2-D2 gain Translation for 3 turns.',
+        type: 'unique',
+        tags: [],
+        start: async function (actionInfo, owner) {
+            for (let ally of aliveBattleBros[owner.team].filter(guy => guy.character.includes("C-3P0") || guy.character.includes("R2-D2"))) {
+                await applyEffect(actionInfo.withTarget(ally), 'translation', 3)
+            }
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.team == target.team && aliveBattleBros[owner.team].filter(guy => guy.character.includes("C-3P0") || guy.character.includes("R2-D2")).find(guy => guy == target) && effect.name == 'translation') {
+                target.evasion += 10
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.team == target.team && aliveBattleBros[owner.team].filter(guy => guy.character.includes("C-3P0") || guy.character.includes("R2-D2")).find(guy => guy == target) && effect.name == 'translation') {
+                target.evasion -= 10
+            }
+        },
+    },
+    'Intermediary': {
+        name: 'Intermediary',
+        image: 'images/abilities/abilityui_passive_sootheall.png',
+        desc: "All allies have +10% Defense Penetration. Each time a Galactic Republic or Ewok ally gains a different, non-unique, non-Protection buff, they gain 15% Protection Up for 2 turns (does not stack with itself). For each stack of Translation, Galactic Republic have +10% Defense Penetration, doubled for Ewoks.",
+        type: 'unique',
+        tags: [],
+        start: async function (actionInfo, owner) {
+            for (let ally of aliveBattleBros[owner.team]) {
+                ally.defencePenetration += 10
+            }
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.team == target.team && (target.tags.includes("galacticRepublic") || target.tags.includes("ewok")) && !target.buffs.find(effect => effect.name == 'protectionUp')) {
+                await applyEffect(new ActionInfo({ battleBro: owner, target: target }), 'protectionUp', 2)
+            }
+            if (owner.team == target.team && (target.tags.includes("galacticRepublic") || target.tags.includes("ewok")) && effect.name == 'translation') {
+                target.defencePenetration += (target.tags.includes("galacticRepublic") ? 10 : 20)
+            }
+        },
+        lostEffect: async function (actionInfo, owner, target, effect) {
+            if (owner.team == target.team && (target.tags.includes("galacticRepublic") || target.tags.includes("ewok")) && effect.name == 'translation') {
+                target.defencePenetration -= (target.tags.includes("galacticRepublic") ? 10 : 20)
+            }
+        },
+    },
+    'Loyal Friend': {
+        name: 'Loyal Friend',
+        image: 'images/abilities/abilityui_passive_fortifications.png',
+        desc: 'At the start of the battle, grant Guard to the weakest ally and Han Solo until Chewbacca is defeated. Chewbacca Assists when a Guarded ally uses any ability during their turn, doing 20% less damage, limited once per turn. When Chewbacca deals damage to an enemy, Chewbacca and all Guarded allies recover 3% Health and 3% Protection.',
+        type: 'unique',
+        tags: [],
+        start: async function (actionInfo, owner) {
+            let allyHealths = aliveBattleBros[owner.team].map(guy => guy.health)
+            let weakestAlly = aliveBattleBros[owner.team][allyHealths.indexOf(Math.min(...allyHealths))]
+            await applyEffect(actionInfo.withTarget(weakestAlly), 'guard', Infinity, 1, false, true)
+            for (let ally of aliveBattleBros[owner.team].filter(guy => guy.character.includes("Han") || guy.character.includes("Solo"))) {
+                await applyEffect(actionInfo.withTarget(ally), 'guard', Infinity, 1, false, true)
+            }
+            owner.customData.loyalFriend = {
+                hasAssisted: false
+            }
+        },
+        usedAbility: async function (actionInfo, owner, abilityName, battleBro, target, type, dmgPercent) {
+            if (battleBro.team == owner.team && battleBro.buffs.find(effect => effect.name == 'guard') && owner.customData.loyalFriend.hasAssisted == false) {
+                await addAttackToQueue(new ActionInfo({ battleBro: owner, target: target }), 80)
+                owner.customData.loyalFriend.hasAssisted = true
+            }
+        },
+        startedTurn: async function (actionInfo, owner, turnStarter) {
+            if (owner == turnStarter) {
+                owner.customData.loyalFriend.hasAssisted = false
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker) {
+            if (attacker == owner) {
+                await heal(actionInfo.withSelfAsTarget(), owner.maxHealth * 0.03)
+                await heal(actionInfo.withSelfAsTarget(), owner.maxProtection * 0.03, 'protection')
+                for (let ally of aliveBattleBros[owner.team].filter(guy => guy.buffs.find(effect => effect.name == 'guard'))) {
+                    await heal(actionInfo.withTarget(ally), ally.maxHealth * 0.03)
+                    await heal(actionInfo.withTarget(ally), ally.maxProtection * 0.03, 'protection')
+                }
+            }
+        },
+        defeated: async function (actionInfo, owner, target, attacker) {
+            if (target == owner) {
+                for (let ally of aliveBattleBros[owner.team].filter(guy => guy.buffs.find(effect => effect.name == 'guard' && effect.caster == owner))) {
+                    await removeEffect(new ActionInfo({ battleBro: owner, target: ally }), ally, null, 'guard')
+                }
+            }
+        }
+    },
+    'Raging Wookiee': {
+        name: 'Raging Wookiee',
+        image: 'images/abilities/abilityui_passive_crit_buff.png',
+        desc: "Chewbacca is immune to Ability Block and Cooldown Increase. When Chewbacca deals damage to an enemy with an attack, he deals bonus damage equal to 20% of their Max Health. When Chewbacca takes damage from an attack, he gains +25% Offense and +25% Critical Chance until the end of his next turn. When Chewbacca or a Guarded ally takes damage from an attack, reduce Furious Bowcaster's cooldown by 1.",
+        type: 'unique',
+        tags: [],
+        start: async function (actionInfo, owner) {
+            owner.customData.ragingWookie = {
+                bonusAttackGains: 0
+            }
+            owner.statuses.immuneCooldownIncrease.push("Raging Wookie")
+        },
+        gainedEffect: async function (actionInfo, owner, target, effect) {
+            if (owner == target && effect.name == 'abilityBlock') {
+                await removeEffect(actionInfo.withSelfAsTarget(), owner, null, null, null, false, effect)
+            }
+        },
+        endedTurn: async function (actionInfo, owner, turnEnder) {
+            if (owner == turnEnder) {
+                for (let i = 0; i < owner.customData.ragingWookie.bonusAttackGains; i++) {
+                    owner.offence -= 25
+                    owner.critChance -= 25
+                }
+                owner.customData.ragingWookie.bonusAttackGains = 0
+            }
+        },
+        damaged: async function (actionInfo, owner, target, attacker, dealtdmg, type) {
+            if (attacker == owner && type == 'physical') {
+                await dealDmg(actionInfo.withTarget(target), 20, 'percentage')
+            }
+            if (target == owner) {
+                owner.offence += 25
+                owner.critChance += 25
+                owner.customData.ragingWookie.bonusAttackGains++
+            }
+            if (target == owner || (target.team == owner.team && target.buffs.find(effect => effect.name == 'guard'))) {
+                await changeCooldowns(owner, -1, 'Furious Bowcaster')
             }
         }
     },
@@ -3144,6 +3388,85 @@ const infoAboutEffects = {
             unit.tenacity -= 100
         }
     },
+    'translation': {
+        name: 'translation',
+        image: 'images/effects/translation.png',
+        type: 'buff',
+        tags: ['stack', 'maxHealth', 'critChance', 'cooldownDecrease', 'translation'],
+        desc: "1 Stack: +30% Max Health.<br>2 Stacks: +15% Critical Chance.<br>3 Stacks: Decrease this character's cooldowns by 1 whenever a translator ally uses their basic ability. (limit once per turn)",
+        opposite: 'confuse',
+        apply: async function (actionInfo, unit, effect) {
+            if (!unit.customData.translation) {
+                unit.customData.translation = { masterEffect: effect, threeStacks: false, hasUsedBasic: false };
+                this.applyMasterEffects(unit);
+            }
+
+            // Promote this effect to master if needed
+            if (!unit.customData.translation.masterEffect) {
+                unit.customData.translation.masterEffect = effect;
+                this.applyMasterEffects(unit);
+            }
+        },
+        remove: async function (actionInfo, unit, effect) {
+            if (unit.customData.translation?.masterEffect === effect) {
+                this.removeMasterEffects(unit);
+                unit.customData.translation.masterEffect = null;
+            }
+        },
+        lostEffect: async function (actionInfo, unit, effect) {
+            if (!unit.customData.translation?.masterEffect) {
+                unit.customData.translation.masterEffect = effect;
+                this.applyMasterEffects(unit);
+            }
+        },
+        usedAbility: async function (actionInfo, unit, effect, abilityName, user, target, type) {
+            if (unit.customData.translation.threeStacks == true && user.tags.includes("translator") && user.team == unit.team && unit.customData.translation.hasUsedBasic == false) {
+                await changeCooldowns(unit, -1)
+                unit.customData.translation.hasUsedBasic = true
+            }
+        },
+        startedTurn: async function (actionInfo, unit, effect, turnStarter) {
+            if (turnStarter == unit) {
+                unit.customData.translation.hasUsedBasic = false
+            }
+        },
+
+        // Central place to apply effects based on current stack count
+        applyMasterEffects(unit) {
+            if (unit.isDead == true) return
+            const stacks = unit.buffs.filter(e => e.name === 'translation').length;
+
+            // First, clear any existing effects (to reapply cleanly)
+            this.removeMasterEffects(unit);
+
+            if (stacks >= 1) {
+                unit.maxHealth *= 1.3;
+                unit.health *= 1.3;
+            }
+            if (stacks >= 2) {
+                unit.critChance += 15;
+            }
+            if (stacks >= 3) {
+                unit.customData.translation.threeStacks = true; // flag to reduce cooldown when caster uses basic
+            }
+        },
+
+        removeMasterEffects(unit) {
+            if (unit.isDead == true) return
+            const stacks = unit.buffs.filter(e => e.name === 'translation').length;
+
+            if (stacks >= 1) {
+                unit.maxHealth /= 1.3;
+                unit.health /= 1.3;
+            }
+            if (stacks >= 2) {
+                unit.critChance -= 15;
+            }
+            if (stacks >= 3) {
+                unit.customData.translation.threeStacks = false;
+            }
+        }
+    },
     'unbreakable': {
         name: 'unbreakable',
         image: 'images/effects/unbreakable.png',
@@ -3287,6 +3610,72 @@ const infoAboutEffects = {
                 await applyEffect(actionInfo, 'daze', 1) // daze for 1 turn
             }
         },
+    },
+    'confuse': {
+        name: 'confuse',
+        image: 'images/effects/confuse.png',
+        type: 'debuff',
+        tags: ['stack', 'buffImmunity'],
+        desc: "1 Stack: Cannot gain buffs. 2 Stacks: Cannot counter, assist, or gain bonus turn meter. 3 Stacks: Increases cooldowns by 1 when this character uses their basic ability.",
+        opposite: 'confuse',
+        apply: async function (actionInfo, unit, effect) {
+            if (!unit.customData.confuse) {
+                unit.customData.confuse = { masterEffect: effect, threeStacks: false };
+                this.applyMasterEffects(unit);
+            }
+
+            // Promote this effect to master if needed
+            if (!unit.customData.confuse.masterEffect) {
+                unit.customData.confuse.masterEffect = effect;
+                this.applyMasterEffects(unit);
+            }
+        },
+        remove: async function (actionInfo, unit, effect) {
+            if (unit.customData.confuse?.masterEffect === effect) {
+                this.removeMasterEffects(unit);
+                unit.customData.confuse.masterEffect = null;
+            }
+        },
+        lostEffect: async function (actionInfo, unit, effect) {
+            if (!unit.customData.confuse?.masterEffect) {
+                unit.customData.confuse.masterEffect = effect;
+                this.applyMasterEffects(unit);
+            }
+        },
+
+        // Central place to apply effects based on current stack count
+        applyMasterEffects(unit) {
+            if (unit.isDead == true) return
+            const stacks = unit.buffs.filter(e => e.name === 'translation').length;
+
+            // First, clear any existing effects (to reapply cleanly)
+            this.removeMasterEffects(unit);
+
+            if (stacks >= 1) {
+                
+            }
+            if (stacks >= 2) {
+                
+            }
+            if (stacks >= 3) {
+                unit.customData.confuse.threeStacks = true; // flag to reduce cooldown when caster uses basic
+            }
+        },
+
+        removeMasterEffects(unit) {
+            if (unit.isDead == true) return
+            const stacks = unit.buffs.filter(e => e.name === 'translation').length;
+
+            if (stacks >= 1) {
+                
+            }
+            if (stacks >= 2) {
+                
+            }
+            if (stacks >= 3) {
+                unit.customData.confuse.threeStacks = false;
+            }
+        }
     },
     'criticalChanceDown': {
         name: 'criticalChanceDown',
@@ -3759,12 +4148,12 @@ const infoAboutEffects = {
             }
         }
     },
-    'scam': { // 3 stacks effect is unfinished
+    'scam': {
         name: 'scam',
         image: 'images/effects/scam.png',
         type: 'debuff',
         tags: ['stack', 'offence', 'critChance'],
-        desc: "1 Stack: -50% Offence and Crit Chance. Lose a random buff every turn.<br>2 Stacks: Attackers will bonus attack and gain Retribution for 1 turn.<br>3 Stacks: Attackers will bonus attack for each buff they have, dealing 50% damage without inflicting status effects.",
+        desc: "1 Stack: -50% Offence and Crit Chance. Lose a random buff every turn.<br>2 Stacks: Attackers will bonus attack and gain Retribution for 1 turn.<br>3 Stacks: Attackers will bonus attack for each buff they have, dealing 50% damage.",
         opposite: 'translation',
         apply: async function (actionInfo, unit, effect) {
             if (!unit.customData.scam) {
@@ -3808,6 +4197,11 @@ const infoAboutEffects = {
                 await applyEffect(newActionInfo, 'retribution', 1)
                 newActionInfo = new ActionInfo({ battleBro: attacker, target: unit })
                 await addAttackToQueue(newActionInfo)
+                if (unit.buffs.filter(effect => effect.name == 'scam').length >= 3) {
+                    for (let i = 0; i < unit.buffs.filter(effect => effect.type == 'buff').length; i++) {
+                        await addAttackToQueue(newActionInfo, 50)
+                    }
+                }
             }
         }
     },
@@ -3968,6 +4362,26 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
 
+        }
+    },
+    'guard': {
+        name: 'guard',
+        image: 'images/effects/guard.png',
+        type: 'misc',
+        tags: ['critChance'],
+        desc: "Can't be critically hit, immune to Daze and Stun, +25% Critical Chance.",
+        apply: async function (actionInfo, unit) {
+            unit.critAvoidance += 1000
+            unit.critChance += 25
+        },
+        gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
+            if (unit == target && (gainedEffect.name == 'daze' || gainedEffect.name == 'stun')) {
+                await removeEffect(actionInfo, unit, null, gainedEffect.name)
+            }
+        },
+        remove: async function (actionInfo, unit) {
+            unit.critAvoidance -= 1000
+            unit.critChance -= 25
         }
     },
     'mercilessTarget': { // unfinished
@@ -4198,6 +4612,7 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.statuses = { // Arrays contain all the sources that apply the effect so that when one expires the others don't break
         immuneTMgain: [],
         immuneTMloss: [],
+        immuneCooldownIncrease: [],
         tauntEffects: [],
         targetableEffects: [],
         ignoreTauntEffects: [],
@@ -5349,6 +5764,7 @@ async function changeCooldowns(battleBro, amount = -1, ability = null) {
             await pdateAbilityCooldownUI(battleBro, abilityName);
         }
     }*/
+    if (amount > 0 && battleBro.statuses.immuneCooldownIncrease.length > 0) return
     if (ability == null) {
         for (let abilityName of battleBro.abilities) {
             //console.log(abilityName)
