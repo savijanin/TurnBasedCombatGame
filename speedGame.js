@@ -1023,7 +1023,7 @@ const infoAboutAbilities = {
     // --------------------------------------------------------OLIV'S CHARACTERS
     'Lethal Swing': {
         name: "Lethal Swing",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStriker1.png',
         type: 'basic',
         tags: ['attack', 'physical_damage'],
         abilityDamage: 117.8,
@@ -1151,7 +1151,7 @@ const infoAboutAbilities = {
     },
     'Cybernetic Overload': {
         name: "Cybernetic Overload",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStrikerAwakened2.png',
         type: 'special',
         cooldown: 2,
         tags: ['attack', 'special_damage', 'physical_damage', 'debuff_gain'],
@@ -1170,7 +1170,7 @@ const infoAboutAbilities = {
     },
     'Crippling Slice': {
         name: "Crippling Slice",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStrikerAwakened3.png',
         type: 'special',
         cooldown: 4,
         tags: ['attack', 'physical_damage', 'debuff_gain'],

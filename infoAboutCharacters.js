@@ -304,7 +304,7 @@ export const infoAboutCharacters = {
         imageSize: 100,
         health: 28450,
         protection: 37828,
-        speed: 172,
+        speed: 1720,
         potency: 55,
         tenacity: 22,
         critChance: 47.23,
