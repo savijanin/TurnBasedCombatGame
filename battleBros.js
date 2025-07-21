@@ -1,9 +1,8 @@
 export var battleBros = [
     // Team 0 (left side)
     {
-        id: "01",
         character: 'Darth Vader',
-        x: 400,
+        x: 450,
         y: 100,
         team: 0,
         isLeader: true,
@@ -13,31 +12,27 @@ export var battleBros = [
 
     },
     {
-        id: "02",
         character: 'Yoda',
-        x: 400,
+        x: 450,
         y: 300,
         team: 0,
         isLeader: true,
     },
     {
-        id: "03",
         character: 'Talia',
-        x: 400,
+        x: 450,
         y: 500,
         team: 0,
         isLeader: false,
     },
     {
-        id: "04",
-        character: 'Ninja',
-        x: 400,
+        character: 'Mace Windu',
+        x: 450,
         y: 700,
         team: 0,
         isLeader: false,
     },
     {
-        id: "05",
         character: 'Super Striker',
         x: 250,
         y: 200,
@@ -45,7 +40,6 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        id: "06",
         character: 'Super Striker (Awakened)',
         x: 250,
         y: 400,
@@ -53,15 +47,13 @@ export var battleBros = [
         isLeader: true,
     },
     {
-        id: "07",
-        character: 'Shadow Menace (Original)',
+        character: 'jabba',
         x: 250,
         y: 600,
         team: 0,
         isLeader: false,
     },
     {
-        id: "08",
         character: 'MassiveJabba',
         x: 0,
         y: 350,
@@ -71,39 +63,34 @@ export var battleBros = [
 
     // Team 1 (right side)
     {
-        id: "11",
         character: 'Shadow Menace (Original)',
-        x: 1400,
+        x: 1350,
         y: 100,
         team: 1,
         isLeader: false,
     },
     {
-        id: "12",
         character: 'Ninja',
-        x: 1400,
+        x: 1350,
         y: 300,
         team: 1,
         isLeader: false,
     },
     {
-        id: "13",
         character: 'Jedi Bob',
-        x: 1400,
+        x: 1350,
         y: 500,
         team: 1,
         isLeader: false,
     },
     {
-        id: "14",
         character: 'Commander Luke Skywalker',
-        x: 1400,
+        x: 1350,
         y: 700,
         team: 1,
         isLeader: true,
     },
     {
-        id: "15",
         character: 'C-3P0',
         x: 1550,
         y: 200,
@@ -111,7 +98,6 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        id: "16",
         character: 'Chewbacca',
         x: 1550,
         y: 400,
@@ -119,7 +105,6 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        id: "17",
         character: 'Han Solo',
         x: 1550,
         y: 600,
@@ -127,7 +112,6 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        id: "18",
         character: 'MassiveJabba',
         x: 1700,
         y: 350,

@@ -12,12 +12,12 @@ class ActionInfo {
         this.battleBro = obj.battleBro ? obj.battleBro : obj.target;
         this.target = obj.target ? obj.target : obj.battleBro;
 
-        this.abilityName = obj.abilityName;
+        this.source = obj.abilityName;
     }
 
     // --- COPY ---
     copy() {
-        return new ActionInfo({ battleBro: this.battleBro, target: this.target, abilityName: this.abilityName });
+        return new ActionInfo({ battleBro: this.battleBro, target: this.target, source: this.abilityName });
     }
 
     // --- METHOD-STYLE SETTERS (for chaining) ---
@@ -38,13 +38,13 @@ class ActionInfo {
 
     // Special ones that clone at the same time, to avoid issues during parallel execution
     withTarget(value) {
-        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.target, abilityName: this.abilityName });
+        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.target, source: this.abilityName });
         newObj.target = value;
         return newObj;
     }
 
     withSelfAsTarget() {
-        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.battleBro, abilityName: this.abilityName });
+        let newObj = new ActionInfo({ battleBro: this.battleBro, target: this.battleBro, source: this.abilityName });
         return newObj;
     }
 }
