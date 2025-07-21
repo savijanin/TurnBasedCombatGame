@@ -5225,7 +5225,18 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
     }
     checkingPromises = null
     await engageCounters()
-    await Promise.all(promises) // waiting for counter attacks to finish
+    // waiting for counter attacks to finish
+    while (promises.length > 0) {
+        // Copy current list and clear original
+        const currentBatch = [...promises];
+        promises.length = 0;
+
+        // Wait for the current batch to settle
+        await Promise.all(currentBatch);
+
+        // Loop continues if new promises were added during the last batch
+    }
+    
     if (infoAboutAbilities[abilityName].type === 'ultimate') ultimateBeingUsed = false
     await endTurn(actionInfo, battleBros[selectedBattleBroNumber])
     promises = []
