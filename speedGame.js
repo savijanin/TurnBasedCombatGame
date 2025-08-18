@@ -41,8 +41,8 @@ const infoAboutAbilities = {
         desc: 'This is a test, deal physical damage to target enemy.',
         use: async function (actionInfo) {
             //await logFunctionCall('method: use (', ...arguments,)
-            await dealDmg(actionInfo, this.abilityDamage, 'physical')
             await applyEffect(actionInfo.withSelfAsTarget(), 'accuracyUp', 2)
+            await dealDmg(actionInfo, this.abilityDamage, 'physical')
         }
     },
     'test2': {
@@ -62,6 +62,7 @@ const infoAboutAbilities = {
         allyUse: async function (actionInfo) {
             await logFunctionCall('method: allyUse (', ...arguments,)
             await heal(actionInfo.withTarget(actionInfo.ally), actionInfo.battleBro.physicalDamage, 'protection')
+            await applyEffect(actionInfo.withTarget(actionInfo.ally), 'foresight', 2)
         }
     },
     'Baffling Trick': {
@@ -5929,10 +5930,11 @@ async function expireEffect(actionInfo, battleBro, effect, type, dispeller = und
 
     if (effect?.remove) await effect.remove(newActionInfo, battleBro, effect, type, dispeller) // apply remove effect
 
-    for (let stat of Object.keys(battleBro.modifiers)) { // removes all modifiers the effect creates
+    for (let stat of Object.keys(battleBro.modifiers)) { // REMOVE MODIFIERS
         battleBro.modifiers[stat] = battleBro.modifiers[stat].filter(
             mod => mod.identifier !== effect.identifier
         )
+        await updateStat(battleBro, stat)
     }
 
     await eventHandle('lostEffect', newActionInfo, battleBro, effect, type, dispeller) // apply event handlers
@@ -6589,10 +6591,23 @@ async function modifyStat(battleBro, source, stat, amount, identifier = 0, type 
         type: type,
         identifier: identifier
     })
+
+    battleBro[stat] = await updateStat(battleBro, stat)
 }
 
-async function getStat(battleBro, stat) {
-    let value = battleBro[stat]
+async function updateStat(battleBro, stat) {
+    let value = 0
+    if (infoAboutCharacters[battleBro.character][stat]) {
+        value = infoAboutCharacters[battleBro.character][stat]
+    } else if (stat == 'critDamage') {
+        value = 150
+    } else if (['offence', 'speedPercent', 'flatDamageDealt', 'flatDamageReceived'].includes(stat)) {
+        value = 100
+    } else if (stat == 'maxHealth') {
+        value = infoAboutCharacters[battleBro.character].health
+    } else if (stat == 'maxProtection') {
+        value = infoAboutCharacters[battleBro.character].protection
+    }
     for (let keyword of ["add", "multiply", "set"]) { // we add the modifiers in the order of add, multiply, set
         for (let mod of battleBro.modifiers[stat]) { // each modifier of that stat contains the source, amount, type and identifier such as {'offence down', '-50', "add", '1234'}
             if (mod.type == keyword && keyword == "add") {
@@ -6638,7 +6653,7 @@ async function showStats(battleBro, x, y, type, abilityName = null) {
         <span style="color: limegreen">Health: ${Math.ceil(battleBro.health)}/${Math.ceil(battleBro.maxHealth)}<br></span>
         <span style="color: cyan">${protText}<br></span>
         <span style="color: orange">Armour: ${Math.ceil(battleBro.armour)}<br></span>
-        <span style="color: goldenrod">Accuracy: ${Math.ceil(await getStat(battleBro, 'accuracy'))}<br></span>
+        <span style="color: goldenrod">Accuracy: ${Math.ceil(battleBro.accuracy)}<br></span>
         <span style="color: darkorange">Critical Avoidance: ${Math.ceil(battleBro.critAvoidance)}<br></span>
         <span style="color: orangered">Critical Chance: ${Math.ceil(battleBro.critChance)}<br></span>
         <span style="color: red">Critical Damage: ${Math.ceil(battleBro.critDamage)}<br></span>

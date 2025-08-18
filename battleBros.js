@@ -105,7 +105,7 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        character: 'Han Solo',
+        character: 'jabba',
         x: 1550,
         y: 600,
         team: 1,
