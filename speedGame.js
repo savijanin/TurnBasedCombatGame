@@ -4187,10 +4187,10 @@ const infoAboutEffects = {
         desc: "-100% Potency (Chance to inflict debuffs)",
         opposite: 'potencyUp',
         apply: async function (actionInfo, unit) {
-            
+
         },
         remove: async function (actionInfo, unit) {
-            
+
         }
     },
     'potencyDown': {
@@ -4822,6 +4822,30 @@ async function createBattleBroVars(battleBro, skipUI = false) {
         targetableEffects: [],
         ignoreTauntEffects: [],
         ignoreStealthEffects: [],
+    }
+    battleBro.modifiers = {
+        speed: [],
+        potency: [],
+        tenacity: [],
+        critChance: [],
+        armour: [],
+        resistance: [],
+        healthSteal: [],
+        critDamage: [],
+        critAvoidance: [],
+        accuracy: [],
+        evasion: [],
+        defencePenetration: [],
+        offence: [],
+        maxHealth: [],
+        maxProtection: [],
+        counterChance: [],
+        shields: [], // used for abilities that give bonus protection
+        speedPercent: [], // using this to manipulate speed via buffs etc
+        flatDamageDealt: [],
+        flatDamageReceived: [],
+        physicalDamage: [],
+        specialDamage: [],
     }
     if (!skipUI) {
         battleBro.id = String(battleBro.team) + String(battleBros.indexOf(battleBro))
@@ -6554,8 +6578,21 @@ async function modifyStat(actionInfo, stat, amount, type = 'add') {
     actionInfo.target[stat] += amount
 }
 
-async function getCurrentStat(actionInfo, stat) {
-    
+async function getStat(battleBro, stat) {
+    let value = battleBro[stat]
+    for (let keyword of ["add", "multiply", "set"]) { // we add the modifiers in the order of add, multiply, set
+        for (let mod of battleBro.modifiers[stat]) { // each modifier of that stat contains the source, amount, and type such as {'offence down', '-50', 'add'}
+            if (mod.type === keyword === "add") {
+                value += mod.amount
+            } else if (mod.type === keyword === "multiply") {
+                value *= mod.amount
+            } else if (mod.type === keyword === "set") {
+                value = mod.amount
+            }
+        }
+    }
+
+    return value
 }
 
 async function showStats(battleBro, x, y, type, abilityName = null) {
