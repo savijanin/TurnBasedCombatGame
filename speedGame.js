@@ -413,6 +413,7 @@ const infoAboutAbilities = {
                 }
                 if (actionInfo.battleBro.customData.shootsFirst.shootingFirst == true) {
                     await applyEffect(actionInfo, 'stun', 1, 1, false)
+                    actionInfo.battleBro.customData.shootsFirst.shootingFirst = false
                     actionInfo.battleBro.statuses.ignoreTauntEffects.splice(actionInfo.battleBro.statuses.ignoreTauntEffects.indexOf("Shoots First"), 1)
                 }
             }
@@ -1031,7 +1032,7 @@ const infoAboutAbilities = {
         type: 'special',
         cooldown: 5,
         tags: ['debuff_gain', 'buff_gain'],
-        desc: "Business Pig must interrupt the battle for an important meeting. Inflicts Locked Stun on all enemies that can't be resisted and sets the turn meter of all Superpig's Bravado allies to 0. Business Pig's speed is set to 0 until all enemies have come out of stun. Then Business Pig activates his jetpack and gains Aerial Advantage for 2 turns. During this Aerial Advantage he can use all other abilities except for Important Meeting and Oinks of Approval.",
+        desc: "Business Pig must interrupt the battle for an important meeting. Inflicts Locked Stun on all enemies that can't be resisted and sets the turn meter of all Superpig's Bravado allies to 0. Business Pig's speed is set to 0 until all enemies have come out of stun. Then Business Pig activates his jetpack and gains Aerial Advantage for 2 turns.",
         use: async function (actionInfo) {
             for (let enemy of actionInfo.enemies) {
                 await applyEffect(actionInfo.withTarget(enemy), 'stun', 1, 1, false, true)
@@ -1044,6 +1045,61 @@ const infoAboutAbilities = {
                 savedSpeed: actionInfo.battleBro.speed
             }
             actionInfo.battleBro.speed -= actionInfo.battleBro.customData.importantMeeting.savedSpeed
+        }
+    },
+    'Oinks of Approval': {
+        name: 'Oinks of Approval',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['buff_gain'],
+        desc: "Business Pig oinks approvingly at this new method of getting money. All allies gain Tenacity Up for 2 turns and Defence Penetration Up for 1 turn. For each member of Superig's Bravado alive, all allies gain +10% turn meter. For each stack of Profit Business Pig has, give a random ally locked Deflector Shield for 2 turns and remove a stack of Profit. Then Business Pig and Secretary Sheep each gain a stack of Profit for each 8 stacks of Inevitable Failure on the enemy team and each enemy defeated.",
+        use: async function (actionInfo) {
+            const allyNum = aliveBattleBros[actionInfo.battleBro.team].filter(guy => guy.tags.includes("Superpig's Bravado")).length
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                await applyEffect(actionInfo.withTarget(ally), 'tenacityUp', 2)
+                await applyEffect(actionInfo.withTarget(ally), 'defencePenetrationUp', 1)
+                await TMchange(actionInfo.withTarget(ally), allyNum * 10)
+            }
+            for (let effect of actionInfo.battleBro.buffs.filter(effect => effect.name == "profit")) {
+                let randomAlly = aliveBattleBros[actionInfo.battleBro.team][Math.floor(Math.random() * aliveBattleBros[actionInfo.battleBro.team].length)]
+                await applyEffect(actionInfo.withTarget(randomAlly), 'deflectorShield', 2, 1, false, true)
+                await removeEffect(actionInfo.withSelfAsTarget(), actionInfo.battleBro, null, "profit")
+            }
+            let inevitableFailure = 0
+            for (let enemy of actionInfo.enemies) {
+                inevitableFailure += enemy.buffs.filter(effect => effect.name == "inevitableFailure").length
+            }
+            const enemiesDefeated = battleBros.filter(guy => guy.team !== actionInfo.battleBro.team).length - actionInfo.enemies.length
+            for (let i = 0; i < Math.floor(inevitableFailure / 8) + enemiesDefeated; i++) {
+                for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(guy => guy.character.includes("Business Pig") || guy.character.includes("Secretary Sheep"))) {
+                    await applyEffect(actionInfo.withTarget(ally), 'profit', Infinity)
+                }
+            }
+        }
+    },
+    'Pig Profit': {
+        name: 'Pig Profit',
+        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        type: 'ultimate',
+        ultimateCost: 5000,
+        tags: ['buff_gain'],
+        desc: "Business Pig makes a big profit. All allies gain locked advantage and 3 stacks of heal over time for 2 turns. If 10 or more characters (can be allies or enemies) are alive, allies gain 3 stacks of locked Critical Chance Up and Critical Damage Up instead. Business Pig and Secretary Sheep gain locked Money Printer for 3 turns. Ultimate Ability.",
+        use: async function (actionInfo) {
+            if (aliveBattleBros.flat().length < 10) {
+                for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                    await applyEffect(actionInfo.withTarget(ally), 'advantage', 2, 1, false, true)
+                    await applyEffect(actionInfo.withTarget(ally), 'healOverTime', 2, 3, false, true)
+                }
+            } else {
+                for (let ally of aliveBattleBros[actionInfo.battleBro.team]) {
+                    await applyEffect(actionInfo.withTarget(ally), 'criticalChanceUp', 2, 3, false, true)
+                    await applyEffect(actionInfo.withTarget(ally), 'criticalDamageUp', 2, 3, false, true)
+                }
+            }
+            for (let ally of aliveBattleBros[actionInfo.battleBro.team].filter(guy => guy.character.includes("Business Pig") || guy.character.includes("Secretary Sheep"))) {
+                await applyEffect(actionInfo.withTarget(ally), 'moneyPrinter', 3, 1, false, true)
+            }
         }
     },
     // --------------------------------------------------------OLIV'S CHARACTERS
@@ -1099,7 +1155,7 @@ const infoAboutAbilities = {
     },
     'Disruptor Shot': {
         name: "Disruptor Shot",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStriker3.png',
         type: 'special',
         cooldown: 4,
         tags: ['attack', 'projectile_attack', 'physical_damage'],
@@ -1215,7 +1271,7 @@ const infoAboutAbilities = {
     },
     'Atomic Detonation': {
         name: "Atomic Detonation",
-        image: 'images/abilities/clonewarschewbacca_bowcaster.png',
+        image: 'images/abilities/superStrikerAwakened4.png',
         type: 'special',
         cooldown: 5,
         tags: ['attack', 'mines', 'debuff_gain'],
@@ -1518,6 +1574,59 @@ const infoAboutAbilities = {
                     let randomBuffIndex = Math.floor(Math.random() * buffs.length)
                     await applyEffect(actionInfo.withTarget(ally), buffs[randomBuffIndex][1].name, 3, 1, false, true, 50)
                 }
+            }
+        },
+    },
+    // --------------------------------------------------------STARCRAFT
+    'Gauss Rifle': {
+        name: "Gauss Rifle",
+        image: 'images/abilities/raynor1.png',
+        type: 'basic',
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 100,
+        desc: 'Deal physical damage to target enemy twice and each instance inflicts a stack of damage over time for 1 turn. Gain advantage for 1 turn.',
+        use: async function (actionInfo) {
+            for (let i = 0; i < 2; i++) {
+                let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+                if (hit[0] > 0) {
+                    await applyEffect(actionInfo, 'damageOverTime', 1)
+                }
+            }
+            await applyEffect(actionInfo.withSelfAsTarget(), 'advantage', 1)
+        },
+    },
+    'Air Support': {
+        name: "Air Support",
+        image: 'images/abilities/raynor2.png',
+        type: 'special',
+        cooldown: 3,
+        tags: ['attack', 'physical_damage', 'ultra_damage', 'debuff_gain'],
+        abilityDamage: 50,
+        desc: "Deal physical damage to four random enemies, then deal ultra damage to the target enemy which inflicts breach for 2 turns.",
+        use: async function (actionInfo) {
+            for (let i = 0; i < 4; i++) {
+                let randomEnemy = actionInfo.enemies[Math.floor(Math.random() * actionInfo.enemies.length)]
+                let hit = await dealDmg(actionInfo.withTarget(randomEnemy), this.abilityDamage, 'physical')
+            }
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'ultra')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'breach', 2)
+            }
+        },
+    },
+    'Penetrator Round': {
+        name: "Penetrator Round",
+        image: 'images/abilities/raynor3.png',
+        type: 'special',
+        cooldown: 4,
+        tags: ['attack', 'physical_damage', 'debuff_gain'],
+        abilityDamage: 210,
+        desc: "Deal physical damage to target enemy, inflicting bleed and pierced for 2 turns.",
+        use: async function (actionInfo) {
+            let hit = await dealDmg(actionInfo, this.abilityDamage, 'physical')
+            if (hit[0] > 0) {
+                await applyEffect(actionInfo, 'bleed', 2)
+                await applyEffect(actionInfo, 'pierced', 2)
             }
         },
     },
@@ -2468,10 +2577,20 @@ const infoAboutPassives = {
     },
     // --------------------------------------------------------SAVI'S CHARACTERS
     // --------------------------------------------------------SUPERPIG'S BRAVADO
+    'Large Partnership': {
+        name: 'Large Partnership',
+        image: 'images/abilities/abilityui_passive_senseweakness.png',
+        desc: "All of Superpig's Bravado currently in the battle gain +10% accuracy, health steal and tenacity for every one of them alive. When an ally falls below 80% health, give them Valour for 3 turns and Business Pig gains Taunt for 2 turns. Every time an enemy attacks Business Pig with Taunt, Secretary Sheep or Business Pig gain a stack of Profit.",
+        type: 'leader',
+        tags: ['debuff_gain', 'revive'],
+        start: async function (actionInfo, owner) {
+        },
+    },
     'Very Important Pig': {
         name: 'Very Important Pig',
         image: 'images/abilities/abilityui_passive_senseweakness.png',
-        desc: "Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can't be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle. Targeted enemies damaged during Aerial Advantage also gain 2 stacks of locked Inevitable Failure for 10 turns which can't be resisted. +Contain Detect Important Meeting Stun Removal Trigger",
+        desc: "Whenever Business Pig is attacked, the attacker gains a Concussion Mine, which can't be resisted. Business Pig gains the VIP buff at the start of the battle which lasts forever. When an ally revives, they steal VIP from any ally that had it prior and gain it for the rest of the battle. Targeted enemies damaged during Aerial Advantage also gain 2 stacks of locked Inevitable Failure for 10 turns which can't be resisted.",
+        extraDesc: "Contains Detect Important Meeting Stun Removal Trigger",
         type: 'unique',
         tags: ['debuff_gain', 'revive'],
         start: async function (actionInfo, owner) {
@@ -2499,7 +2618,7 @@ const infoAboutPassives = {
             }
         },
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
-            if (owner.customData.importantMeeting.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.tags.includes('stun') && effect.caster == owner)).length <= 0) {
+            if (owner?.customData?.importantMeeting?.enemiesStunned == true && actionInfo.enemies.filter(enemy => enemy.buffs.find(effect => effect.tags.includes('stun') && effect.caster == owner)).length <= 0) {
                 owner.speed += owner.customData.importantMeeting.savedSpeed
                 await applyEffect(actionInfo.withTarget(owner), 'aerialAdvantage', 2, 1, false)
                 owner.customData.importantMeeting.enemiesStunned = false
@@ -2546,7 +2665,7 @@ const infoAboutPassives = {
         },
         attacked: async function (actionInfo, owner, target, attacker) {
             if (owner === attacker && target.buffs.find(effect => effect.tags.includes('targetLock')) && owner.customData?.eliminationProtocol?.offenceStacks < 5) {
-                await modifyStat(actionInfo.withTarget(owner), 'offence', 10)
+                owner.offence += 10
                 owner.customData.eliminationProtocol.offenceStacks++
             }
         }
@@ -2722,6 +2841,46 @@ const infoAboutEffects = {
         },
         remove: async function (actionInfo, unit) {
             unit.accuracy -= 100
+        }
+    },
+    'advantage': {
+        name: 'advantage',
+        image: 'images/effects/advantage.png',
+        type: 'buff',
+        tags: ['stack', 'critChance'],
+        desc: "Next attack will be a critical hit if able.",
+        opposite: 'expose',
+        apply: async function (actionInfo, unit) {
+            unit.critChance += 1000
+        },
+        remove: async function (actionInfo, unit) {
+            unit.critChance -= 1000
+        },
+        damaged: async function (actionInfo, unit, effect, target, attacker, dealtdmg, damageType, crit) {
+            if (unit == attacker && crit == true) {
+                await removeEffect(actionInfo.withSelfAsTarget(), unit, null, null, null, false, effect)
+            }
+        }
+    },
+    'aerialAdvantage': {
+        name: 'aerialAdvantage',
+        image: 'images/effects/aerialAdvantage.png',
+        type: 'buff',
+        tags: ['stack', 'critChance', 'speed', 'debuff_gain'],
+        desc: "Gain infinite speed, attacks critically hit and expose targeted enemies for 1 turn.",
+        opposite: 'flatten',
+        apply: async function (actionInfo, unit) {
+            unit.speed += 10000
+            unit.critChance += 1000
+        },
+        remove: async function (actionInfo, unit) {
+            unit.speed -= 10000
+            unit.critChance -= 1000
+        },
+        attacked: async function (actionInfo, unit, effect, target, attacker) {
+            if (unit == attacker) {
+                await applyEffect(actionInfo.withTarget(target), 'expose', 1)
+            }
         }
     },
     'backupPlan': {
@@ -3575,12 +3734,32 @@ const infoAboutEffects = {
             }
         }
     },
+    'breach': {
+        name: 'breach',
+        image: 'images/effects/breach.png',
+        type: 'debuff',
+        tags: ['stack', 'speed', 'defence'],
+        desc: "-25% Speed and -25% Defence (Doesn't stack with other effects)",
+        opposite: 'breachImmunity',
+        apply: async function (actionInfo, unit) {
+            await logFunctionCall('method: apply (', ...arguments,)
+            unit.speedPercent -= 25
+            unit.armour -= 25
+            unit.resistance -= 25
+        },
+        remove: async function (actionInfo, unit) {
+            await logFunctionCall('method: remove (', ...arguments,)
+            unit.speedPercent += 25
+            unit.armour += 25
+            unit.resistance += 25
+        },
+    },
     'buffImmunity': {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
         type: 'debuff',
         tags: ['buffImmunity'],
-        desc: "Can't gain buffs.",
+        desc: "Can't gain non-locked buffs.",
         opposite: 'debuffImmunity',
     },
     'burning': {
@@ -3891,12 +4070,14 @@ const infoAboutEffects = {
         type: 'debuff',
         tags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
         desc: "Miss the next turn, but Fear is removed upon taking damage. If it is, increase cooldowns by 1.",
-        apply: async function (actionInfo, unit) {
+        apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
+            unit.statuses.stunned.push(effect)
             unit.evasion -= 10000
         },
         remove: async function (actionInfo, unit, effect, removalType) {
             await logFunctionCall('method: remove (', ...arguments,)
+            unit.statuses.stunned.splice(unit.statuses.stunned.indexOf(effect), 1)
             unit.evasion += 10000
             if (removalType == 'removed') {
                 await changeCooldowns(unit, 1)
@@ -3996,6 +4177,20 @@ const infoAboutEffects = {
         remove: async function (actionInfo, unit) {
             await logFunctionCall('method: remove (', ...arguments,)
             unit.offence += 50
+        }
+    },
+    'pierced': {
+        name: 'pierced',
+        image: 'images/effects/pierced.png',
+        type: 'debuff',
+        tags: ['stack', 'maxHealth', 'defence', 'buffImmunity'],
+        desc: "-100% Potency (Chance to inflict debuffs)",
+        opposite: 'potencyUp',
+        apply: async function (actionInfo, unit) {
+            
+        },
+        remove: async function (actionInfo, unit) {
+            
         }
     },
     'potencyDown': {
@@ -4308,11 +4503,13 @@ const infoAboutEffects = {
         tags: ['stun', 'evasion'],
         desc: "Can't use abilities.",
         opposite: 'lockdown',
-        apply: async function (actionInfo, unit) {
+        apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
+            unit.statuses.stunned.push(effect)
             unit.evasion -= 200
         },
-        remove: async function (actionInfo, unit) {
+        remove: async function (actionInfo, unit, effect) {
+            unit.statuses.stunned.splice(unit.statuses.stunned.indexOf(effect), 1)
             await logFunctionCall('method: remove (', ...arguments,)
             unit.evasion += 200
         }
@@ -5236,7 +5433,7 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
 
         // Loop continues if new promises were added during the last batch
     }
-    
+
     if (infoAboutAbilities[abilityName].type === 'ultimate') ultimateBeingUsed = false
     await endTurn(actionInfo, battleBros[selectedBattleBroNumber])
     promises = []
@@ -6146,7 +6343,8 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
         await gainUltCharge(target, dealtdmg * 0.0035)
         //const protUsed = (ignoreProtection == false) ? target.protection : 0 // how much protection was used
         if (target.health <= 0 && target.isDead == false) {
-            await dead(target)
+            let promise = dead(target)
+            promises.push(promise)
             await gainUltCharge(target, 500)
             await eventHandle('defeated', actionInfo, target, user, dealtdmg, type, crit, target.health + target.protection - dealtdmg)
         }
@@ -6349,11 +6547,15 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
     img.style.display = 'block'
 }
 
-async function modifyStat(actionInfo, stat, amount, triggerEventHandlers = true) {
-    if (triggerEventHandlers == true) {
+async function modifyStat(actionInfo, stat, amount, type = 'add') {
+    /*if (triggerEventHandlers == true) {
         await eventHandle('modifiedStat', actionInfo, stat, amount, actionInfo.target, actionInfo.battleBro)
-    }
+    }*/
     actionInfo.target[stat] += amount
+}
+
+async function getCurrentStat(actionInfo, stat) {
+    
 }
 
 async function showStats(battleBro, x, y, type, abilityName = null) {

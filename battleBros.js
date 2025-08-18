@@ -47,7 +47,7 @@ export var battleBros = [
         isLeader: true,
     },
     {
-        character: 'jabba',
+        character: 'Clone Wars Chewbacca',
         x: 250,
         y: 600,
         team: 0,

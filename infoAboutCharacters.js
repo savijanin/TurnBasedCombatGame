@@ -293,7 +293,7 @@ export const infoAboutCharacters = {
         armour: 31,
         resistance: 27,
         healthSteal: 5,
-        tags: ['lightSide', 'support', 'leader', 'earthling', "Superpig's Bravado"],
+        tags: ['lightSide', 'tank', 'leader', 'earthling', "Superpig's Bravado"],
         abilities: ['Thwart the Plan', 'Important Meeting', 'Pig Profit', 'Oinks of Approval'],
         passiveAbilities: ['Large Partnership', 'Very Important Pig'],
         charDesc: 'Business Pig is here to sabotage any future competitors to his prosperous business.',
