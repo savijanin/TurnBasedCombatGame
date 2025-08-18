@@ -12,7 +12,7 @@ export var battleBros = [
 
     },
     {
-        character: 'Yoda',
+        character: 'jabba',
         x: 450,
         y: 300,
         team: 0,
