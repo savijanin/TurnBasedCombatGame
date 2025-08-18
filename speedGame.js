@@ -13,6 +13,7 @@ var engagingCounters = false
 var characterDying = false
 var promises = []
 var checkingPromises = null
+var modifierID = 0
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
 // FUNNY CONDITIONS
@@ -5862,7 +5863,7 @@ async function playStatusEffectGlow(characterDiv, effectName) {
 }
 
 async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, resistable = true, isLocked = false, bonusData = null) {
-    const identifier = Math.random().toString(36).substring(2, 15) // generate a random identifier for the effect
+    modifierID++
     actionInfo.actionDetails = {
         category: 'applyEffect',
         effectName: effectName,
@@ -5871,7 +5872,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         resistable: resistable,
         isLocked: isLocked,
         bonusData: bonusData,
-        identifier: identifier,
+        identifier: modifierID,
     }
     if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.tags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
     await logFunctionCall('applyEffect', ...arguments)
@@ -5885,7 +5886,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
             caster: actionInfo.battleBro,
             apply: info?.apply,
             remove: info?.remove,
-            identifier: identifier,
+            identifier: modifierID,
         }
         if (info.type == 'debuff' && resistable == true && Math.random() < (actionInfo.target.tenacity - actionInfo.battleBro.potency) * 0.01) {
             await addFloatingText(actionInfo.target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
@@ -5919,11 +5920,12 @@ async function updateEffectsAtTurnEnd(actionInfo, battleBro) {
     await updateEffectIcons(battleBro);
 }
 
-async function expireEffect(actionInfo, battleBro, effect, type) {
-    battleBro.buffs.splice(battleBro.buffs.indexOf(effect), 1)
-    let newActionInfo = new ActionInfo({ battleBro: battleBro })
-    if (effect?.remove) await effect.remove(newActionInfo, battleBro, effect, type)
-    await eventHandle('lostEffect', newActionInfo, battleBro, effect, type)
+async function expireEffect(actionInfo, battleBro, effect, type, dispeller = undefined) {
+    battleBro.buffs.splice(battleBro.buffs.indexOf(effect), 1) // remove effect from buffs array
+    let newActionInfo = (actionInfo) ? actionInfo : new ActionInfo({ battleBro: battleBro })
+
+    if (effect?.remove) await effect.remove(newActionInfo, battleBro, effect, type, dispeller) // apply remove effect
+    await eventHandle('lostEffect', newActionInfo, battleBro, effect, type, dispeller) // apply event handlers
 }
 
 async function updateEffectIcons(battleBro) {
@@ -6093,9 +6095,8 @@ async function dispel(actionInfo, type = null, tag = null, name = null, dispelLo
     for (let i = actionInfo.target.buffs.length - 1; i >= 0; i--) {
         const effect = actionInfo.target.buffs[i];
         if (dispelledEffects.includes(effect)) {
-            actionInfo.target.buffs.splice(i, 1)
-            if (effect?.remove) await effect.remove(actionInfo, actionInfo.target, effect, 'dispelled')
-            await eventHandle('lostEffect', actionInfo, actionInfo.target, effect, 'dispelled', actionInfo.battleBro)
+            await expireEffect(actionInfo, actionInfo.target, effect, 'dispelled', actionInfo.battleBro)
+            
             await gainUltCharge(actionInfo.battleBro, 8)
             removedEffects.push(effect)
         }
@@ -6123,18 +6124,15 @@ async function removeEffect(actionInfo, target, bufftag = null, name = null, typ
             let shortestDurationEffect = filteredEffects.reduce((prev, current) => {
                 return (prev.duration < current.duration) ? prev : current;
             })
-            let shortestDurationEffectIndex = target.buffs.indexOf(shortestDurationEffect)
-            target.buffs.splice(shortestDurationEffectIndex, 1)
-            if (shortestDurationEffect?.remove) await shortestDurationEffect.remove(actionInfo, target, shortestDurationEffect, 'removed')
-            await eventHandle('lostEffect', actionInfo, target, shortestDurationEffect, 'removed')
+
+            await expireEffect(actionInfo, target, shortestDurationEffect, 'removed')
+
             await updateEffectIcons(target)
         } else {
             for (let i = target.buffs.length - 1; i >= 0; i--) {
                 const effect = target.buffs[i];
                 if (filteredEffects.includes(effect)) {
-                    target.buffs.splice(i, 1)
-                    if (effect?.remove) await effect.remove(actionInfo, target, effect, 'removed')
-                    await eventHandle('lostEffect', actionInfo, target, effect, 'removed')
+                    await expireEffect(actionInfo, target, effect, 'removed')
                 }
             }
             await updateEffectIcons(target)
@@ -6571,7 +6569,7 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
     img.style.display = 'block'
 }
 
-async function modifyStat(actionInfo, stat, amount, type = 'add') {
+async function modifyStat(actionInfo, source, stat, amount, type = 'add') {
     /*if (triggerEventHandlers == true) {
         await eventHandle('modifiedStat', actionInfo, stat, amount, actionInfo.target, actionInfo.battleBro)
     }*/
@@ -6581,7 +6579,7 @@ async function modifyStat(actionInfo, stat, amount, type = 'add') {
 async function getStat(battleBro, stat) {
     let value = battleBro[stat]
     for (let keyword of ["add", "multiply", "set"]) { // we add the modifiers in the order of add, multiply, set
-        for (let mod of battleBro.modifiers[stat]) { // each modifier of that stat contains the source, amount, and type such as {'offence down', '-50', 'add'}
+        for (let mod of battleBro.modifiers[stat]) { // each modifier of that stat contains the source, amount, type and ID such as {'offence down', '-50', 'add', '1234'}
             if (mod.type === keyword === "add") {
                 value += mod.amount
             } else if (mod.type === keyword === "multiply") {
