@@ -5,7 +5,7 @@ export var battleBros = [
         x: 450,
         y: 100,
         team: 0,
-        isLeader: true,
+        isLeader: false,
         // Defined elsewhere
         // - avatarHtmlElement
         // - isTargeted
@@ -16,7 +16,7 @@ export var battleBros = [
         x: 450,
         y: 300,
         team: 0,
-        isLeader: true,
+        isLeader: false,
     },
     {
         character: 'Talia',
@@ -44,14 +44,14 @@ export var battleBros = [
         x: 250,
         y: 400,
         team: 0,
-        isLeader: true,
+        isLeader: false,
     },
     {
         character: 'Clone Wars Chewbacca',
         x: 250,
         y: 600,
         team: 0,
-        isLeader: false,
+        isLeader: true,
     },
     {
         character: 'MassiveJabba',
