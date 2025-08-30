@@ -6284,12 +6284,12 @@ async function updateStat(battleBro, stat, updateStats = true) {
         if (stat == 'maxHealth') {
             const healthPercent = battleBro.health / battleBro.maxHealth
             battleBro.maxHealth = infoAboutCharacters[battleBro.character].health * value * 0.01
-            battleBro.health = battleBro.maxHealth * healthPercent
+            if (typeof healthPercent === 'number' && healthPercent > 0) battleBro.health = battleBro.maxHealth * healthPercent
             battleBro.maxHealthPercent = value
         } else if (stat == 'maxProtection') {
             const protectionPercent = battleBro.protection / battleBro.maxProtection
             battleBro.maxProtection = infoAboutCharacters[battleBro.character].protection * value * 0.01
-            battleBro.protection = battleBro.maxProtection * protectionPercent
+            if (typeof protectionPercent === 'number' && protectionPercent > 0) battleBro.protection = battleBro.maxProtection * protectionPercent
             battleBro.maxProtectionPercent = value
         } else {
             battleBro[stat] = value
