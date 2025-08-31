@@ -16,7 +16,7 @@ var checkingPromises = null
 var modifierID = 1000 // starts at 1000 so smaller numbers can be used for other purposes
 const wait = ms => new Promise(res => setTimeout(res, ms))
 const floatingTextQueues = new Map()
-var temporaryModifierActive = false
+var temporaryModifierActive = []
 // FUNNY CONDITIONS
 var numberOfTeams = 2
 var omicron = true // activates omicron bonuses on some abilities
@@ -415,7 +415,7 @@ const infoAboutAbilities = {
                 if (actionInfo.battleBro.customData.shootsFirst.shootingFirst == true) {
                     await applyEffect(actionInfo, 'stun', 1, 1, false)
                     actionInfo.battleBro.customData.shootsFirst.shootingFirst = false
-                    actionInfo.battleBro.statuses.ignoreTauntEffects.splice(actionInfo.battleBro.statuses.ignoreTauntEffects.indexOf("Shoots First"), 1)
+                    await addStatus(actionInfo.battleBro, 'Shoots First', 'ignoreTaunt', 'temporary')
                 }
             }
         }
@@ -2012,7 +2012,8 @@ const infoAboutPassives = {
             owner.customData.ragingWookie = {
                 bonusAttackGains: 0
             }
-            owner.statuses.immuneCooldownIncrease.push("Raging Wookie")
+            await addStatus(owner, 'Raging Wookie', 'stopCooldownIncrease')
+            await addStatus(owner, 'Raging Wookie', 'stopEffect', undefined, 'abilityBlock')
         },
         gainedEffect: async function (actionInfo, owner, target, effect) {
             if (owner == target && effect.name == 'abilityBlock') {
@@ -2204,7 +2205,7 @@ const infoAboutPassives = {
             }
         }
     },
-    'No Escape': { // uses statuses
+    'No Escape': {
         name: 'No Escape',
         image: 'images/abilities/abilityui_passive_darthvader.png',
         desc: `At the start of each encounter, Darth Vader gains 8 Speed until the end of the encounter for each of the following: Empire ally, Sith ally, Jedi enemy, and Rebel enemy.<br>Darth Vader is immune to Turn Meter reduction and recovers 5% Health and 2% Protection whenever a Damage Over Time effect on an enemy expires.`,
@@ -2227,7 +2228,7 @@ const infoAboutPassives = {
                 }
             }
             await modifyStat(owner, 'No Escape', 'speed', speed)
-            owner.statuses.immuneTMloss.push("No Escape")
+            await addStatus(owner, 'No Escape', 'stopTMloss')
         },
         lostEffect: async function (actionInfo, owner, target, effect, removalType, dispeller) {
             if (effect.name == 'damageOverTime' && owner.team !== target.team && removalType == 'expired') {
@@ -2250,7 +2251,6 @@ const infoAboutPassives = {
             owner.customData.shootsFirst = {
                 shootingFirst: true
             }
-            owner.statuses.ignoreTauntEffects.push("Shoots First")
             await changeCooldowns(owner, 2)
             await bonusTurn(new ActionInfo({ battleBro: owner, target: owner }))
         },
@@ -2862,10 +2862,11 @@ const infoAboutEffects = {
         image: 'images/effects/callToAction.png',
         type: 'buff',
         tags: ['accuracy', 'critChance', 'critDamage', 'target'],
-        desc: "+50% Accuracy, +50% Critical Chance, + 50% Critical Damage, and ignores taunts during this character's turn.",
+        desc: "+50% Accuracy, +50% Critical Chance, + 50% Critical Damage, and ignores taunts.",
         modifiers: [['critChance', 50], ['critDamage', 50], ['accuracy', 50]],
+        statuses: ['ignoreTaunt'],
         opposite: 'criticalChanceDown',
-        apply: async function (actionInfo, unit, effect) {
+        /*apply: async function (actionInfo, unit, effect) {
             if (!unit.customData.ignoreTaunts) unit.customData.ignoreTaunts = {
                 enemiesNotTaunting: [],
                 ignoringTaunts: false
@@ -2890,7 +2891,7 @@ const infoAboutEffects = {
                 unit.customData.ignoreTaunts.ignoringTaunts = false
                 if (actionInfo.enemies.filter(unit => unit.taunting == true)[0]) await changeTarget(actionInfo.enemies.filter(unit => unit.taunting == true)[0])
             }
-        }
+        }*/
     },
     'chainAttack': {
         name: 'chainAttack',
@@ -3069,29 +3070,20 @@ const infoAboutEffects = {
             }
         }
     },
-    'merciless': { // immunity to turn meter manipulation uses janky statuses - switch to modifiers
+    'merciless': {
         name: 'merciless',
         image: 'images/effects/merciless.png',
         type: 'buff',
         tags: ['stack', 'offence', 'critChance', 'critDamage'],
         desc: "+50% Offence, +25% Critical Chance, and +50% Critical Damage. Immune to Fear and Turn Meter manipulation.",
         modifiers: [['critChance', 25], ['critDamage', 50], ['offence', 50]],
-        opposite: 'offenceUp',
-        apply: async function (actionInfo, unit, effect) {
-            await logFunctionCall('method: apply (', ...arguments,)
-            unit.statuses.immuneTMgain.push(effect)
-            unit.statuses.immuneTMloss.push(effect)
-        },
-        remove: async function (actionInfo, unit, effect) {
-            await logFunctionCall('method: remove (', ...arguments,)
-            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
-            unit.statuses.immuneTMloss.splice(unit.statuses.immuneTMloss.indexOf(effect), 1)
-        },
-        gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
+        statuses: [['stopTMgain'], ['stopTMloss'], ['stopEffect', 'fear']],
+        opposite: 'fear',
+        /*gainedEffect: async function (actionInfo, unit, effect, target, gainedEffect) {
             if (unit == target && gainedEffect.name == 'fear') {
                 await dispel(new ActionInfo({ battleBro: unit, target: unit }), null, null, null, true, gainedEffect)
             }
-        }
+        }*/
     },
     'offenceUp': {
         name: 'offenceUp',
@@ -3177,7 +3169,8 @@ const infoAboutEffects = {
         type: 'buff',
         tags: ['stack', 'taunt', 'target', 'loseOnHit'],
         desc: "Taunt and lose one stack of Resilient Defence when damaged by an attack.",
-        apply: async function (actionInfo, unit, effect) {
+        statuses: ['taunt'],
+        /*apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
             unit.taunting = true
             await removeEffect(actionInfo, unit, 'stealth')
@@ -3194,7 +3187,7 @@ const infoAboutEffects = {
                     }
                 }
             }
-        }
+        }*/
     },
     'retribution': {
         name: 'retribution',
@@ -3297,27 +3290,34 @@ const infoAboutEffects = {
         modifiers: ['speedPercent', 25],
         opposite: 'speedDown',
     },
-    'stealth': { // add stealth status
+    'stealth': {
         name: 'stealth',
         image: 'images/effects/stealth.png',
         type: 'buff',
         tags: ['stealth', 'target', 'counterImmunity'],
         desc: "Can't be targeted or countered.",
+        statuses: ['stealth'],
         opposite: 'marked',
-        apply: async function (actionInfo, unit, effect) {
+        usedAbility: async function (actionInfo, unit, effect, abilityName, battleBro, target) {
+            if (unit == battleBro) {
+                await ignoreStat('stealth', actionInfo.enemies, 'counterChance')
+            }
+        }
+        /*apply: async function (actionInfo, unit, effect) {
             await logFunctionCall('method: apply (', ...arguments,)
             await removeEffect(actionInfo, unit, 'taunt')
             await switchTarget(unit)
-        },
+        },*/
     },
-    'taunt': { // add taunt status
+    'taunt': {
         name: 'taunt',
         image: 'images/effects/taunt.png',
         type: 'buff',
         tags: ['taunt', 'target'],
         desc: "Enemies will target this character.",
+        statuses: ['taunt'],
         opposite: 'tauntImmunity',
-        apply: async function (actionInfo, unit, effect) {
+        /*apply: async function (actionInfo, unit, effect) {
             unit.taunting = true
             await removeEffect(actionInfo, unit, 'stealth')
             if (battleBros.filter(battleBro => battleBro.team == unit.team).filter(battleBro => battleBro.taunting == true).length == 1) await changingTarget(unit) // don't switch the target if there's another member of this character's team taunting
@@ -3331,7 +3331,7 @@ const infoAboutEffects = {
                     await changingTarget(unitTeam.filter(battleBro => battleBro.taunting)[0]) // change the target to that one
                 }
             }
-        }
+        }*/
     },
     'tenacityUp': {
         name: 'tenacityUp',
@@ -3437,12 +3437,13 @@ const infoAboutEffects = {
         }
     },
     // ----------------------------------------------------------------- DEBUFFS -----------------------------------------------------------------
-    'abilityBlock': { // add ability block status
+    'abilityBlock': {
         name: 'abilityBlock',
         image: 'images/effects/abilityBlock.png',
         type: 'debuff',
         tags: ['stifle', 'abilityBlock'],
         desc: "Can't use special abilities.",
+        statuses: ['abilityBlock'],
         opposite: 'tacticalGenius',
     },
     'accuracyDown': {
@@ -3482,11 +3483,11 @@ const infoAboutEffects = {
             }
         }
     },
-    'blind': { // doesn't work with stacks
+    'blind': { // doesn't work with stacks - apply master effect
         name: 'blind',
         image: 'images/effects/blind.png',
         type: 'debuff',
-        tags: ['stack', 'singleUse', 'accuracy', 'blind'],
+        tags: ['stack', 'masterEffect', 'singleUse', 'accuracy', 'blind'],
         desc: "Miss the next attack.",
         modifiers: ['accuracy', -100],
         opposite: 'foresight',
@@ -3505,12 +3506,13 @@ const infoAboutEffects = {
         modifiers: [['speed', -25, 'add', 'debuff'], ['defence', -25, 'add', 'debuff']],
         opposite: 'breachImmunity',
     },
-    'buffImmunity': { // switch tag to buff immunity status
+    'buffImmunity': {
         name: 'buffImmunity',
         image: 'images/effects/buffImmunity.png',
         type: 'debuff',
         tags: ['buffImmunity'],
         desc: "Can't gain non-locked buffs.",
+        statuses: ['buffImmunity'],
         opposite: 'debuffImmunity',
     },
     'burning': {
@@ -3641,19 +3643,14 @@ const infoAboutEffects = {
             }
         }
     },
-    'daze': { // uses janky statuses to stop assist, counter and turn meter gain
+    'daze': {
         name: 'daze',
         image: 'images/effects/daze.png',
         type: 'debuff',
         tags: ['stopAssist', 'stopCounter', 'stopTMgain'],
         desc: "Can't assist, counter or gain turn meter.",
+        statuses: [['stopTMgain'], ['stopAssist'], ['stopCounter']],
         opposite: 'retribution',
-        apply: async function (actionInfo, unit, effect) {
-            unit.statuses.immuneTMgain.push(effect)
-        },
-        remove: async function (actionInfo, unit, effect) {
-            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
-        }
     },
     'decay': {
         name: 'decay',
@@ -3673,7 +3670,7 @@ const infoAboutEffects = {
         modifiers: ['defence', -50],
         opposite: 'defenceUp',
     },
-    'disarm': { // shouldn't stack with other effects
+    'disarm': {
         name: 'disarm',
         image: 'images/effects/disarm.png',
         type: 'debuff',
@@ -3756,31 +3753,27 @@ const infoAboutEffects = {
             }
         }
     },
-    'fear': { // no opposite buff + uses janky statuses
+    'fear': { // no opposite buff
         name: 'fear',
         image: 'images/effects/fear.png',
         type: 'debuff',
         tags: ['stack', 'singleUse', 'loseOnHit', 'stun'],
         desc: "Miss the next turn and can't evade attacks, but Fear is removed upon taking damage. If it is, increase cooldowns by 1.",
+        statuses: ['stunned'],
         modifiers: ['evasion', -100],
-        apply: async function (actionInfo, unit, effect) {
-            await logFunctionCall('method: apply (', ...arguments,)
-            unit.statuses.stunned.push(effect)
-        },
         remove: async function (actionInfo, unit, effect, removalType) {
-            await logFunctionCall('method: remove (', ...arguments,)
-            unit.statuses.stunned.splice(unit.statuses.stunned.indexOf(effect), 1)
             if (removalType == 'removed') {
                 await changeCooldowns(unit, 1)
             }
         }
     },
-    'healingImmunity': { // uses tags instead of statuses
+    'healingImmunity': {
         name: 'healingImmunity',
         image: 'images/effects/healingImmunity.png',
         type: 'debuff',
         tags: ['healingImmunity', 'protectionHealingImmunity'],
         desc: "Can't recover health or protection.",
+        statuses: [['healingImmunity'], ['protectionHealingImmunity']],
         opposite: 'lifeMark',
     },
     'healthDown': {
@@ -3846,13 +3839,14 @@ const infoAboutEffects = {
         modifiers: ['offence', -50],
         opposite: 'offenceUp',
     },
-    'pierced': { // replace tags with status
+    'pierced': {
         name: 'pierced',
         image: 'images/effects/pierced.png',
         type: 'debuff',
         tags: ['stack', 'maxHealth', 'defence', 'buffImmunity'],
         desc: "0% defence, -20% max health and can't gain buffs.",
         modifiers: [['defence', 0, 'set'], ['maxHealth', -20]],
+        statuses: ['buffImmunity'],
         opposite: 'debuffImmunity',
     },
     'potencyDown': {
@@ -4018,14 +4012,15 @@ const infoAboutEffects = {
             }
         }
     },
-    'shatterpoint': { // fix taunt bypass
+    'shatterpoint': {
         name: 'shatterpoint',
         image: 'images/effects/shatterpoint.png',
         type: 'debuff',
         tags: ['stack', 'speed', 'taunt', 'loseOnHit', 'defence', 'maxHealth', 'offence'],
         desc: "Receiving damage removes Shatterpoint and reduces Defence, Max Health, and Offence by 10%. Enemies can ignore Taunt effects to target this unit.",
+        statuses: ['targetable'],
         opposite: 'barrier',
-        apply: async function (actionInfo, unit, effect) {
+        /*apply: async function (actionInfo, unit, effect) {
             unit.customData.shatterpoint = {
                 taunting: false
             }
@@ -4045,35 +4040,32 @@ const infoAboutEffects = {
                 unit.taunting = false
                 unit.customData.shatterpoint.taunting = false
             }
-        },
-        remove: async function (actionInfo, unit, effect) {
+        },*/
+        remove: async function (actionInfo, unit, effect, removalType) {
             await logFunctionCall('method: remove (', ...arguments,)
-            await switchTarget(unit)
-            await modifyStat(unit, effect.name, 'defence', -10)
-            await modifyStat(unit, effect.name, 'maxHealth', -10)
-            await modifyStat(unit, effect.name, 'offence', -10)
-            if (unit.customData.shatterpoint.taunting == true) {
+            //await switchTarget(unit)
+            if (removalType == 'removed') {
+                await modifyStat(unit, effect.name, 'defence', -10)
+                await modifyStat(unit, effect.name, 'maxHealth', -10)
+                await modifyStat(unit, effect.name, 'offence', -10)
+            }
+            /*if (unit.customData.shatterpoint.taunting == true) {
                 unit.taunting = false
                 unit.customData.shatterpoint.taunting = false
                 if (aliveBattleBros[unit.team].filter(unit => unit.taunting == true).length > 0 && unit.isTarget == true) {
                     await switchTarget(unit)
                 }
-            }
+            }*/
         }
     },
-    'shock': { // fix status + tags
+    'shock': {
         name: 'shock',
         image: 'images/effects/shock.png',
         type: 'debuff',
         tags: ['healingImmunity', 'stopTMgain', 'buffImmunity'],
         desc: "Can't heal, gain buffs or bonus turn meter.",
+        statuses: [['healingImmunity'], ['buffImmunity'], ['stopTMgain']],
         opposite: 'overcharge',
-        apply: async function (actionInfo, unit, effect) {
-            unit.statuses.immuneTMgain.push(effect)
-        },
-        remove: async function (actionInfo, unit, effect) {
-            unit.statuses.immuneTMgain.splice(unit.statuses.immuneTMgain.indexOf(effect), 1)
-        }
     },
     'speedDown': {
         name: 'speedDown',
@@ -4098,22 +4090,15 @@ const infoAboutEffects = {
             }
         }
     },
-    'stun': { // uses statuses
+    'stun': {
         name: 'stun',
         image: 'images/effects/stun.png',
         type: 'debuff',
         tags: ['stun', 'evasion'],
         desc: "Can't use abilities or evade attacks.",
         modifiers: ['evasion', -200],
+        statuses: ['stunned'],
         opposite: 'lockdown',
-        apply: async function (actionInfo, unit, effect) {
-            await logFunctionCall('method: apply (', ...arguments,)
-            unit.statuses.stunned.push(effect)
-        },
-        remove: async function (actionInfo, unit, effect) {
-            unit.statuses.stunned.splice(unit.statuses.stunned.indexOf(effect), 1)
-            await logFunctionCall('method: remove (', ...arguments,)
-        }
     },
     'targetLock': { // move tags to statuses
         name: 'targetLock',
@@ -4121,6 +4106,7 @@ const infoAboutEffects = {
         type: 'debuff',
         tags: ['targetLock'],
         desc: "Some abilities have extra effects against target-locked characters.",
+        statuses: ['targetLock'],
         opposite: 'chaff',
     },
     'tenacityDown': {
@@ -4174,6 +4160,7 @@ const infoAboutEffects = {
         type: 'misc',
         tags: [],
         desc: "{{caster}} must target this character. Upon being attacked, lose Merciless Target and grant {{caster}} a bonus turn.",
+        statuses: ['targetable'],
         apply: async function (actionInfo, unit, effect) {
 
         },
@@ -4397,15 +4384,29 @@ async function createBattleBroVars(battleBro, skipUI = false) {
     battleBro.effects = []
     battleBro.statuses = { // Arrays contain all the sources that apply the effect so that when one expires the others don't break
         stunned: [],
-        immuneTMgain: [],
-        immuneTMloss: [],
-        immuneCooldownIncrease: [],
-        tauntEffects: [],
-        targetableEffects: [],
-        ignoreTauntEffects: [],
-        ignoreStealthEffects: [],
+        stopAssist: [],
+        stopCounter: [],
+        stopCooldownIncrease: [],
+        stopCooldownDecrease: [],
+        stopTMgain: [],
+        stopTMloss: [],
+        stopEffect: [],
+        buffImmunity: [],
+        debuffImmunity: [],
+        healingImmunity: [],
+        protectionHealingImmunity: [],
+        taunt: [],
+        stealth: [],
+        targetable: [],
+        ignoreTaunt: [],
+        ignoreStealth: [],
+        abilitiesBlocked: [],
+        targetLock: [],
+        active(status) { // we can check if a status is active by doing await battleBro.statuses.active('stunned') == true
+            return this[status]?.length > 0
+        }
     }
-    battleBro.modifiers = {
+    battleBro.modifiers = { // contains modifiers from buffs, passives, etc that change stats
         speed: [],
         potency: [],
         tenacity: [],
@@ -4676,7 +4677,7 @@ async function updateCurrentBattleBroSkillImages() {
         }
     }
     await updateUltimateIconForCurrentCharacter(battleBro)
-    await changeCooldowns(battleBro, -1)
+    await changeCooldowns(battleBro, -1, "startOfTurn")
     let characterPassives = battleBro.passives
     if (characterPassives) {
         for (let i = 0; i < characterPassives.length; i++) {
@@ -4848,6 +4849,11 @@ async function selectBattleBro(battleBroNumber) {
     let avatarHtmlElement = battleBro.avatarHtmlElement
     avatarHtmlElement.addClass('selected')
 
+    let potentialTargets = await calculateTargets()
+    if (!potentialTargets.find(enemy => enemy.isTarget)) {
+        await changingTarget(potentialTargets[0])
+    }
+
     await updateCurrentBattleBroSkillImages()
 }
 
@@ -4884,7 +4890,14 @@ async function avatarClicked(clickedElement) {
         }
     }
 
-    await changeTarget(foundBattleBro)
+    let potentialTargets = await calculateTargets()
+    if (potentialTargets.includes(foundBattleBro)) {
+        console.log('Changing target to:', foundBattleBro)
+        await changingTarget(foundBattleBro)
+    } else {
+        console.log("Can't change target to:", foundBattleBro)
+        // optional effect
+    }
 }
 
 async function initActionInfo(battleBro, target, source, oldActionInfo = {}, ally = undefined, category = "ability", stats = {}, type = "main") {
@@ -4901,6 +4914,34 @@ async function initActionInfo(battleBro, target, source, oldActionInfo = {}, all
     }
     actionInfo.stats = stats
     return actionInfo
+}
+
+async function calculateTargets() {
+    let battleBro = battleBros[selectedBattleBroNumber]
+    let enemies = aliveBattleBros.filter((_, i) => i !== battleBro.team).flat()
+    let tauntingEnemies = enemies.filter(enemy => enemy.statuses.active('taunt') == true)
+    let stealthedEnemies = enemies.filter(enemy => enemy.statuses.active('stealth') == true)
+    let targetableEnemies = enemies.filter(enemy => enemy.statuses.active('targetable') == true)
+    let potentialTargets = enemies.slice()
+
+    // Step 1: Handle Taunt
+    if (tauntingEnemies.length > 0 && !battleBro.statuses.active('ignoreTaunt')) {
+        potentialTargets = tauntingEnemies
+    }
+
+    // Step 2: Handle Stealth
+    if (stealthedEnemies.length > 0 && !battleBro.statuses.active('ignoreStealth')) {
+        potentialTargets = potentialTargets.filter(enemy => !stealthedEnemies.includes(enemy))
+    }
+
+    // Step 3: Handle Targetable
+    if (targetableEnemies.length > 0) {
+        // Add targetables back in (union of sets)
+        let set = new Set([...potentialTargets, ...targetableEnemies])
+        potentialTargets = [...set]
+    }
+    
+    return potentialTargets
 }
 
 async function changeTarget(target) {
@@ -5047,7 +5088,7 @@ async function useAbilityMain(abilityName, actionInfo, hasTurn = false, type = '
 async function useAbility(abilityName, actionInfo, hasTurn = false, type = 'main') {
     await logFunctionCall('useAbility', ...arguments)
 
-    if (actionInfo.battleBro.statuses.stunned.length <= 0) {
+    if (actionInfo.battleBro.statuses.active('stunned') == false) {
 
         let ability = infoAboutAbilities[abilityName]
         let animation = null
@@ -5154,6 +5195,9 @@ async function endTurn(actionInfo, battleBro) {
 }
 
 async function assist(oldActionInfo, assister, dmgPercent = 100, abilityIndex = 0, stats = {}, target = null, ignoresTaunts = true) {
+
+    if (assister.statuses.active('stopAssist') == true) return
+
     let newTarget = target ? target : oldActionInfo.enemies.find(enemy => enemy.isTarget == true)
     let newStats = {
         ...stats,
@@ -5161,8 +5205,6 @@ async function assist(oldActionInfo, assister, dmgPercent = 100, abilityIndex = 
         ignoresTaunts,
     }
     let actionInfo = await initActionInfo(assister, newTarget, assister.abilities[abilityIndex], oldActionInfo, undefined, "ability", newStats, "assist")
-
-    if (actionInfo.battleBro.buffs.find(effect => effect.tags.includes('stopAssist'))) return
 
     actionInfo.battleBro.queuedAttacks.unshift([actionInfo, 'assist'])
 }
@@ -5179,7 +5221,7 @@ async function addAttackToQueue(oldActionInfo, battleBro, target, dmgPercent = 1
 
         let actionInfo = await initActionInfo(battleBro, (target ? target : oldActionInfo.battleBro), battleBro.abilities[abilityIndex], oldActionInfo, undefined, "ability", newStats, "counter")
 
-        if (battleBro.buffs.find(effect => effect.tags.includes('stopCounter')) || actionInfo.target.buffs.find(effect => effect.tags.includes('counterImmunity'))) return
+        if (battleBro.statuses.active('stopCounter') == true) return
         console.log('counter attack logged')
 
         actionInfo.battleBro.queuedAttacks.push([actionInfo, 'counter'])
@@ -5455,7 +5497,17 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
         bonusData: bonusData,
         identifier: modifierID,
     }
-    if (actionInfo.target.isDead == true || (actionInfo.target.buffs.find(effect => effect.tags.includes('buffImmunity')) && infoAboutEffects[effectName].type == 'buff' && isLocked == false)) return // don't apply the effect if the target is dead
+    if (actionInfo.target.isDead == true || (((actionInfo.target.statuses.active('buffImmunity') == true && infoAboutEffects[effectName].type == 'buff') || (actionInfo.target.statuses.active('debuffImmunity') == true && infoAboutEffects[effectName].type == 'debuff')) && isLocked == false)) return // don't apply the effect if the target is dead or they're immune to buffs or debuffs
+
+    if (actionInfo.target.statuses.active('stopEffect') == true) {
+        for (let statusMod of actionInfo.target.statuses.stopEffect) {
+            if (statusMod.bonusData == effectName || statusMod.bonusData == 'all') {
+                await addFloatingText(actionInfo.target.avatarHtmlElement.children()[7].firstElementChild, 'BLOCKED', 'white')
+                return
+            }
+        }
+    }
+
     await logFunctionCall('applyEffect', ...arguments)
     const info = infoAboutEffects[effectName];
 
@@ -5483,6 +5535,7 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
             if (effect?.apply) await effect.apply(actionInfo, actionInfo.target, effect) //the effect's apply effect activates unless it isn't stackable and there's already an effect with the same name
 
             if (effect?.modifiers) { // checks if the effect has a single modifier or multiple modifiers to apply
+                effect.addedModifiers = []
                 if (Array.isArray(effect.modifiers) && typeof effect.modifiers[0] === 'string') {
                     // Do single-mod logic
                     let mod = effect.modifiers
@@ -5503,7 +5556,28 @@ async function applyEffect(actionInfo, effectName, duration = 1, stacks = 1, res
                 } else {
                     console.error("Invalid input format in effect modifiers:", effect.modifiers)
                 }
+            }
 
+            if (effect?.statuses) { // checks if the effect has a single modifier or multiple modifiers to apply
+                effect.addedStatuses = []
+                if (Array.isArray(effect.statuses) && typeof effect.statuses[0] === 'string') {
+                    // Do single-mod logic
+                    let statusMod = effect.statuses
+                    const bonusData = (statusMod[1]) ? statusMod[1] : undefined
+                    let newStatusMod = await addStatus(actionInfo.target, effectName, statusMod[0], effect.identifier, bonusData)
+                    effect.addedStatuses.push(newStatusMod)
+                }
+                // Check if it's an array of pairs
+                else if (Array.isArray(effect.statuses) && Array.isArray(effect.statuses[0])) {
+                    // Do multi-mod logic
+                    for (let statusMod of effect.statuses) {
+                        const bonusData = (statusMod[1]) ? statusMod[1] : undefined
+                        let newStatusMod = await addStatus(actionInfo.target, effectName, statusMod[0], effect.identifier, bonusData)
+                        effect.addedStatuses.push(newStatusMod)
+                    }
+                } else {
+                    console.error("Invalid input format in effect statuses:", effect.statuses)
+                }
             }
 
             await eventHandle('gainedEffect', actionInfo, actionInfo.target, effect)
@@ -5547,6 +5621,7 @@ async function expireEffect(actionInfo, battleBro, effect, type, dispeller = und
     if (effect?.remove) await effect.remove(newActionInfo, battleBro, effect, type, dispeller) // apply remove effect
 
     await removeModifiers(battleBro, effect.identifier)
+    await removeStatuses(battleBro, effect.identifier)
 
     await eventHandle('lostEffect', newActionInfo, battleBro, effect, type, dispeller) // apply event handlers
 }
@@ -5770,8 +5845,9 @@ async function changeCooldowns(battleBro, amount = -1, ability = null) {
             await pdateAbilityCooldownUI(battleBro, abilityName);
         }
     }*/
-    if (amount > 0 && battleBro.statuses.immuneCooldownIncrease.length > 0) return
-    if (ability == null) {
+    if (amount > 0 && battleBro.statuses.active('stopCooldownIncrease') == true) return
+    if (amount < 0 && ability !== "startOfTurn" && battleBro.statuses.active('stopCooldownDecrease') == true) return
+    if (ability == "startOfTurn") {
         for (let abilityName of battleBro.abilities) {
             //console.log(abilityName)
             if (infoAboutAbilities[abilityName].type == 'special') {
@@ -5813,8 +5889,19 @@ async function updateAbilityCooldownUI(battleBro, abilityName) {
     const img = abilityImageDiv.get(0).querySelector('img');
     const cooldownSpan = abilityImageDiv.get(0).querySelector('#cooldown');
     console.log(abilityName, 'cooldown:', cooldown, 'abilityIndex:', abilityIndex, 'img:', img, 'cooldownSpan:', cooldownSpan)
-    if (cooldown > 0 || (!!battleBro.buffs.find(effect => effect.tags.includes('abilityBlock')) == true && infoAboutAbilities[abilityName].type !== 'basic')) {
-        //|| (infoAboutAbilities[abilityName].type === 'ultimate' && ultimateCharge[battleBro.team] < infoAboutAbilities[abilityName].ultimateCost)
+
+    let abilityBlocked = false
+
+    if (battleBro.statuses.active('abilitiesBlocked') == true) {
+        for (let statusMod of battleBro.statuses.abilitiesBlocked) {
+            if (statusMod.bonusData == abilityName) {
+                abilityBlocked = true
+            } else if ((statusMod.bonusData == "special") && infoAboutAbilities[abilityName].type == "special") {
+                abilityBlocked = true
+            }
+        }
+    }
+    if (cooldown > 0 || abilityBlocked == true) {
         img.style.filter = 'grayscale(100%) brightness(50%)'; // greyed out
         cooldownSpan.innerText = (cooldown > 0) ? cooldown : ''
         cooldownSpan.style.display = 'block';
@@ -6003,7 +6090,7 @@ async function dealDmg(actionInfo, dmg, type, triggerEventHandlers = true, effec
 
 async function heal(actionInfo, healing, type = 'health', isHealthSteal = false, ignoreHealImmunity = false, triggerEventHandlers = true) {
     await logFunctionCall('heal', ...arguments)
-    if (ignoreHealImmunity == false && ((actionInfo.target.buffs.find(effect => effect.tags.includes('healingImmunity')) && type == 'health') || (actionInfo.target.buffs.find(effect => effect.tags.includes('protectionHealingImmunity')) && type == 'protection'))) return
+    if (ignoreHealImmunity == false && ((actionInfo.target.statuses.active('healingImmunity') == true && type == 'health') || (actionInfo.target.statuses.active('protectionHealingImmunity') == true && type == 'protection'))) return
     actionInfo.actionDetails = {
         category: 'heal',
         type: type,
@@ -6028,7 +6115,7 @@ async function heal(actionInfo, healing, type = 'health', isHealthSteal = false,
 async function TMchange(actionInfo, change, resistable = true) {
     let user = actionInfo.battleBro // get the user from the actionInfo
     let target = actionInfo.target // get the target from the actionInfo
-    if ((target.statuses.immuneTMgain.length > 0 && change > 0) || (target.statuses.immuneTMloss.length > 0 && change < 0)) return
+    if ((target.statuses.active('stopTMgain') == true && change > 0) || (target.statuses.active('stopTMloss') == true && change < 0)) return
     if (resistable == true && change < 0 && Math.random() < (target.tenacity - user.potency) * 0.01) {
         await addFloatingText(target.avatarHtmlElement.children()[7].firstElementChild, 'RESISTED', 'white')
         await eventHandle('resisted', actionInfo, target, user, 'turnMeter', change)
@@ -6110,6 +6197,7 @@ async function ignoreStat(source, targets, stat) {
         await modifyStat(targets, source, stat, 0, 'temporary', 'set')
     }
 }
+
 
 async function gainUltCharge(battleBro, chargeAmount = 1) {
     if (ultimateBeingUsed === true) return
@@ -6202,6 +6290,7 @@ async function updateUltimateIconForCurrentCharacter(battleBro) {
     img.style.display = 'block'
 }
 
+
 async function modifyStat(battleBro, source, stat, amount, identifier = undefined, type = "add", notStackableWith) {
     if (stat == 'defence') {
         await modifyStat(battleBro, source, 'armour', amount, identifier, type, notStackableWith)
@@ -6213,7 +6302,7 @@ async function modifyStat(battleBro, source, stat, amount, identifier = undefine
         modifierID++
         identifier = modifierID
     } else if (identifier == 'temporary') {
-        temporaryModifierActive = true
+        temporaryModifierActive.push(battleBro)
     }
 
     let mod = {
@@ -6308,12 +6397,49 @@ async function removeModifiers(battleBro, identifier) {
 }
 
 async function destroyTemporaryModifiers() {
-    if (temporaryModifierActive == false) return
-    for (let battleBro of battleBros) {
+    if (temporaryModifierActive.length <= 0) return
+    for (let battleBro of temporaryModifierActive) {
         await removeModifiers(battleBro, 'temporary')
+        await removeStatuses(battleBro, 'temporary')
     }
-    temporaryModifierActive = false
+    temporaryModifierActive = []
 }
+
+
+async function addStatus(battleBro, source, status, identifier = undefined, bonusData) {
+    if (status == "abilityBlock") {
+        status = "abilitiesBlocked"
+        bonusData = "special"
+    }
+
+    if (identifier == undefined) { // If there isn't an identifier, create one
+        modifierID++
+        identifier = modifierID
+    } else if (identifier == 'temporary') {
+        temporaryModifierActive.push(battleBro)
+    }
+
+    let statusMod = {
+        source: source,
+        status: status,
+        identifier: identifier,
+    }
+    if (bonusData) statusMod.bonusData = bonusData
+
+    battleBro.statuses[status].push(statusMod)
+
+    return statusMod
+}
+
+async function removeStatuses(battleBro, identifier) {
+    for (let status of Object.keys(battleBro.statuses)) {
+        if (status == 'active') continue // active is a function not an array
+        battleBro.statuses[status] = battleBro.statuses[status].filter(
+            mod => mod.identifier !== identifier
+        )
+    }
+}
+
 
 async function showStats(battleBro, x, y, type, abilityName = null) {
     let statBox = $('#statBox')
@@ -6732,7 +6858,6 @@ async function runOnAuto(runForever = true) {
     }
 }
 
-
 async function attack(inputs) {
     await logFunctionCall('attack', ...arguments)
     console.log('Attack: ' + inputs.battleBroNumber + ' uses ' + inputs.skill.name + (inputs.targetedEnemy ? ' on ' + inputs.targetedEnemy.character : ''))
@@ -6745,7 +6870,6 @@ async function attack(inputs) {
     inputs.skillData.cooldown = inputs.skill.cooldownAfterUse
     await updateBattleBrosHtmlText()
 }
-
 
 async function damageEnemy(inputs) {
     await logFunctionCall('damageEnemy', ...arguments)

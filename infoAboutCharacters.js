@@ -76,7 +76,7 @@ export const infoAboutCharacters = {
         image: 'images/avatars/CloneWarsChewbacca.png',
         health: 43470 + 52371,
         protection: 0,
-        speed: 126 + 100,
+        speed: 126 + 30,
         potency: 28,
         tenacity: 65,
         critChance: 28.46,
