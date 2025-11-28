@@ -12,14 +12,14 @@ export var battleBros = [
 
     },
     {
-        character: 'jabba',
+        character: 'Jim Raynor',
         x: 450,
         y: 300,
         team: 0,
-        isLeader: false,
+        isLeader: true,
     },
     {
-        character: 'Talia',
+        character: 'Goosey',
         x: 450,
         y: 500,
         team: 0,
@@ -33,7 +33,7 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        character: 'Super Striker',
+        character: 'jabba',
         x: 250,
         y: 200,
         team: 0,
@@ -47,7 +47,7 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        character: 'Clone Wars Chewbacca',
+        character: 'John Wok',
         x: 250,
         y: 600,
         team: 0,
@@ -63,7 +63,7 @@ export var battleBros = [
 
     // Team 1 (right side)
     {
-        character: 'Shadow Menace (Original)',
+        character: 'Talia',
         x: 1350,
         y: 100,
         team: 1,
@@ -105,7 +105,7 @@ export var battleBros = [
         isLeader: false,
     },
     {
-        character: 'Clone Wars Chewbacca',
+        character: 'Han Solo',
         x: 1550,
         y: 600,
         team: 1,
